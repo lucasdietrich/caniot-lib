@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.asm": "avr",
+        "caniot.h": "c",
+        "tempsens.h": "c"
+    }
+}

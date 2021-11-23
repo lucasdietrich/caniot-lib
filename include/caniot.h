@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+void caniot_input(void);
+
 #define ciot_dev struct caniot_device
 
 enum { command = 0, telemetry = 1, attribute = 2, _unused = 3 };

@@ -2,6 +2,8 @@
     "files.associations": {
         "*.asm": "avr",
         "caniot.h": "c",
-        "tempsens.h": "c"
+        "tempsens.h": "c",
+        "stdint.h": "c",
+        "errno.h": "c"
     }
 }

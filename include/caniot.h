@@ -1,46 +1,54 @@
 #ifndef _CANIOT_H
 #define _CANIOT_H
 
+#include <stddef.h>
 #include <stdint.h>
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
+#define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 void caniot_input(void);
 
-#define ciot_dev struct caniot_device
-
-enum { command = 0, telemetry = 1, attribute = 2, _unused = 3 };
-
-struct id
-{
-        uint32_t type: 2;
-        uint32_t device: 9;
-        uint32_t _unused: 18;
-};
-
-enum { controller = 0, sensor = 1, actuator = 2, full_device = 3};
+// custom errors codes
 
 struct deviceid
 {
-        uint8_t type: 2;
-        uint8_t lightning: 1;
-        uint8_t heating: 1;
-        uint8_t presence: 1;
-        uint8_t contact: 1;
-        uint8_t unique: 3;
+        uint8_t cls: 3;
+        uint8_t dev: 3;
 };
 
-struct can_msg
-{
-        uint32_t id;
-        uint8_t rtr;
-        uint8_t ext;
+enum { command = 0, telemetry = 1, write_attribute = 3, read_attribute = 2 };
+enum { query = 0, response = 1 };
 
+/* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
+struct caniot_id {
+        uint16_t type : 2;
+        uint16_t query : 1;
+        uint16_t cls: 3;
+        uint16_t dev: 3;
+        uint16_t endpoint : 2;
+};
+
+
+struct caniot_attribute
+{
+        uint16_t key;
+        uint32_t val;
+};
+
+struct caniot_frame {
+        struct caniot_id id;
+        union {
+		char buf[8];
+                struct caniot_attribute attr;
+		int32_t err;
+        };
         uint8_t len;
-        uint8_t buffer[8];
 };
 
 struct caniot_identification
 {
-        uint8_t nodeid;
+        struct deviceid nodeid;
         uint16_t version;
         char name[32];
 };
@@ -95,20 +103,37 @@ struct caniot_device
         struct caniot_system system;
         struct caniot_config config;
         struct caniot_scheduled scheduled[32];
+        
         const struct caniot_api *api;
 };
 
 struct caniot_api
 {
-        int (*update_time)(ciot_dev *dev, uint32_t ts);
-        int (*update_config)(ciot_dev *dev, struct caniot_config *cfg);
+        int (*update_time)(struct caniot_device *dev, uint32_t ts);
+        int (*update_config)(struct caniot_device *dev, struct caniot_config *cfg);
 
-        int (*scheduled_handler)(ciot_dev *dev, struct caniot_scheduled *sch);
+        int (*scheduled_handler)(struct caniot_device *dev, struct caniot_scheduled *sch);
 
-        int (*read_attribute)(ciot_dev *dev, uint16_t key, uint32_t *val);
-        int (*write_attribute)(ciot_dev *dev, uint16_t key, uint32_t *val);
-        int (*command)(ciot_dev *dev, char *buf, uint8_t len);
-        int (*telemetry)(ciot_dev *dev, char *buf, uint8_t *len);
+        int (*read_attribute)(struct caniot_device *dev, uint16_t key, uint32_t *val);
+        int (*write_attribute)(struct caniot_device *dev, uint16_t key, uint32_t val);
+
+	/* Handle command */
+        int (*command)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t len);
+
+	/* Build telemetry */
+        int (*telemetry)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t *len);
 };
 
+int caniot_process_rx_frame(struct caniot_device *dev,
+			    struct caniot_frame *req,
+			    struct caniot_frame *resp);
+
+int caniot_telemetry_resp(struct caniot_device *dev,
+			  struct caniot_frame *resp,
+			  uint8_t ep);
+
+int caniot_attribute_resp(struct caniot_device *dev,
+			  struct caniot_frame *resp,
+			  uint16_t key);
+			  
 #endif

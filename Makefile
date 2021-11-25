@@ -29,6 +29,8 @@ APP_INC = -Iexamples/ $(INC_OPT)
 build/main: $(APP_SRC) build/caniot.a
 	gcc -o $@ $^ $(CFLAGS) $(APP_INC) -MMD
 
+build: build/main
+
 -include $(APP_DEP)
 
 echo:

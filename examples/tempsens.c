@@ -32,7 +32,7 @@ static const struct caniot_api tempsens_api = {
 	.update_config = NULL,
 	.read_attribute = NULL,
 	.write_attribute = NULL,
-	.command = dev_command,
+	.command_handler = dev_command,
 	.telemetry = dev_telemetry
 };
 
@@ -42,7 +42,7 @@ struct tempdev tempsens = {
 	.dev = {
 		.identification = {
 			.name = "TempSens1",
-			.nodeid = {
+			.node = {
 				.cls = 2,
 				.dev = 1
 			},

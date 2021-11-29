@@ -3,18 +3,19 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
+#define MEMBER_SIZEOF(s, member)	(sizeof(((s *)0)->member))
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
-
-void caniot_input(void);
+#define MIN(a, b) (a < b ? a : b)
 
 // custom errors codes
 
 struct deviceid
 {
-        uint8_t cls: 3;
-        uint8_t dev: 3;
+	uint8_t cls : 3;
+	uint8_t dev : 3;
 };
 
 enum { command = 0, telemetry = 1, write_attribute = 3, read_attribute = 2 };
@@ -46,9 +47,19 @@ struct caniot_frame {
         uint8_t len;
 };
 
+struct caniot_filter
+{
+	uint32_t filter;
+	uint32_t mask;
+	uint8_t ext;
+};
+
 struct caniot_identification
 {
-        struct deviceid nodeid;
+	union {
+		struct deviceid node;
+		uint8_t nodeid;
+	};
         uint16_t version;
         char name[32];
 };
@@ -57,7 +68,7 @@ struct caniot_system
 {
         uint32_t uptime;
         uint32_t abstime;
-        // uint32_t calculated_abstime;
+        uint32_t calculated_abstime;
         uint32_t uptime_shift;
         uint32_t last_telemetry;
         struct {
@@ -88,6 +99,10 @@ struct caniot_config
         uint32_t telemetry_period;
         uint32_t telemetry_rdm_delay;
         uint32_t telemetry_min;
+	
+	struct {
+		uint8_t error_response: 1;
+	};
 };
 
 struct caniot_scheduled
@@ -95,6 +110,13 @@ struct caniot_scheduled
         uint8_t days;
         uint8_t time;
         uint32_t command;
+};
+
+struct caniot_drivers_api {
+	int (*send)(struct caniot_frame *frame, uint32_t delay); /* TX queue */
+	int (*recv)(struct caniot_frame *frame); /* RX queue */
+
+	int (*set_filter) (struct caniot_filter *filter);
 };
 
 struct caniot_device
@@ -105,12 +127,16 @@ struct caniot_device
         struct caniot_scheduled scheduled[32];
         
         const struct caniot_api *api;
+	const struct caniot_drivers_api *driv;
 };
 
 struct caniot_api
 {
+	/* called when time is updated with new time */
         int (*update_time)(struct caniot_device *dev, uint32_t ts);
-        int (*update_config)(struct caniot_device *dev, struct caniot_config *cfg);
+
+	/* called when configuration is updated */
+        int (*update_config)(struct caniot_device *dev);
 
         int (*scheduled_handler)(struct caniot_device *dev, struct caniot_scheduled *sch);
 
@@ -118,22 +144,20 @@ struct caniot_api
         int (*write_attribute)(struct caniot_device *dev, uint16_t key, uint32_t val);
 
 	/* Handle command */
-        int (*command)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t len);
+        int (*command_handler)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t len);
 
 	/* Build telemetry */
         int (*telemetry)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t *len);
+
+	bool (*pending_telemetry)(struct caniot_device *dev);
+
+	void (*entropy)(uint8_t *buf, size_t len);
 };
 
 int caniot_process_rx_frame(struct caniot_device *dev,
 			    struct caniot_frame *req,
 			    struct caniot_frame *resp);
 
-int caniot_telemetry_resp(struct caniot_device *dev,
-			  struct caniot_frame *resp,
-			  uint8_t ep);
+int caniot_process(struct caniot_device *dev);
 
-int caniot_attribute_resp(struct caniot_device *dev,
-			  struct caniot_frame *resp,
-			  uint16_t key);
-			  
 #endif

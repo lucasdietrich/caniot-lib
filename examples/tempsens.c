@@ -28,26 +28,24 @@ static int dev_telemetry(struct caniot_device *dev, uint8_t ep, char *buf, uint8
 
 static const struct caniot_api tempsens_api = {
 	.update_time = dev_update_time,
-	.scheduled_handler = NULL,
-	.update_config = NULL,
-	.read_attribute = NULL,
-	.write_attribute = NULL,
 	.command_handler = dev_command,
-	.telemetry = dev_telemetry
+	.telemetry = dev_telemetry,
 };
 
-struct tempdev tempsens = {
-	.trigger_temp = 0xDDAA,
-	.measured_temp = 0x1234,
-	.dev = {
-		.identification = {
+const struct caniot_identification id = {
 			.name = "TempSens1",
 			.node = {
 				.cls = 2,
 				.dev = 1
 			},
 			.version = 1
-		},
+};
+
+struct tempdev tempsens = {
+	.trigger_temp = 0xDDAA,
+	.measured_temp = 0x1234,
+	.dev = {
+		.identification = &id,
 		.api = &tempsens_api
 	}
 };

@@ -20,17 +20,4 @@ int main(void)
 	printf("sizeof(m) = %lu : %hu", sizeof(m), *((uint16_t*)&m));
 
 	return 0;
-
-	char buf[8];
-	uint8_t len = sizeof(buf);
-	memset(buf, 0x00, sizeof(buf));
-
-	tempsens.dev.api->telemetry(&tempsens.dev, 0, buf, &len);
-
-	for (int i = 0; i < len; i++) {
-		printf("%hhx ", buf[i]);
-	}
-	printf("\n");
-	
-	return 0;
 }

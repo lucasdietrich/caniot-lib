@@ -4,9 +4,9 @@
 #include <memory.h>
 
 #ifdef __AVR__
-#define RO_SECTION	PROGMEM
+#define ROM	PROGMEM
 #else
-#define RO_SECTION	
+#define ROM	
 #endif
 
 #define ATTR_IDENTIFICATION 0
@@ -24,53 +24,71 @@
 
 typedef uint16_t key_t;
 
+enum section {
+	section_identification = 0,
+	section_system = 1,
+	section_config = 2
+};
+
+enum section_option
+{
+	READONLY = 1 << 0,
+	VOLATILE = 1 << 1,
+	PERSISTENT = 1 << 2
+};
+
 enum attr_option
 {
-    WRITABLE = 0,
-    RAM = 1 << 0,
-    EEPROM = 1 << 1,
-    PROGMEMORY = 1 << 2,
-    READONLY = 1 << 3,
-    PRIVATE = 1 << 4, // unimplemented
+	READABLE = 1 << 0,
+	WRITABLE = 1 << 1,
 };
+
+static void attr_option_adjust(enum attr_option *attr_opt,
+			       enum section_option sec_opt)
+{
+	if (sec_opt & READONLY) {
+		*attr_opt &= ~WRITABLE;
+	}
+}
 
 union attr_value
 {
-    uint32_t u32;
-    uint16_t u16;
-    uint8_t u8;
+	uint32_t u32;
+	uint16_t u16;
+	uint8_t u8;
 };
 
 struct attr_ref
 {
-    uint8_t section;
-    enum attr_option option;
-    uint8_t offset;
-    uint8_t read_size;
+	enum attr_option option;
+	enum section_option section_option;
+	uint8_t section;
+	uint8_t offset;
+	uint8_t read_size;
 };
 
 struct attribute
 {
 	uint8_t offset;
 	uint8_t size;
-	uint8_t readonly;
+	uint8_t option;
 	char name[32];
 };
 
 struct attr_section
 {
-	uint8_t option;
+	enum section_option option;
 	char name[16];
 	const struct attribute *array;
 	uint8_t array_size;
 };
 
 
-#define ATTRIBUTE(s, readonly, name, param) 	\
+#define ATTRIBUTE(s, rw, name, param) 	\
     {                                           \
         (uint8_t) offsetof(s, param),       	\
             (uint8_t)MEMBER_SIZEOF(s, param),   \
-            (uint8_t)readonly ? READONLY : 0,   \
+            (uint8_t)rw,   			\
             name                                \
     }
 
@@ -82,87 +100,146 @@ struct attr_section
             ARRAY_SIZE(array)         \
     }
 
-static const struct attribute identification_attr[] RO_SECTION = {
-    ATTRIBUTE(struct caniot_identification, READONLY, "nodeid", nodeid),
-    ATTRIBUTE(struct caniot_identification, READONLY, "version", version),
-    ATTRIBUTE(struct caniot_identification, READONLY, "name", name),
+static const struct attribute identification_attr[] ROM = {
+	ATTRIBUTE(struct caniot_identification, READABLE, "nodeid", nodeid),
+	ATTRIBUTE(struct caniot_identification, READABLE, "version", version),
+	ATTRIBUTE(struct caniot_identification, READABLE, "name", name),
 };
 
-static const struct attribute system_attr[] RO_SECTION = {
-    ATTRIBUTE(struct caniot_system, READONLY, "uptime", uptime),
-    ATTRIBUTE(struct caniot_system, WRITABLE, "abstime", abstime),
-    ATTRIBUTE(struct caniot_system, READONLY, "calculated_abstime", calculated_abstime),
-    ATTRIBUTE(struct caniot_system, READONLY, "uptime_shift", uptime_shift),
-    ATTRIBUTE(struct caniot_system, READONLY, "last_telemetry", last_telemetry),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.total", received.total),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.read_attribute", received.read_attribute),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.write_attribute", received.write_attribute),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.command", received.command),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.request_telemetry", received.request_telemetry),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.processed", received.processed),
-    ATTRIBUTE(struct caniot_system, READONLY, "received.query_failed", received.query_failed),
-    ATTRIBUTE(struct caniot_system, READONLY, "sent.total", sent.total),
-    ATTRIBUTE(struct caniot_system, READONLY, "sent.telemetry", sent.telemetry),
-    ATTRIBUTE(struct caniot_system, READONLY, "sent.events", events.total),
-    ATTRIBUTE(struct caniot_system, READONLY, "last_query_error", last_query_error),
-    ATTRIBUTE(struct caniot_system, READONLY, "last_telemetry_error", last_telemetry_error),
-    ATTRIBUTE(struct caniot_system, READONLY, "last_event_error", last_event_error),
-    ATTRIBUTE(struct caniot_system, READONLY, "battery", battery),
+static const struct attribute system_attr[] ROM = {
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "uptime", uptime),
+	ATTRIBUTE(struct caniot_system, WRITABLE, "abstime", abstime),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "calculated_abstime", calculated_abstime),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "uptime_shift", uptime_shift),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_telemetry", last_telemetry),
+  	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.total", received.total),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.read_attribute", received.read_attribute),
+ 	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.write_attribute", received.write_attribute),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.command", received.command),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.request_telemetry", received.request_telemetry),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.processed", received.processed),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.query_failed", received.query_failed),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "sent.total", sent.total),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "sent.telemetry", sent.telemetry),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "sent.events", events.total),
+ 	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_query_error", last_query_error),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_telemetry_error", last_telemetry_error),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_event_error", last_event_error),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "battery", battery),
 };
 
-static const struct attribute config_attr[] RO_SECTION = {
-    ATTRIBUTE(struct caniot_config, WRITABLE, "telemetry_period", telemetry_period),
-    ATTRIBUTE(struct caniot_config, WRITABLE, "telemetry_rdm_delay", telemetry_rdm_delay),
-    ATTRIBUTE(struct caniot_config, WRITABLE, "telemetry_min", telemetry_min),
+static const struct attribute config_attr[] ROM = {
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry_period", telemetry_period),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry_rdm_delay", telemetry_rdm_delay),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry_min", telemetry_min),
 };
 
-static const struct attr_section attr_sections[] RO_SECTION = {
-    SECTION(RAM | PROGMEMORY | READONLY, "identification", identification_attr),
-    SECTION(RAM, "system", system_attr),
-    SECTION(EEPROM, "configuration", config_attr),
+static const struct attr_section attr_sections[] ROM = {
+    	SECTION(READONLY, "identification", identification_attr),
+    	SECTION(VOLATILE, "system", system_attr),
+    	SECTION(PERSISTENT, "configuration", config_attr),
 };
+
+static inline void arch_rom_cpy_byte(const uint8_t *p, uint8_t *d)
+{
+#ifdef __AVR__
+	*d = pgm_read_byte(p);
+#else
+	*d = *p;
+#endif
+}
+
+static inline void arch_rom_cpy_word(const uint16_t *p, uint16_t *d)
+{
+#ifdef __AVR__
+	*d = pgm_read_word(p);
+#else
+	*d = *p;
+#endif
+}
+
+static inline void arch_rom_cpy_dword(const uint32_t *p, uint32_t *d)
+{
+#ifdef __AVR__
+	*d = pgm_read_dword(p);
+#else
+	*d = *p;
+#endif
+}
+
+static inline void arch_rom_cpy_ptr(void **p, void **d)
+{
+#ifdef __AVR__
+	*d = pgm_read_ptr(p);
+#else
+	*d = *p;
+#endif
+}
+
+static inline void arch_rom_cpy_mem(void *p, void *d, uint16_t size)
+{
+#ifdef __AVR__
+	memcpy_P(d, p, size);
+#else
+	memcpy(d, p, size);
+#endif
+}
+
+static inline void arch_rom_cpy(void *p, void *d, uint16_t size)
+{
+	switch (size) {
+	case 1u:
+		return arch_rom_cpy_byte(p, d);
+	case 2u:
+		return arch_rom_cpy_word(p, d);
+	case 4u:
+		return arch_rom_cpy_dword(p, d);
+	default:
+		return arch_rom_cpy_mem(p, d, size);
+	}
+}
 
 static inline uint8_t attr_get_section_size(const struct attr_section *section)
 {
-#ifdef __AVR__
-	return pgm_read_byte(&section->array_size);
-#else
-	return section->array_size;
-#endif
+	uint8_t size;
+	arch_rom_cpy_byte(&section->array_size, &size);
+	return size;
 }
 
 static inline const struct attribute *attr_get_section_array(
 	const struct attr_section *section)
 {
-#ifdef __AVR__
-	return pgm_read_word(&section->array);
-#else
-	return section->array;
-#endif
+	const struct attribute *array;
+	arch_rom_cpy_ptr((void **) &section->array, (void**) &array);
+	return array;
 }
 
-static inline uint8_t attr_get_section_option(const struct attr_section *section) {
-#ifdef __AVR__
-	return pgm_read_byte(&section->option);
-#else
-	return section->option;
-#endif
+static inline enum section_option attr_get_section_option(const struct attr_section *section)
+{
+	uint8_t option;
+	arch_rom_cpy_byte((const uint8_t *) &section->option, &option);
+	return option;
 }
 
-static inline uint8_t attr_get_size(const struct attribute *attr) {
-#ifdef __AVR__
-	return pgm_read_byte(&attr->size);
-#else
-	return attr->size;
-#endif
+static inline uint8_t attr_get_size(const struct attribute *attr)
+{
+	uint8_t size;
+	arch_rom_cpy_byte(&attr->size, &size);
+	return size;
 }
 
-static inline uint8_t attr_get_offset(const struct attribute *attr) {
-#ifdef __AVR__
-	return pgm_read_byte(&attr->offset);
-#else
-	return attr->offset;
-#endif
+static inline uint8_t attr_get_offset(const struct attribute *attr)
+{
+	uint8_t offset;
+	arch_rom_cpy_byte(&attr->offset, &offset);
+	return offset;
+}
+
+static inline enum attr_option attr_get_option(const struct attribute *attr)
+{
+	uint8_t option;
+	arch_rom_cpy_byte(&attr->option, &option);
+	return option;
 }
 
 static const struct attr_section *attr_get_section(key_t key)
@@ -189,7 +266,7 @@ static int attr_resolve(key_t key, struct attr_ref *ref)
 	if (!section) {
 		return -EINVAL; /* TODO return accurate error CANIOT_EKEYSECTION */
 	}
-	
+
 	const struct attribute *attr = attr_get(key, section);
 	if (!attr) {
 		return -EINVAL; /* TODO return accurate error CANIOT_EKEYATTR */
@@ -201,26 +278,104 @@ static int attr_resolve(key_t key, struct attr_ref *ref)
 	}
 
 	ref->section = ATTR_KEY_SECTION(key);
-	ref->option = attr_get_section_option(section);
 	ref->read_size = MIN(attr_size, 4u);
 	ref->offset = ATTR_KEY_OFFSET(key) + attr_get_offset(attr);
+	ref->option = attr_get_option(attr);
+	ref->section_option = attr_get_section_option(section);
+
+	/* adjust attribute options in function of uppermost section options */
+	attr_option_adjust(&ref->option, ref->section_option);
 	
 	return 0;
 }
 
-static int attr_read(const struct attr_ref *ref, union attr_value value)
+static void read_identificate_attr(struct caniot_device *dev,
+				   const struct attr_ref *ref,
+				   union attr_value *value)
 {
+	arch_rom_cpy((void *)dev->identification + ref->offset,
+		      value, ref->read_size);
+}
+
+/*
+static inline uint16_t get_identification_version(struct caniot_device *dev)
+{
+	uint16_t version;
+	arch_rom_cpy_word(&dev->identification->version, &version);
+	return version;
+}
+*/
+
+static inline void read_identification_nodeid(struct caniot_device *dev,
+					     struct deviceid *node)
+{
+	arch_rom_cpy_byte((const uint8_t *)&dev->identification->node,
+			   (uint8_t *)node);
+}
+
+static int config_prepare_read(struct caniot_device *dev)
+{
+	/* local configuration in RAM should be updated */
+	if (dev->api->config.on_read) {
+		return dev->api->config.on_read(dev, dev->config);
+	}
+	
 	return 0;
 }
 
-static int attr_write(const struct attr_ref *ref, union attr_value value)
+static int read_config_attr(struct caniot_device *dev,
+			    const struct attr_ref *ref,
+			    union attr_value *value)
 {
+	/* local configuration in RAM should be updated */
+	int ret = config_prepare_read(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	memcpy(value, (void *)&dev->config + ref->offset, ref->read_size);
+
 	return 0;
 }
 
-static bool is_error_response(struct caniot_frame *frame) {
-	return frame->id.query == response && frame->id.type == command;
+
+static int attribute_read(struct caniot_device *dev,
+			  const struct attr_ref *ref,
+			  union attr_value *value)
+{
+	int ret = 0;
+
+	switch (ref->section) {
+	case section_identification:
+	{
+		read_identificate_attr(dev, ref, value);
+		break;
+	}
+
+	case section_system:
+	{
+		memcpy(value, (void *)&dev->system + ref->offset,
+		       ref->read_size);
+		break;
+	}
+
+	case section_config:
+	{
+		ret = read_config_attr(dev, ref, value);
+		break;
+	}
+
+	default:
+		ret = -EINVAL;
+	}
+
+	return ret;
 }
+
+
+// static bool is_error_response(struct caniot_frame *frame) {
+// 	return frame->id.query == response && frame->id.type == command;
+// }
 
 static bool is_telemetry_response(struct caniot_frame *frame) {
 	return frame->id.query == response && frame->id.type == telemetry;
@@ -235,13 +390,19 @@ static void prepare_response(struct caniot_device *dev,
 			     struct caniot_frame *resp,
 			     uint8_t type)
 {
+	struct deviceid node;
+
 	clean_frame(resp);
+
+	/* read device class and id from ROM */
+	read_identification_nodeid(dev, &node);
 
 	/* id */
 	resp->id.type = type;
 	resp->id.query = response;
-	resp->id.cls = dev->identification.node.cls;
-	resp->id.dev = dev->identification.node.dev;
+
+	resp->id.cls = node.cls;
+	resp->id.dev = node.dev;
 	resp->id.endpoint = 0;
 }
 
@@ -252,6 +413,49 @@ static void prepare_error(struct caniot_device *dev,
 	prepare_response(dev, resp, command);
 
 	resp->err = (int32_t)error;
+}
+
+static int handle_read_attribute(struct caniot_device *dev,
+			  struct caniot_frame *resp,
+			  uint16_t key)
+{
+	int ret;
+	struct attr_ref attr;
+
+	ret = attr_resolve(key, &attr);
+	if (ret != 0 && ret != -EINVAL) {
+		goto exit;
+	}
+
+	prepare_response(dev, resp, read_attribute);
+
+	if (ret == -EINVAL) { /* if custom attribute */
+		if (dev->api->custom_attr.read != NULL) {
+			ret = dev->api->custom_attr.read(dev, key, &resp->attr.val);
+		} else {
+			ret = -ENOTSUP; /* not supported attribute */
+		}
+	} else {
+		/* if standart attribute */
+		ret = attribute_read(dev, &attr,
+				     (union attr_value *)&resp->attr.val);
+	}
+
+	/* finalize response */
+	if (ret == 0) {
+		resp->attr.key = key;
+		resp->len = 6u;
+	}
+
+exit:
+	return ret;
+}
+
+static int handle_write_attribute(struct caniot_device *dev,
+				  struct caniot_frame *resp,
+				  uint16_t key)
+{
+	return -1;
 }
 
 static int telemetry_resp(struct caniot_device *dev,
@@ -271,41 +475,23 @@ static int telemetry_resp(struct caniot_device *dev,
 	return ret;
 }
 
-static int attribute_resp(struct caniot_device *dev,
-			  struct caniot_frame *resp,
-			  uint16_t key)
-{
-	int ret;
-
-	prepare_response(dev, resp, read_attribute);
-
-	/* buffer */
-	ret = dev->api->read_attribute(dev, key, &resp->attr.val);
-	if (ret == 0) {
-		resp->attr.key = key;
-		resp->len = 6u;
-	}
-
-	return ret;
-}
-
 static uint32_t get_random_u32_range(struct caniot_device *dev,
 				     uint32_t a, uint32_t b)
 {
 	uint32_t rng;
-	dev->api->entropy((uint8_t *)&rng, sizeof(rng));
+	dev->driv->entropy((uint8_t *)&rng, sizeof(rng));
 
 	return a + rng % (b - a);
 }
 
 static uint32_t get_telemetry_delay(struct caniot_device *dev)
 {
-	if (!dev->config.telemetry_rdm_delay) {
-		return dev->config.telemetry_min;
+	if (!dev->config->telemetry_rdm_delay) {
+		return dev->config->telemetry_min;
 	}
 
-	return get_random_u32_range(dev, dev->config.telemetry_min,
-				    dev->config.telemetry_rdm_delay);
+	return get_random_u32_range(dev, dev->config->telemetry_min,
+				    dev->config->telemetry_rdm_delay);
 }
 
 int process_dev_rx_frame(struct caniot_device *dev,
@@ -323,27 +509,28 @@ int process_dev_rx_frame(struct caniot_device *dev,
 	switch (req->id.type) {
 	case command:
 		ret = dev->api->command_handler(dev, req->id.endpoint,
-					req->buf, req->len);
+						req->buf, req->len);
 		if (ret != 0) {
+			goto error;
 		}
-
 	case telemetry:
 		ret = telemetry_resp(dev, resp, req->id.endpoint);
 		break;
 
 	case write_attribute:
-		ret = dev->api->write_attribute(dev, req->attr.key,
-						req->attr.val);
+		ret = handle_write_attribute(dev, resp, req->attr.key);
 		if (ret != 0) {
 			goto error;
 		}
-
 	case read_attribute:
-		ret = attribute_resp(dev, resp, req->attr.key);
+		ret = handle_read_attribute(dev, resp, req->attr.key);
 		break;
 	}
 
-	return 0;
+	/* on success */
+	if (ret == 0) {
+		return 0;
+	}
 
 error:
 	prepare_error(dev, resp, ret);
@@ -358,8 +545,8 @@ int caniot_process(struct caniot_device *dev)
 	uint32_t delay = 0;
 
 	clean_frame(&req);
-	
-	ret = dev->driv->recv(&req);
+
+	ret = dev->driv->rx_get(&req);
 	if (ret) {
 		goto exit; /* failed to receive */
 	}
@@ -367,7 +554,7 @@ int caniot_process(struct caniot_device *dev)
 	ret = process_dev_rx_frame(dev, &req, &resp);
 
 	/* If CANIOT error frames should be sent in case of error or not */
-	if (ret && !dev->config.error_response) {
+	if (ret && !dev->config->error_response) {
 		goto exit;
 	}
 
@@ -375,18 +562,51 @@ int caniot_process(struct caniot_device *dev)
 		/* if there is a telemetry response which is not already sent
 		 * we don't queue a new telemetry response
 		 */
-		if (dev->api->pending_telemetry(dev)) {
+		if (dev->driv->pending_telemetry()) {
 			goto exit;
 		}
 
 		delay = get_telemetry_delay(dev);
 	}
-	
+
 	/* todo, how to delay response ? */
-	ret = dev->driv->send(&resp, delay);
+	ret = dev->driv->tx_queue(&resp, delay);
 	if (ret) {
-		goto exit; /* failed to send */
+		goto exit; /* failed to tx_queue */
 	}
 exit:
 	return ret;
+}
+
+int caniot_verify(struct caniot_device *dev)
+{
+	if (!dev) {
+		return -CANIOT_ENULLDEV;
+	}
+
+	if (!dev->api) {
+		return -CANIOT_ENULLAPI;
+	}
+
+	if (!dev->api->command_handler) {
+		return -CANIOT_EHANDLERC;
+	}
+
+	if (!dev->api->telemetry) {
+		return -CANIOT_EHANDLERT;
+	}
+
+	if (!dev->driv) {
+		return -CANIOT_ENULLDRV;
+	}
+
+	if (!dev->identification) {
+		return -CANIOT_ENULLID;
+	}
+
+	if (!dev->config) {
+		return -CANIOT_ENULLCFG;
+	}
+
+	return 0;
 }

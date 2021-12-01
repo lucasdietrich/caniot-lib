@@ -1,7 +1,7 @@
 #ifndef _TEMPTSENS_H_
 #define _TEMPTSENS_H_
 
-#include <caniot.h>
+#include <device.h>
 
 #define TEMPDEV_OF(p_dev) CONTAINER_OF(p_dev, struct tempdev, dev)
 

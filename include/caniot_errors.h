@@ -38,7 +38,12 @@
 #define CANIOT_EENOCB      0xCA32         /* ERROR no event handler */
 #define CANIOT_EECB        0xCA33         /* ERROR ECCB  */
 
-#define CANIOT_ENIMPL      0xCA44         /* ERROR NOT IMPLEMENTED */
+#define CANIOT_EDEVICE	   0xCA40
+
+#define CANIOT_EAGAIN	   0xCA50	  /* EBUSY */
+#define CANIOT_EBUSY	   CANIOT_EAGAIN
+
+#define CANIOT_ENIMPL      0xCA60         /* ERROR NOT IMPLEMENTED */
 
 
 #define CANIOT_ANY         0xCAFF         /* ANY ERROR + -1 */

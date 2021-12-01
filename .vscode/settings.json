@@ -4,6 +4,10 @@
         "caniot.h": "c",
         "tempsens.h": "c",
         "stdint.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "device.h": "c",
+        "controller.h": "c",
+        "stdbool.h": "c",
+        "caniot_common.h": "c"
     }
 }

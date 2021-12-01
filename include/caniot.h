@@ -6,22 +6,40 @@
 #include <stdbool.h>
 
 #include "caniot_errors.h"
+#include "caniot_common.h"
 
 #define MEMBER_SIZEOF(s, member)	(sizeof(((s *)0)->member))
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #define MIN(a, b) (a < b ? a : b)
 
-// custom errors codes
-
-struct deviceid
-{
-	uint8_t cls : 3;
-	uint8_t dev : 3;
+union deviceid {
+	struct {
+		uint8_t cls : 3;
+		uint8_t dev : 3;
+	};
+	uint8_t val;
 };
 
 enum { command = 0, telemetry = 1, write_attribute = 3, read_attribute = 2 };
 enum { query = 0, response = 1 };
+enum { endpoint_default = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_broadcast = 3 };
+
+enum { device_broadcast = 0b111111 };
+
+struct caniot_command
+{
+	uint8_t ep;
+	uint8_t buf[8];
+	uint8_t len;
+};
+
+struct caniot_telemetry
+{
+	uint8_t ep;
+	uint8_t buf[8];
+	uint8_t len;
+};
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
 struct caniot_id {
@@ -32,11 +50,22 @@ struct caniot_id {
         uint16_t endpoint : 2;
 };
 
-
 struct caniot_attribute
 {
-        uint16_t key;
-        uint32_t val;
+	union {
+		uint16_t key;
+		struct {
+			uint16_t section : 4;
+			uint16_t attribute : 8;
+			uint16_t part : 4;
+		};
+	};
+	union {
+		uint32_t u32;
+		uint16_t u16;
+		uint8_t u8;
+		uint32_t val;
+	};
 };
 
 struct caniot_frame {
@@ -56,64 +85,6 @@ struct caniot_filter
 	uint8_t ext;
 };
 
-struct caniot_identification
-{
-	union {
-		struct deviceid node;
-		uint8_t nodeid;
-	};
-        uint16_t version;
-        char name[32];
-};
-
-struct caniot_system
-{
-        uint32_t uptime;
-        uint32_t abstime;
-        uint32_t calculated_abstime;
-        uint32_t uptime_shift;
-        uint32_t last_telemetry;
-        struct {
-                uint32_t total;
-                uint32_t read_attribute;
-                uint32_t write_attribute;
-                uint32_t command;
-                uint32_t request_telemetry;
-                uint32_t processed;
-                uint32_t query_failed;
-        } received;
-        struct {
-                uint32_t total;
-                uint32_t telemetry;
-        } sent;
-        struct {
-                uint32_t total;
-
-        } events;
-        int32_t last_query_error;
-        int32_t last_telemetry_error;
-        int32_t last_event_error;
-        int32_t battery;
-};
-
-struct caniot_config
-{
-        uint32_t telemetry_period;
-        uint32_t telemetry_rdm_delay;
-        uint32_t telemetry_min;
-	
-	struct {
-		uint8_t error_response: 1;
-	};
-};
-
-struct caniot_scheduled
-{
-        uint8_t days;
-        uint8_t time;
-        uint32_t command;
-};
-
 struct caniot_drivers_api {
 	/* arch R/W */
 	void (*rom_read)(void *p, void *d, uint8_t size);
@@ -123,66 +94,30 @@ struct caniot_drivers_api {
 	/* util */
 	void (*entropy)(uint8_t *buf, size_t len);
 
+	/* event (RTOS API) */
+	int (*schedule)(void *event, int32_t delay, void (*callback)(void *event)); /* -1 is forever */
+	int (*unschedule)(void *event);
+
 	/* CAN */
-	int (*tx_queue)(struct caniot_frame *frame, uint32_t delay); /* TX queue */
-	int (*rx_get)(struct caniot_frame *frame); /* RX queue */
-
-	bool (*pending_telemetry)(void);
-
+	int (*send)(struct caniot_frame *frame, uint32_t delay); /* TX queue */
+	int (*recv)(struct caniot_frame *frame); /* RX queue */
 	int (*set_filter) (struct caniot_filter *filter);
+	int (*set_mask) (struct caniot_filter *filter);
+
+	/* device specific */
+	bool (*pending_telemetry)(void);
 };
 
-struct caniot_device
+// Return if deviceid is valid
+static inline bool caniot_valid_deviceid(union deviceid id)
 {
-        const struct caniot_identification *identification;
-        struct caniot_system system;
-        struct caniot_config *config;
+	return id.val <= device_broadcast;
+}
 
-        // struct caniot_scheduled scheduled[32];
-        
-        const struct caniot_api *api;
-	const struct caniot_drivers_api *driv;
-};
-
-struct caniot_api
+// Return if deviceid is broadcast
+static inline bool caniot_is_broadcast(union deviceid id)
 {
-	/* called when time is updated with new time */
-        int (*update_time)(struct caniot_device *dev, uint32_t ts);
-
-	struct {
-		/* called after configuration is updated */
-		int (*written)(struct caniot_device *dev, struct caniot_config *config);
-
-		/* called before configuration will be read */
-		int (*on_read)(struct caniot_device *dev, struct caniot_config *config);
-	} config;
-
-        // int (*scheduled_handler)(struct caniot_device *dev, struct caniot_scheduled *sch);
-
-	struct {
-		int (*read)(struct caniot_device *dev, uint16_t key, uint32_t *val);
-		int (*write)(struct caniot_device *dev, uint16_t key, uint32_t val);
-	} custom_attr;
-
-	/* Handle command */
-        int (*command_handler)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t len);
-
-	/* Build telemetry */
-        int (*telemetry)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t *len);
-};
-
-int caniot_process_rx_frame(struct caniot_device *dev,
-			    struct caniot_frame *req,
-			    struct caniot_frame *resp);
-
-int caniot_process(struct caniot_device *dev);
-
-/**
- * @brief Verify if device is properly defined
- * 
- * @param dev 
- * @return int 
- */
-int caniot_verify(struct caniot_device *dev);
+	return id.val == device_broadcast;
+}
 
 #endif

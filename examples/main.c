@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <memory.h>
 
-#include <caniot.h>
+#include <device.h>
 
 // #include <caniot.h>
 #include "tempsens.h"

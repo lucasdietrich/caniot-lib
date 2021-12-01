@@ -1,9 +1,10 @@
-#include "caniot.h"
+#include "device.h"
 
 #include <errno.h>
 #include <memory.h>
 
 #ifdef __AVR__
+#include <avr/pgmspace.h>
 #define ROM	PROGMEM
 #else
 #define ROM	
@@ -51,13 +52,6 @@ static void attr_option_adjust(enum attr_option *attr_opt,
 	}
 }
 
-union attr_value
-{
-	uint32_t u32;
-	uint16_t u16;
-	uint8_t u8;
-};
-
 struct attr_ref
 {
 	enum attr_option option;
@@ -101,7 +95,7 @@ struct attr_section
     }
 
 static const struct attribute identification_attr[] ROM = {
-	ATTRIBUTE(struct caniot_identification, READABLE, "nodeid", nodeid),
+	ATTRIBUTE(struct caniot_identification, READABLE, "nodeid", did),
 	ATTRIBUTE(struct caniot_identification, READABLE, "version", version),
 	ATTRIBUTE(struct caniot_identification, READABLE, "name", name),
 };
@@ -291,10 +285,10 @@ static int attr_resolve(key_t key, struct attr_ref *ref)
 
 static void read_identificate_attr(struct caniot_device *dev,
 				   const struct attr_ref *ref,
-				   union attr_value *value)
+				   struct caniot_attribute *attr)
 {
 	arch_rom_cpy((void *)dev->identification + ref->offset,
-		      value, ref->read_size);
+		     &attr->val, ref->read_size);
 }
 
 /*
@@ -307,10 +301,9 @@ static inline uint16_t get_identification_version(struct caniot_device *dev)
 */
 
 static inline void read_identification_nodeid(struct caniot_device *dev,
-					     struct deviceid *node)
+					      union deviceid did)
 {
-	arch_rom_cpy_byte((const uint8_t *)&dev->identification->node,
-			   (uint8_t *)node);
+	arch_rom_cpy_byte((const uint8_t *)&dev->identification->did, &did.val);
 }
 
 static int config_prepare_read(struct caniot_device *dev)
@@ -325,7 +318,7 @@ static int config_prepare_read(struct caniot_device *dev)
 
 static int read_config_attr(struct caniot_device *dev,
 			    const struct attr_ref *ref,
-			    union attr_value *value)
+			    struct caniot_attribute *attr)
 {
 	/* local configuration in RAM should be updated */
 	int ret = config_prepare_read(dev);
@@ -333,7 +326,7 @@ static int read_config_attr(struct caniot_device *dev,
 		return ret;
 	}
 
-	memcpy(value, (void *)&dev->config + ref->offset, ref->read_size);
+	memcpy(&attr->val, (void *)&dev->config + ref->offset, ref->read_size);
 
 	return 0;
 }
@@ -341,27 +334,27 @@ static int read_config_attr(struct caniot_device *dev,
 
 static int attribute_read(struct caniot_device *dev,
 			  const struct attr_ref *ref,
-			  union attr_value *value)
+			  struct caniot_attribute *attr)
 {
 	int ret = 0;
 
 	switch (ref->section) {
 	case section_identification:
 	{
-		read_identificate_attr(dev, ref, value);
+		read_identificate_attr(dev, ref, attr);
 		break;
 	}
 
 	case section_system:
 	{
-		memcpy(value, (void *)&dev->system + ref->offset,
+		memcpy(&attr->val, (void *)&dev->system + ref->offset,
 		       ref->read_size);
 		break;
 	}
 
 	case section_config:
 	{
-		ret = read_config_attr(dev, ref, value);
+		ret = read_config_attr(dev, ref, attr);
 		break;
 	}
 
@@ -390,19 +383,19 @@ static void prepare_response(struct caniot_device *dev,
 			     struct caniot_frame *resp,
 			     uint8_t type)
 {
-	struct deviceid node;
+	union deviceid did;
 
 	clean_frame(resp);
 
 	/* read device class and id from ROM */
-	read_identification_nodeid(dev, &node);
+	read_identification_nodeid(dev, did);
 
 	/* id */
 	resp->id.type = type;
 	resp->id.query = response;
 
-	resp->id.cls = node.cls;
-	resp->id.dev = node.dev;
+	resp->id.cls = did.cls;
+	resp->id.dev = did.dev;
 	resp->id.endpoint = 0;
 }
 
@@ -420,9 +413,9 @@ static int handle_read_attribute(struct caniot_device *dev,
 			  uint16_t key)
 {
 	int ret;
-	struct attr_ref attr;
+	struct attr_ref ref;
 
-	ret = attr_resolve(key, &attr);
+	ret = attr_resolve(key, &ref);
 	if (ret != 0 && ret != -EINVAL) {
 		goto exit;
 	}
@@ -437,14 +430,13 @@ static int handle_read_attribute(struct caniot_device *dev,
 		}
 	} else {
 		/* if standart attribute */
-		ret = attribute_read(dev, &attr,
-				     (union attr_value *)&resp->attr.val);
+		ret = attribute_read(dev, &ref, &resp->attr);
 	}
 
 	/* finalize response */
 	if (ret == 0) {
-		resp->attr.key = key;
 		resp->len = 6u;
+		resp->attr.key = key;
 	}
 
 exit:
@@ -546,7 +538,7 @@ int caniot_process(struct caniot_device *dev)
 
 	clean_frame(&req);
 
-	ret = dev->driv->rx_get(&req);
+	ret = dev->driv->recv(&req);
 	if (ret) {
 		goto exit; /* failed to receive */
 	}
@@ -570,9 +562,9 @@ int caniot_process(struct caniot_device *dev)
 	}
 
 	/* todo, how to delay response ? */
-	ret = dev->driv->tx_queue(&resp, delay);
+	ret = dev->driv->send(&resp, delay);
 	if (ret) {
-		goto exit; /* failed to tx_queue */
+		goto exit; /* failed to send */
 	}
 exit:
 	return ret;

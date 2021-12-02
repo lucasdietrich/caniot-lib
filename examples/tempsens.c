@@ -34,7 +34,7 @@ static const struct caniot_api tempsens_api = {
 
 const struct caniot_identification id = {
 			.name = "TempSens1",
-			.node = {
+			.did = {
 				.cls = 2,
 				.dev = 1
 			},

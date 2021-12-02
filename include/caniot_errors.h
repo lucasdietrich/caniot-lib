@@ -5,11 +5,12 @@
 #define CANIOT_IS_ERR(err)	   ((err == 0) || (err >= 0xCA00 && err <= 0xCAFF))
 
 #define CANIOT_OK          0x0000         /* OK */
+#define CANIOT_EINVAL	   0xCA00	  /* Invalid argument */
 #define CANIOT_ENPROC      0xCA01         /* ERROR UNPROCESSABLE */
 #define CANIOT_ECMD        0xCA02         /* ERROR COMMAND */
 #define CANIOT_EKEY        0xCA03         /* ERROR KEY (read/write-attribute) */
 #define CANIOT_ETIMEOUT    0xCA04         /* ERROR TIMEOUT */
-#define CANIOT_EBUSY       0xCA05         /* ERROR BUSY */
+#define CANIOT_EAGAIN      0xCA05         /* ERROR BUSY / EAGAIN */
 #define CANIOT_EFMT        0xCA06         /* ERROR FORMAT */
 #define CANIOT_EHANDLERC   0xCA07         /* ERROR UNDEFINED COMMAND HANDLER  */
 #define CANIOT_EHANDLERT   0xCA08         /* ERROR UNDEFINED TELEMETRY HANDLER */
@@ -38,9 +39,8 @@
 #define CANIOT_EENOCB      0xCA32         /* ERROR no event handler */
 #define CANIOT_EECB        0xCA33         /* ERROR ECCB  */
 
-#define CANIOT_EDEVICE	   0xCA40
+#define CANIOT_EDEVICE	   0xCA40	  /* ERROR DEVICE */
 
-#define CANIOT_EAGAIN	   0xCA50	  /* EBUSY */
 #define CANIOT_EBUSY	   CANIOT_EAGAIN
 
 #define CANIOT_ENIMPL      0xCA60         /* ERROR NOT IMPLEMENTED */

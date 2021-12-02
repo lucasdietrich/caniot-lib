@@ -8,8 +8,8 @@
 
 static bool frame_match(struct caniot_device *dev, struct caniot_frame *frame)
 {
-	return (dev->identification->node.cls == frame->id.cls) &&
-		(dev->identification->node.dev == frame->id.dev);
+	return (dev->identification->did.cls == frame->id.cls) &&
+		(dev->identification->did.dev == frame->id.dev);
 }
 
 int process_rx_frame(struct caniot_device *dev_list[],
@@ -25,7 +25,7 @@ int process_rx_frame(struct caniot_device *dev_list[],
 
 	for (device **dev = dev_list; dev < &dev_list[dev_count]; dev++) {
 		if (frame_match(*dev, frame)) {
-			return caniot_process_rx_frame(*dev, frame, &resp);
+			return caniot_device_handle_rx_frame(*dev, frame, &resp);
 		}
 	}
 

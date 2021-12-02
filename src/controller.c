@@ -1,63 +1,44 @@
 #include "controller.h"
 
-struct caniot_telemetry_entry {
-	union deviceid did;
-	uint32_t timestamp;
-	uint8_t buf[4][8];
-};
-
-struct caniot_device_entry
+// Get deviceid from frame
+static inline union deviceid caniot_get_deviceid(const struct caniot_frame *frame)
 {
-	uint32_t last_seen;	/* timestamp this device was last seen */
-
-	caniot_query_callback_t callback; /* pending query if not NULL */
-
-	struct {
-		uint8_t active : 1;	/* valid entry if set */
-	} flags;
-};
-
-struct caniot_telemetry_database_api
-{
-	int (*init)(void);
-	int (*deinit)(void);
-
-	int (*append)(struct caniot_telemetry_entry *entry);
-
-	int (*get_first)(union deviceid did);
-	int (*get_next)(union deviceid did,
-			struct caniot_telemetry_entry *entry);
-	int (*get_last)(union deviceid did);
-	int (*count)(union deviceid did);
-};
-
-struct caniot_controller {
-	char name[32];
-	uint32_t uid;
-
-	struct caniot_device_entry devices[CANIOT_MAX_DEVICES];
-	struct caniot_telemetry_database_api *telemetry_db;
-	struct caniot_drivers_api *driv;
-};
-
-static void clean_frame(struct caniot_frame *frame)
-{
-	memset(frame, 0x00, sizeof(struct caniot_frame));
+	return CANIOT_DEVICE(frame->id.cls, frame->id.dev);
 }
 
+// Clear caniot telemetry entry
+static inline void caniot_telemetry_entry_clear(struct caniot_telemetry_entry *entry)
+{
+	memset(entry, 0x00, sizeof(*entry));
+}
+
+// Build telemetry entry from frame
+static int caniot_build_telemetry_entry(struct caniot_telemetry_entry *entry,
+					struct caniot_frame *frame,
+					uint32_t timestamp)
+{
+	caniot_telemetry_entry_clear(entry);
+
+	entry->did = caniot_get_deviceid(frame);
+	entry->timestamp = timestamp;
+	entry->ep = frame->id.endpoint;
+	memcpy(entry->buf, frame->buf, frame->len);
+
+	return 0;
+}
 
 // Finalize frame with device id
 static void finalize_query_frame(struct caniot_frame *frame, union deviceid did)
 {
 	frame->id.query = query;
-	
+
 	frame->id.cls = did.cls;
 	frame->id.dev = did.dev;
 }
 
 static void prepare_query_frame(struct caniot_frame *frame, union deviceid did)
 {
-	clean_frame(frame);
+	caniot_clear_frame(frame);
 
 	finalize_query_frame(frame, did);
 }
@@ -67,27 +48,32 @@ static struct caniot_device_entry *get_device_entry(struct caniot_controller *ct
 						    union deviceid did)
 {
 	if (caniot_is_broadcast(did)) {
-		return ctrl->devices + did.val;
-	} else if (caniot_is_broadcast(did)) {
 		return &ctrl->devices[CANIOT_MAX_DEVICES - 1];
+	} else if (caniot_valid_deviceid(did)) {
+		return ctrl->devices + did.val;
 	}
 
 	return NULL;
 }
 
+// Get device id from device entry
+static inline union deviceid get_device_id(struct caniot_controller *ctrl,
+					   struct caniot_device_entry *entry)
+{
+	return (union deviceid) { .val = entry - ctrl->devices };
+}
+
 // Tells if a query is pending for device entry
 static int is_query_pending(struct caniot_device_entry *entry)
 {
-	return entry->callback != NULL;
+	return entry->query.callback != NULL;
 }
 
-static int caniot_controller_init(struct caniot_controller *ctrl)
+// Initialize controller structure
+int caniot_controller_init(struct caniot_controller *ctrl)
 {
-	int i;
-
-	for (i = 0; i < CANIOT_MAX_DEVICES; i++) {
-		ctrl->devices[i].flags.active = 0;
-	}
+	// initialize devices array
+	memset(ctrl->devices, 0, sizeof(ctrl->devices));
 
 	return ctrl->telemetry_db->init();
 }
@@ -97,13 +83,17 @@ static int caniot_controller_deinit(struct caniot_controller *ctrl)
 	return ctrl->telemetry_db->deinit();
 }
 
-// Initialize controller structure
-int caniot_controller_init(struct caniot_controller *controller)
+// Event handler
+static void query_timeout_cb(void *event)
 {
-	// initialize devices array
-	memset(controller->devices, 0, sizeof(controller->devices));
-
-	return 0;
+	struct caniot_device_entry *entry = (struct caniot_device_entry *) event;
+	
+	if (entry && is_query_pending(entry)) {
+		entry->query.callback(get_device_id(entry->query.controller, 
+						    entry),
+				      NULL);
+		entry->query.callback = NULL;
+	}
 }
 
 // Send query to device and prepare response callback
@@ -116,7 +106,7 @@ static int caniot_controller_query(struct caniot_controller *controller,
 	int ret;
 	struct caniot_device_entry *entry;
 
-	entry = get_device(controller, did);
+	entry = get_device_entry(controller, did);
 	if (!entry) {
 		return -CANIOT_EDEVICE;
 	}
@@ -127,19 +117,25 @@ static int caniot_controller_query(struct caniot_controller *controller,
 		return -CANIOT_EAGAIN;
 	}
 
-	// cb is set and delay is not 0 -> set pending callback and send the frame
-	if (cb && delay) {
-		entry->callback = cb;
+	finalize_query_frame(frame, did);
+
+	ret = controller->driv->send(frame, delay);
+	// return error on failure
+	if (ret < 0) {
+		return ret;
 	}
 
-	finalize_query_frame(&frame, did);
-
-	ret = controller->driv->send(&frame, delay);
-
-	// delete pending callback on failure and return error
-	if (ret < 0) {
-		entry->callback = NULL;
-		return ret;
+	// cb is set and delay is not 0 -> set pending callback and schedule timer 
+	// for delay if different from -1
+	if (cb && delay) {
+		entry->query.callback = cb;
+		if (delay != -1) {
+			ret = controller->driv->schedule(entry, delay,
+							 query_timeout_cb);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 	}
 
 	return 0;
@@ -179,25 +175,88 @@ int caniot_send_command(struct caniot_controller *ctrl,
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
 			  union deviceid did,
-			  struct caniot_attribute *attr,
+			  uint16_t key,
 			  caniot_query_callback_t cb,
 			  int32_t timeout)
 {
+	struct caniot_frame frame = {
+		.id.type = read_attribute,
+		.len = 2u,
+		.attr.key = key
+	};
 
+	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
 			   union deviceid did,
-			   struct caniot_attribute *attr,
+			   uint16_t key,
+			   uint32_t value,
 			   caniot_query_callback_t cb,
 			   int32_t timeout)
 {
+	struct caniot_frame frame = {
+		.id.type = write_attribute,
+		.len = 6u,
+		.attr.key = key,
+		.attr.val = value
+	};
 
+	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_discover(struct caniot_controller *ctrl,
 		    caniot_query_callback_t cb,
 		    int32_t timeout)
 {
+	struct caniot_frame frame = {
+		.id.type = telemetry,
+	};
 
+	return caniot_controller_query(ctrl, CANIOT_DEVICE_BROADCAST,
+				       &frame, cb, timeout);
+}
+
+int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
+				      struct caniot_frame *frame)
+{
+	int ret;
+
+	// Assert that frame is not NULL and is a response
+	if (!frame || frame->id.query != response) {
+		return -CANIOT_EINVAL;
+	}
+
+	// Get device entry from frame device id
+	union deviceid did = caniot_get_deviceid(frame);
+	struct caniot_device_entry *entry = get_device_entry(ctrl, did);
+	
+	// If device entry is not found return error
+	if (!entry) {
+		return -CANIOT_EDEVICE;
+	}
+
+	// If a query is pending and the frame is the response for it
+	// Call callback and clear pending query
+	if (is_query_pending(entry)) {
+		entry->query.callback(did, frame);
+		entry->query.callback = NULL;
+	}
+
+	// Update last seen timestamp for entry
+	ctrl->driv->get_time(&entry->last_seen, NULL);
+
+	// If frame is a telemetry frame, update telemetry database
+	if (frame->id.type == telemetry) {
+		struct caniot_telemetry_entry tentry;
+		caniot_build_telemetry_entry(&tentry, frame, entry->last_seen);
+		ret = ctrl->telemetry_db->append(&tentry);
+
+		// Return if error
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }

@@ -97,7 +97,7 @@ struct caniot_api
         int (*telemetry)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t *len);
 };
 
-int caniot_process_rx_frame(struct caniot_device *dev,
+int caniot_device_handle_rx_frame(struct caniot_device *dev,
 			    struct caniot_frame *req,
 			    struct caniot_frame *resp);
 

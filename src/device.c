@@ -301,9 +301,9 @@ static inline uint16_t get_identification_version(struct caniot_device *dev)
 */
 
 static inline void read_identification_nodeid(struct caniot_device *dev,
-					      union deviceid did)
+					      union deviceid *did)
 {
-	arch_rom_cpy_byte((const uint8_t *)&dev->identification->did, &did.val);
+	arch_rom_cpy_byte((const uint8_t *)&dev->identification->did, &did->val);
 }
 
 static int config_prepare_read(struct caniot_device *dev)
@@ -374,21 +374,16 @@ static bool is_telemetry_response(struct caniot_frame *frame) {
 	return frame->id.query == response && frame->id.type == telemetry;
 }
 
-static void clean_frame(struct caniot_frame *frame)
-{
-	memset(frame, 0x00, sizeof(struct caniot_frame));
-}
-
 static void prepare_response(struct caniot_device *dev,
 			     struct caniot_frame *resp,
 			     uint8_t type)
 {
 	union deviceid did;
 
-	clean_frame(resp);
+	caniot_clear_frame(resp);
 
 	/* read device class and id from ROM */
-	read_identification_nodeid(dev, did);
+	read_identification_nodeid(dev, &did);
 
 	/* id */
 	resp->id.type = type;
@@ -536,7 +531,7 @@ int caniot_process(struct caniot_device *dev)
 	struct caniot_frame resp;
 	uint32_t delay = 0;
 
-	clean_frame(&req);
+	caniot_clear_frame(&req);
 
 	ret = dev->driv->recv(&req);
 	if (ret) {

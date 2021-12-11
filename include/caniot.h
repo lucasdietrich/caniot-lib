@@ -45,12 +45,15 @@ struct caniot_telemetry
 };
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
-struct caniot_id {
-        uint16_t type : 2;
-        uint16_t query : 1;
-        uint16_t cls: 3;
-        uint16_t dev: 3;
-        uint16_t endpoint : 2;
+union caniot_id {
+	struct {
+		uint16_t type : 2;
+		uint16_t query : 1;
+		uint16_t cls : 3;
+		uint16_t dev : 3;
+		uint16_t endpoint : 2;
+	};
+	uint16_t raw;
 };
 
 struct caniot_attribute
@@ -72,7 +75,8 @@ struct caniot_attribute
 };
 
 struct caniot_frame {
-        struct caniot_id id;
+	union caniot_id id;
+	
         union {
 		char buf[8];
                 struct caniot_attribute attr;
@@ -130,6 +134,11 @@ static inline bool caniot_is_broadcast(union deviceid id)
 static inline void caniot_clear_frame(struct caniot_frame *frame)
 {
 	memset(frame, 0x00, sizeof(struct caniot_frame));
+}
+
+static inline bool caniot_is_error(union caniot_id id)
+{
+	return (id.query = response) && (id.type == command);
 }
 
 // Check if drivers api is valid

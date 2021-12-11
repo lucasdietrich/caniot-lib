@@ -2,22 +2,24 @@
 #include <stdint.h>
 #include <memory.h>
 
-#include <device.h>
-
 // #include <caniot.h>
 #include "tempsens.h"
 
+#include "helper.h"
+
+
 int main(void)
 {
-	struct caniot_id m = {
-		.type = 3,
-		.query = 1,
-		.cls = 7,
-		.dev = 7,
-		.endpoint = 3
-	};
+	int ret;
+	struct caniot_frame req, resp;
 
-	printf("sizeof(m) = %lu : %hu", sizeof(m), *((uint16_t*)&m));
+	caniot_build_query_telemtry(&req, tempsens.dev.identification->did);
 
-	return 0;
+	caniot_explain_frame(&req);
+
+	ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
+
+	caniot_explain_frame(&resp);
+
+	printf("ret = %d\n", ret);
 }

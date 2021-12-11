@@ -8,6 +8,7 @@
         "device.h": "c",
         "controller.h": "c",
         "stdbool.h": "c",
-        "caniot_common.h": "c"
+        "caniot_common.h": "c",
+        "helper.h": "c"
     }
 }

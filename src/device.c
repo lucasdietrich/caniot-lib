@@ -481,7 +481,7 @@ static uint32_t get_telemetry_delay(struct caniot_device *dev)
 				    dev->config->telemetry_rdm_delay);
 }
 
-int process_dev_rx_frame(struct caniot_device *dev,
+int caniot_device_handle_rx_frame(struct caniot_device *dev,
 			 struct caniot_frame *req,
 			 struct caniot_frame *resp)
 {
@@ -538,7 +538,7 @@ int caniot_process(struct caniot_device *dev)
 		goto exit; /* failed to receive */
 	}
 
-	ret = process_dev_rx_frame(dev, &req, &resp);
+	ret = caniot_device_handle_rx_frame(dev, &req, &resp);
 
 	/* If CANIOT error frames should be sent in case of error or not */
 	if (ret && !dev->config->error_response) {

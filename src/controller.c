@@ -47,9 +47,7 @@ static void prepare_query_frame(struct caniot_frame *frame, union deviceid did)
 static struct caniot_device_entry *get_device_entry(struct caniot_controller *ctrl,
 						    union deviceid did)
 {
-	if (caniot_is_broadcast(did)) {
-		return &ctrl->devices[CANIOT_MAX_DEVICES - 1];
-	} else if (caniot_valid_deviceid(did)) {
+	if (caniot_valid_deviceid(did)) {
 		return ctrl->devices + did.val;
 	}
 

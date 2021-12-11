@@ -94,7 +94,7 @@ void caniot_show_frame(struct caniot_frame *frame)
 void caniot_explain_id(union caniot_id id)
 {
 	if (caniot_is_error(id)) {
-		printf("Error");
+		printf("Error frame ");
 		return;
 	} else {
 		printf("%s %s",
@@ -102,15 +102,26 @@ void caniot_explain_id(union caniot_id id)
 		       get_id_query_str(id.query));
 	}
 
-	printf(" to device %s %s : %s / ",
-	       get_id_class_str(id.cls),
-	       get_id_dev_str(id.dev),
-	       get_id_endpoint_str(id.endpoint));
+	if (caniot_is_class_broadcast(CANIOT_DEVICE(id.cls, id.dev))) {
+		printf(" to %s BROADCAST : %s /",
+		       get_id_class_str(id.cls),
+		       get_id_endpoint_str(id.endpoint));
+	} else {
+		printf(" to device %s %s : %s / ",
+		       get_id_class_str(id.cls),
+		       get_id_dev_str(id.dev),
+		       get_id_endpoint_str(id.endpoint));
+	}
 }
 
 void caniot_explain_frame(struct caniot_frame *frame)
 {
 	caniot_explain_id(frame->id);
+
+	if (caniot_is_error(frame->id)) {
+		printf(": %x \n", -frame->err);
+		return;
+	}
 
 	if ((frame->id.type == telemetry) || (frame->id.type == command)) {
 		for (int i = 0; i < frame->len; i++) {
@@ -124,7 +135,9 @@ void caniot_explain_frame(struct caniot_frame *frame)
 	printf("\n");
 }
 
-void caniot_build_query_telemtry(struct caniot_frame *frame, union deviceid did)
+void caniot_build_query_telemtry(struct caniot_frame *frame,
+				 union deviceid did,
+				 uint8_t endpoint)
 {
 	struct caniot_frame tmp = {
 		.id = {
@@ -132,11 +145,33 @@ void caniot_build_query_telemtry(struct caniot_frame *frame, union deviceid did)
 			.dev = did.dev,
 			.type = telemetry,
 			.query = query,
-			.endpoint = endpoint_default
+			.endpoint = endpoint
 		},
 		.buf = {0, 0, 0, 0, 0, 0, 0, 0},
 		.len = 0
 	};
 
 	memcpy(frame, &tmp, sizeof(struct caniot_frame));
+}
+
+void caniot_build_query_command(struct caniot_frame *frame,
+				union deviceid did,
+				uint8_t endpoint,
+				const uint8_t *buf,
+				uint8_t size)
+{
+	struct caniot_frame tmp = {
+		.id = {
+			.cls = did.cls,
+			.dev = did.dev,
+			.type = command,
+			.query = query,
+			.endpoint = endpoint
+		},
+		.len = size
+	};
+
+	memcpy(frame, &tmp, sizeof(struct caniot_frame));
+
+	memcpy(frame->buf, buf, MIN(size, 8));
 }

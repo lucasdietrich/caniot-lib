@@ -3,6 +3,14 @@
 
 #include "caniot.h"
 
+#include <stdbool.h>
+
+#define CANIOT_MASK_SELF(cls, dev) CANIOT_ID(0b00, 0b1, 0b111, 0b111, 0b00)
+#define CANIOT_FILTER_SELF(cls, dev) CANIOT_ID(0b00, 0b1, cls, dev, 0b00)
+
+#define CANIOT_MASK_BROADCAST(cls, dev) CANIOT_ID(0b00, 0b1, 0b111, 0b111, 0b00)
+#define CANIOT_FILTER_BROADCAST(cls, dev) CANIOT_ID(0b00, 0b1, cls, 0b111, 0b00)
+
 struct caniot_identification
 {
 	union deviceid did;
@@ -102,6 +110,9 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 			    struct caniot_frame *resp);
 
 int caniot_process(struct caniot_device *dev);
+
+bool caniot_is_device_target(struct caniot_frame *frame,
+			     union deviceid did);
 
 /**
  * @brief Verify if device is properly defined

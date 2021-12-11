@@ -14,9 +14,13 @@
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #define MIN(a, b) (a < b ? a : b)
 
+#define CANIOT_ID(t, q, c, d, e) ((t) | (q << 2) | (c << 3) | (d << 6) | (e << 9))
+
+#define CANIOT_CLASS_BROADCAST	0x7
+
 #define CANIOT_DEVICE(class, sub_id)	((union deviceid) { .cls = class, .dev = sub_id })
 
-#define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
+#define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, CANIOT_CLASS_BROADCAST)
 
 union deviceid {
 	struct {
@@ -26,7 +30,7 @@ union deviceid {
 	uint8_t val;
 };
 
-enum { command = 0, telemetry = 1, write_attribute = 3, read_attribute = 2 };
+enum { command = 0, telemetry = 1, write_attribute = 2, read_attribute = 3 };
 enum { query = 0, response = 1 };
 enum { endpoint_default = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_broadcast = 3 };
 
@@ -126,9 +130,9 @@ static inline bool caniot_valid_deviceid(union deviceid id)
 }
 
 // Return if deviceid is broadcast
-static inline bool caniot_is_broadcast(union deviceid id)
+static inline bool caniot_is_class_broadcast(union deviceid id)
 {
-	return id.val == CANIOT_DEVICE_BROADCAST.val;
+	return id.dev == CANIOT_CLASS_BROADCAST;
 }
 
 static inline void caniot_clear_frame(struct caniot_frame *frame)
@@ -138,7 +142,7 @@ static inline void caniot_clear_frame(struct caniot_frame *frame)
 
 static inline bool caniot_is_error(union caniot_id id)
 {
-	return (id.query = response) && (id.type == command);
+	return (id.query == response) && (id.type == command);
 }
 
 // Check if drivers api is valid

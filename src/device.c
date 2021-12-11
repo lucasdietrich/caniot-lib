@@ -401,6 +401,7 @@ static void prepare_error(struct caniot_device *dev,
 	prepare_response(dev, resp, command);
 
 	resp->err = (int32_t)error;
+	resp->len = 4;
 }
 
 static int handle_read_attribute(struct caniot_device *dev,
@@ -495,6 +496,11 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 
 	switch (req->id.type) {
 	case command:
+		if (req->id.endpoint == endpoint_broadcast) {
+			ret = -CANIOT_ECMDEP;
+			goto error;
+		}
+
 		ret = dev->api->command_handler(dev, req->id.endpoint,
 						req->buf, req->len);
 		if (ret != 0) {
@@ -563,6 +569,13 @@ int caniot_process(struct caniot_device *dev)
 	}
 exit:
 	return ret;
+}
+
+bool caniot_is_device_target(struct caniot_frame *frame,
+			     union deviceid did)
+{
+	return (frame->id.query == query) && (frame->id.cls == did.cls) &&
+		(frame->id.dev == did.dev || frame->id.dev == CANIOT_CLASS_BROADCAST);
 }
 
 int caniot_verify(struct caniot_device *dev)

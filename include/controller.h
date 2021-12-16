@@ -49,8 +49,8 @@ struct caniot_controller {
 	uint32_t uid;
 
 	struct caniot_device_entry devices[CANIOT_MAX_DEVICES];
-	struct caniot_telemetry_database_api *telemetry_db;
-	struct caniot_drivers_api *driv;
+	const struct caniot_telemetry_database_api *telemetry_db;
+	const struct caniot_drivers_api *driv;
 	const struct caniot_controller_config *cfg;
 };
 

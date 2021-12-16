@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 static const char *const id_type_str[] = {
 	"Command",
 	"Telemetry",
@@ -85,7 +87,7 @@ static const char *get_id_endpoint_str(uint8_t endpoint)
 
 void caniot_show_frame(struct caniot_frame *frame)
 {
-	printf("%x [ %x %x %x %x %x %x %x %x] len = %d\n",
+	printf(F("%x [ %x %x %x %x %x %x %x %x] len = %d\n"),
 	       frame->id.raw, frame->buf[0], frame->buf[1],
 	       frame->buf[2], frame->buf[3], frame->buf[4], frame->buf[5],
 	       frame->buf[6], frame->buf[7], frame->len);
@@ -94,20 +96,20 @@ void caniot_show_frame(struct caniot_frame *frame)
 void caniot_explain_id(union caniot_id id)
 {
 	if (caniot_is_error(id)) {
-		printf("Error frame ");
+		printf(F("Error frame "));
 		return;
 	} else {
-		printf("%s %s",
+		printf(F("%s %s"),
 		       get_id_type_str(id.type),
 		       get_id_query_str(id.query));
 	}
 
 	if (caniot_is_class_broadcast(CANIOT_DEVICE(id.cls, id.dev))) {
-		printf(" to %s BROADCAST : %s /",
+		printf(F(" to %s BROADCAST : %s /"),
 		       get_id_class_str(id.cls),
 		       get_id_endpoint_str(id.endpoint));
 	} else {
-		printf(" to device %s %s : %s / ",
+		printf(F(" to device %s %s : %s / "),
 		       get_id_class_str(id.cls),
 		       get_id_dev_str(id.dev),
 		       get_id_endpoint_str(id.endpoint));
@@ -119,20 +121,20 @@ void caniot_explain_frame(struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error(frame->id)) {
-		printf(": %x \n", -frame->err);
+		printf(F(": %lx \n"), -frame->err);
 		return;
 	}
 
 	if ((frame->id.type == telemetry) || (frame->id.type == command)) {
 		for (int i = 0; i < frame->len; i++) {
-			printf("%02hhx ", frame->buf[i]);
+			printf(F("%02hhx "), frame->buf[i]);
 		}
 	} else {
-		printf("LEN = %d, key = %x val = %x", frame->len,
+		printf(F("LEN = %d, key = %x val = %lx"), frame->len,
 		      frame->attr.key, frame->attr.val);
 	}
 
-	printf("\n");
+	printf(F("\n"));
 }
 
 void caniot_build_query_telemtry(struct caniot_frame *frame,

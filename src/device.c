@@ -1,7 +1,7 @@
 #include "device.h"
 
 #include <errno.h>
-#include <memory.h>
+#include <string.h>
 
 #ifdef __AVR__
 #include <avr/pgmspace.h>
@@ -9,6 +9,8 @@
 #else
 #define ROM	
 #endif
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 #define ATTR_IDENTIFICATION 0
 #define ATTR_SYSTEM 1
@@ -77,6 +79,7 @@ struct attr_section
 	uint8_t array_size;
 };
 
+#define MEMBER_SIZEOF(s, member)	(sizeof(((s *)0)->member))
 
 #define ATTRIBUTE(s, rw, name, param) 	\
     {                                           \
@@ -272,7 +275,7 @@ static int attr_resolve(key_t key, struct attr_ref *ref)
 	}
 
 	ref->section = ATTR_KEY_SECTION(key);
-	ref->read_size = MIN(attr_size, 4u);
+	ref->read_size = attr_size > 4u ? 4u : attr_size;
 	ref->offset = ATTR_KEY_OFFSET(key) + attr_get_offset(attr);
 	ref->option = attr_get_option(attr);
 	ref->section_option = attr_get_section_option(section);
@@ -422,7 +425,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 		if (dev->api->custom_attr.read != NULL) {
 			ret = dev->api->custom_attr.read(dev, key, &resp->attr.val);
 		} else {
-			ret = -ENOTSUP; /* not supported attribute */
+			ret = -CANIOT_ENOTSUP; /* not supported attribute */
 		}
 	} else {
 		/* if standart attribute */

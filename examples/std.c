@@ -7,6 +7,10 @@
 
 #include "helper.h"
 
+#if __AVR__
+#error "This example is not for AVR"
+#endif
+
 void z_entropy(uint8_t *buf, size_t len)
 {
 	for (uint8_t *p = buf; p < buf + len; p++)
@@ -32,7 +36,7 @@ bool z_pending_telemetry(void)
 
 int z_send(struct caniot_frame *frame, uint32_t delay)
 {
-	printf("TX delay=%d", delay);
+	printf(F("TX delay=%d"), delay);
 	caniot_show_frame(frame);
 
 	return 0;

@@ -1,8 +1,8 @@
 #include "sim.h"
 
-#include <memory.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define device struct caniot_device
 

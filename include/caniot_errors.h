@@ -46,7 +46,9 @@
 
 #define CANIOT_EBUSY	   CANIOT_EAGAIN
 
-#define CANIOT_ENIMPL      0xCA60         /* ERROR NOT IMPLEMENTED */
+#define CANIOT_ENOTSUP     0xCA60  		/* ERROR NOT SUPPORTED */
+#define CANIOT_ENIMPL      CANIOT_ENOTSUP       /* ERROR NOT IMPLEMENTED */
+
 
 
 #define CANIOT_ANY         0xCAFF         /* ANY ERROR + -1 */

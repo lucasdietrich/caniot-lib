@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <memory.h>
+#include <string.h>
 
 // #include <caniot.h>
 #include "tempsens.h"
@@ -22,9 +22,9 @@ int main(void)
 	if (caniot_is_device_target(&req, tempsens.dev.identification->did)) {
 		ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
 		caniot_explain_frame(&resp);
-		printf("ret = %x\n", -ret);
+		printf(F("ret = %x\n"), -ret);
 	} else {
-		printf("not for me\n");
+		printf(F("not for me\n"));
 	}
 
 
@@ -34,8 +34,8 @@ int main(void)
 	if (caniot_is_device_target(&req, tempsens.dev.identification->did)) {
 		ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
 		caniot_explain_frame(&resp);
-		printf("ret = %x\n", -ret);
+		printf(F("ret = %x\n"), -ret);
 	} else {
-		printf("not for me\n");
+		printf(F("not for me\n"));
 	}
 }

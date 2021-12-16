@@ -4,15 +4,30 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <memory.h>
+#include <string.h>
 
 #include "caniot_errors.h"
 #include "caniot_common.h"
 
-#define MEMBER_SIZEOF(s, member)	(sizeof(((s *)0)->member))
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
-#define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
-#define MIN(a, b) (a < b ? a : b)
+/**
+ * @brief Helper for printing strings :
+ * 
+ * printf(F("Hello %d\n"), 42);
+ * 
+ * Equivalent to :
+ * - AVR : printf_P(PSTR("Hello %d\n"), 42);
+ * - ARM/x86/any : printf("Hello %d\n", 42);
+ */
+#ifdef __AVR__
+#include <avr/pgmspace.h>
+#define printf	printf_P
+#define FLASH_STRING(x) PSTR(x)
+#else
+#define printf  printf
+#define FLASH_STRING(x) PSTR(x)
+#endif
+#define F(x) FLASH_STRING(x)
+
 
 #define CANIOT_ID(t, q, c, d, e) ((t) | (q << 2) | (c << 3) | (d << 6) | (e << 9))
 
@@ -119,7 +134,7 @@ struct caniot_drivers_api {
 	int (*set_filter) (struct caniot_filter *filter);
 	int (*set_mask) (struct caniot_filter *filter);
 
-	/* device specific */
+	/* Device specific */
 	bool (*pending_telemetry)(void);
 };
 

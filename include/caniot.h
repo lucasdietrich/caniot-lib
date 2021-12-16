@@ -24,7 +24,7 @@
 #define FLASH_STRING(x) PSTR(x)
 #else
 #define printf  printf
-#define FLASH_STRING(x) PSTR(x)
+#define FLASH_STRING(x) (x)
 #endif
 #define F(x) FLASH_STRING(x)
 

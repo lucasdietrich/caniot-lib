@@ -121,7 +121,7 @@ void caniot_explain_frame(struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error(frame->id)) {
-		printf(F(": %lx \n"), -frame->err);
+		printf(F(": %4x \n"), (uint32_t) -frame->err);
 		return;
 	}
 
@@ -130,7 +130,7 @@ void caniot_explain_frame(struct caniot_frame *frame)
 			printf(F("%02hhx "), frame->buf[i]);
 		}
 	} else {
-		printf(F("LEN = %d, key = %x val = %lx"), frame->len,
+		printf(F("LEN = %d, key = %x val = %4x"), frame->len,
 		      frame->attr.key, frame->attr.val);
 	}
 

@@ -3,6 +3,7 @@
 
 #include <device.h>
 
+#define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #define TEMPDEV_OF(p_dev) CONTAINER_OF(p_dev, struct tempdev, dev)
 
 struct tempdev {

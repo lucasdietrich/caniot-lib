@@ -1,15 +1,26 @@
 #include "controller.h"
 
 // Get deviceid from frame
-static inline union deviceid caniot_get_deviceid(const struct caniot_frame *frame)
+static inline union deviceid get_deviceid(const struct caniot_frame *frame)
 {
 	return CANIOT_DEVICE(frame->id.cls, frame->id.dev);
 }
 
 // Clear caniot telemetry entry
-static inline void caniot_telemetry_entry_clear(struct caniot_telemetry_entry *entry)
+static inline void telemetry_entry_clear(struct caniot_telemetry_entry *entry)
 {
 	memset(entry, 0x00, sizeof(*entry));
+}
+
+static bool has_config(struct caniot_controller *controller)
+{
+	return controller->cfg;
+}
+
+static bool telemetry_db_enabled(struct caniot_controller *controller)
+{
+	return controller->telemetry_db &&
+		(!has_config(controller) || controller->cfg->store_telemetry);
 }
 
 // Build telemetry entry from frame
@@ -17,9 +28,9 @@ static int caniot_build_telemetry_entry(struct caniot_telemetry_entry *entry,
 					struct caniot_frame *frame,
 					uint32_t timestamp)
 {
-	caniot_telemetry_entry_clear(entry);
+	telemetry_entry_clear(entry);
 
-	entry->did = caniot_get_deviceid(frame);
+	entry->did = get_deviceid(frame);
 	entry->timestamp = timestamp;
 	entry->ep = frame->id.endpoint;
 	memcpy(entry->buf, frame->buf, frame->len);
@@ -34,13 +45,6 @@ static void finalize_query_frame(struct caniot_frame *frame, union deviceid did)
 
 	frame->id.cls = did.cls;
 	frame->id.dev = did.dev;
-}
-
-static void prepare_query_frame(struct caniot_frame *frame, union deviceid did)
-{
-	caniot_clear_frame(frame);
-
-	finalize_query_frame(frame, did);
 }
 
 // Return device entry corresponding to device id or last entry if broadcast
@@ -76,7 +80,7 @@ int caniot_controller_init(struct caniot_controller *ctrl)
 	return ctrl->telemetry_db->init();
 }
 
-static int caniot_controller_deinit(struct caniot_controller *ctrl)
+int caniot_controller_deinit(struct caniot_controller *ctrl)
 {
 	return ctrl->telemetry_db->deinit();
 }
@@ -226,7 +230,7 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	}
 
 	// Get device entry from frame device id
-	union deviceid did = caniot_get_deviceid(frame);
+	union deviceid did = get_deviceid(frame);
 	struct caniot_device_entry *entry = get_device_entry(ctrl, did);
 	
 	// If device entry is not found return error
@@ -245,7 +249,7 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	ctrl->driv->get_time(&entry->last_seen, NULL);
 
 	// If frame is a telemetry frame, update telemetry database
-	if (frame->id.type == telemetry) {
+	if ((frame->id.type == telemetry) && telemetry_db_enabled(ctrl)) {
 		struct caniot_telemetry_entry tentry;
 		caniot_build_telemetry_entry(&tentry, frame, entry->last_seen);
 		ret = ctrl->telemetry_db->append(&tentry);

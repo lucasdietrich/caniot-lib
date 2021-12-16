@@ -39,6 +39,11 @@ struct caniot_telemetry_database_api
 	int (*count)(union deviceid did);
 };
 
+struct caniot_controller_config
+{
+	uint16_t store_telemetry;	/* store telemetry data in database */
+};
+
 struct caniot_controller {
 	char name[32];
 	uint32_t uid;
@@ -46,10 +51,13 @@ struct caniot_controller {
 	struct caniot_device_entry devices[CANIOT_MAX_DEVICES];
 	struct caniot_telemetry_database_api *telemetry_db;
 	struct caniot_drivers_api *driv;
+	const struct caniot_controller_config *cfg;
 };
 
 // intitalize controller structure
 int caniot_controller_init(struct caniot_controller *controller);
+
+int caniot_controller_deinit(struct caniot_controller *ctrl);
 
 int caniot_send_command(struct caniot_controller *ctrl,
 			union deviceid did,

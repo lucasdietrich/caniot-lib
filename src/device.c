@@ -533,7 +533,7 @@ error:
 	return ret;
 }
 
-int caniot_process(struct caniot_device *dev)
+int caniot_device_process(struct caniot_device *dev)
 {
 	int ret;
 	struct caniot_frame req;
@@ -574,14 +574,14 @@ exit:
 	return ret;
 }
 
-bool caniot_is_device_target(struct caniot_frame *frame,
-			     union deviceid did)
+bool caniot_device_is_target(union deviceid did,
+			     struct caniot_frame *frame)
 {
 	return (frame->id.query == query) && (frame->id.cls == did.cls) &&
 		(frame->id.dev == did.dev || frame->id.dev == CANIOT_CLASS_BROADCAST);
 }
 
-int caniot_verify(struct caniot_device *dev)
+int caniot_device_verify(struct caniot_device *dev)
 {
 	if (!dev) {
 		return -CANIOT_ENULLDEV;

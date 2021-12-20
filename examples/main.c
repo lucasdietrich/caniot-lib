@@ -19,7 +19,7 @@ int main(void)
 	caniot_build_query_telemtry(&req, CANIOT_DEVICE_BROADCAST, endpoint_default);
 	caniot_explain_frame(&req);
 
-	if (caniot_is_device_target(&req, tempsens.dev.identification->did)) {
+	if (caniot_device_is_target(tempsens.dev.identification->did, &req)) {
 		ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
 		caniot_explain_frame(&resp);
 		printf(F("ret = %x\n"), -ret);
@@ -31,7 +31,7 @@ int main(void)
 	caniot_build_query_command(&req, tempsens.dev.identification->did, endpoint_broadcast, command, 8);
 	caniot_explain_frame(&req);
 
-	if (caniot_is_device_target(&req, tempsens.dev.identification->did)) {
+	if (caniot_device_is_target(tempsens.dev.identification->did, &req)) {
 		ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
 		caniot_explain_frame(&resp);
 		printf(F("ret = %x\n"), -ret);

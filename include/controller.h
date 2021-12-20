@@ -3,55 +3,51 @@
 
 #include "caniot.h"
 
-struct caniot_telemetry_entry {
-	union deviceid did;
-	uint32_t timestamp;
-	uint8_t ep;
-	uint8_t buf[8];
-};
-
 struct caniot_device_entry
 {
 	uint32_t last_seen;	/* timestamp this device was last seen */
-
-	/* move to a memslab */
-	struct {
-		struct caniot_controller *controller;
-		caniot_query_callback_t callback; /* query callback if not NULL */
-	} query;
-
 	struct {
 		uint8_t active : 1;	/* valid entry if set */
+		uint8_t pending : 1;	/* query pending */
 	} flags;
 };
 
-struct caniot_telemetry_database_api
+/* see https://github.com/lucasdietrich/AVRTOS/blob/master/src/avrtos/dstruct/tqueue.c */
+struct caniot_pqt
 {
-	int (*init)(void);
-	int (*deinit)(void);
-
-	int (*append)(struct caniot_telemetry_entry *entry);
-
-	int (*get_first)(union deviceid did);
-	int (*get_next)(union deviceid did,
-			struct caniot_telemetry_entry *entry);
-	int (*get_last)(union deviceid did);
-	int (*count)(union deviceid did);
+	union {
+		uint32_t timeout;
+		uint32_t delay;
+	}; /* in ms */
+	struct caniot_pqt *next;
 };
 
-struct caniot_controller_config
+struct caniot_pendq
 {
-	uint16_t store_telemetry;	/* store telemetry data in database */
+	union deviceid did;
+	caniot_query_callback_t callback;
+
+	union {
+		struct caniot_pqt tie;
+		struct caniot_pendq *next;
+	};
 };
 
 struct caniot_controller {
 	char name[32];
 	uint32_t uid;
 
-	struct caniot_device_entry devices[CANIOT_MAX_DEVICES];
-	const struct caniot_telemetry_database_api *telemetry_db;
+	struct caniot_device_entry devices[32];
+
+	struct {
+		struct caniot_pendq pool[CANIOT_MAX_PENDING_QUERIES];
+		struct caniot_pendq *free_list;
+		struct caniot_pqt *timeout_queue;
+	} pendingq;
+
+	uint32_t last_process_ms;
+
 	const struct caniot_drivers_api *driv;
-	const struct caniot_controller_config *cfg;
 };
 
 // intitalize controller structure
@@ -90,5 +86,17 @@ int caniot_discover(struct caniot_controller *ctrl,
 
 int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 				      struct caniot_frame *frame);
+
+
+/**
+ * @brief Check timeouts and receive incoming CANIOT message if any and handle it
+ * 
+ * Note: Should be called on query timeout or when an incoming can message
+ * 
+ * @param ctrl 
+ * @return int 
+ */
+int caniot_controller_process(struct caniot_controller *ctrl /*,
+			      struct caniot_frame *frame */);
 
 #endif /* _CANIOT_CONTROLLER_H */

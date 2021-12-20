@@ -41,6 +41,7 @@
 
 #define CANIOT_EENOCB      0xCA32         /* ERROR no event handler */
 #define CANIOT_EECB        0xCA33         /* ERROR ECCB  */
+#define CANIOT_EPQALLOC    0xCA34         /* ERROR PENDING QUERY ALLOCATION  */
 
 #define CANIOT_EDEVICE	   0xCA40	  /* ERROR DEVICE */
 

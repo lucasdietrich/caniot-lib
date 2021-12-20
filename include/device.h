@@ -109,10 +109,16 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 			    struct caniot_frame *req,
 			    struct caniot_frame *resp);
 
-int caniot_process(struct caniot_device *dev);
+/**
+ * @brief Receive incoming CANIOT message if any and handle it
+ * 
+ * @param dev 
+ * @return int 
+ */
+int caniot_device_process(struct caniot_device *dev);
 
-bool caniot_is_device_target(struct caniot_frame *frame,
-			     union deviceid did);
+bool caniot_device_is_target(union deviceid did,
+			     struct caniot_frame *frame);
 
 /**
  * @brief Verify if device is properly defined
@@ -120,6 +126,6 @@ bool caniot_is_device_target(struct caniot_frame *frame,
  * @param dev 
  * @return int 
  */
-int caniot_verify(struct caniot_device *dev);
+int caniot_device_verify(struct caniot_device *dev);
 
 #endif /* _CANIOT_DEVICE_H */

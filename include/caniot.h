@@ -124,13 +124,21 @@ struct caniot_drivers_api {
 	void (*entropy)(uint8_t *buf, size_t len);
 	void (*get_time)(uint32_t *sec, uint32_t *usec);
 
-	/* event (RTOS API) */
-	int (*schedule)(void *event, int32_t delay, void (*callback)(void *event)); /* -1 is forever */
-	int (*unschedule)(void *event);
+	/**
+	 * @brief Send a CANIOT frame
+	 * 
+	 * Return 0 on success, any other value on error.
+	 */
+	int (*send)(struct caniot_frame *frame, uint32_t delay);
 
-	/* CAN */
-	int (*send)(struct caniot_frame *frame, uint32_t delay); /* TX queue */
-	int (*recv)(struct caniot_frame *frame); /* RX queue */
+	/**
+	 * @brief Receive a CANIOT frame.
+	 * 
+	 * Return 0 on success, -EAGAIN if no frame is available.
+	 */
+	int (*recv)(struct caniot_frame *frame);
+	
+	/* CAN configuration */
 	int (*set_filter) (struct caniot_filter *filter);
 	int (*set_mask) (struct caniot_filter *filter);
 

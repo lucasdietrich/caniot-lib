@@ -583,33 +583,5 @@ bool caniot_device_is_target(union deviceid did,
 
 int caniot_device_verify(struct caniot_device *dev)
 {
-	if (!dev) {
-		return -CANIOT_ENULLDEV;
-	}
-
-	if (!dev->api) {
-		return -CANIOT_ENULLAPI;
-	}
-
-	if (!dev->api->command_handler) {
-		return -CANIOT_EHANDLERC;
-	}
-
-	if (!dev->api->telemetry) {
-		return -CANIOT_EHANDLERT;
-	}
-
-	if (!dev->driv) {
-		return -CANIOT_ENULLDRV;
-	}
-
-	if (!dev->identification) {
-		return -CANIOT_ENULLID;
-	}
-
-	if (!dev->config) {
-		return -CANIOT_ENULLCFG;
-	}
-
-	return 0;
+	return -CANIOT_ENIMPL;
 }

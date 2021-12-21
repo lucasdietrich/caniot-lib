@@ -43,6 +43,12 @@ static inline union deviceid get_device_id(struct caniot_controller *ctrl,
 	return (union deviceid) { .val = entry - ctrl->devices };
 }
 
+static inline bool device_is_broadcast(struct caniot_controller *ctrl,
+				       struct caniot_device_entry *entry)
+{
+	return CANIOT_DEVICE_IS_BROADCAST(get_device_id(ctrl, entry));
+}
+
 static void _pendq_queue(struct caniot_controller *ctrl, struct pqt *item)
 {
 	struct pqt **prev_next_p = &ctrl->pendingq.timeout_queue;
@@ -102,6 +108,9 @@ static struct pendq *pendq_get_expired(struct caniot_controller *ctrl)
 	if ((*root != NULL) && ((*root)->delay == 0)) {
 		item = *root;
 		*root = (*root)->next;
+	}
+
+	if (item != NULL) {
 		pq = CONTAINER_OF(item, struct pendq, tie);
 	}
 
@@ -232,35 +241,89 @@ static int pendq_register(struct caniot_controller *controller,
 	return 0;
 }
 
+static int pendq_call_and_unregister(struct caniot_controller *controller,
+				     struct pendq *pq,
+				     struct caniot_frame *frame)
+{
+	int ret = -CANIOT_ENOPQ;
+
+	if (pq != NULL) {
+		/* void should we discard the callback ? */
+		ret = pq->callback(pq->did, frame);
+		pendq_remove(controller, pq);
+		pendq_free(controller, pq);
+	}
+
+	return ret;
+}
+
+static int pendq_call_expired(struct caniot_controller *controller)
+{
+	int ret;
+	struct pendq *pq;
+
+	for (pq = pendq_get_expired(controller); pq != NULL;
+	     pq = pendq_get_expired(controller)) {
+		ret = pendq_call_and_unregister(controller, pq, NULL);
+	}
+
+	return ret;
+}
+
+static uint32_t get_diff_ms(struct caniot_controller *controller)
+{
+	uint32_t sec, us;
+	controller->driv->get_time(&sec, &us);
+
+	uint32_t diff_ms = us * 1000 - controller->last_process.ms;
+	diff_ms += (sec - controller->last_process.sec) * 1000;
+
+	return diff_ms;
+}
+
+static void pendq_process(struct caniot_controller *ctrl)
+{
+	/* update timeouts */
+	pendq_shift(ctrl, get_diff_ms(ctrl));
+
+	/* call callbacks for expired queries */
+	pendq_call_expired(ctrl);
+}
+
 // Send query to device and prepare response callback
-static int caniot_controller_query(struct caniot_controller *controller,
+static int query_device(struct caniot_controller *controller,
 				   union deviceid did,
 				   struct caniot_frame *frame,
 				   caniot_query_callback_t cb,
 				   int32_t timeout)
 {
 	int ret;
-	struct caniot_device_entry *device = get_device_entry(controller, did);
+	struct caniot_device_entry *device;
 
-	/* get the device */
+	/* validate arguments */
+	if (controller == NULL || frame == NULL) {
+		return -CANIOT_EINVAL;
+	}
+
+	device = get_device_entry(controller, did);
 	if (device == NULL) {
 		return -CANIOT_EDEVICE;
 	}
 
-	finalize_query_frame(frame, did);
+	ret = pendq_register(controller, device, cb, timeout);
+	if (ret < 0) {
+		goto error;
+	}
 
-	/* send the query frame */
+	/* finalize and send the query frame */
+	finalize_query_frame(frame, did);
 	const uint32_t deffered = 0U;
 	ret = controller->driv->send(frame, deffered);
 	if (ret < 0) {
 		goto error;
 	}
 
-	/* register the pending query */
-	ret = pendq_register(controller, device, cb, timeout);
-	if (ret != 0) {
-		goto error;
-	}
+	return 0;
 
 error:
 	device->flags.pending = 0U;
@@ -279,7 +342,7 @@ int caniot_request_telemetry(struct caniot_controller *ctrl,
 		.len = 0,
 	};
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return query_device(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_send_command(struct caniot_controller *ctrl,
@@ -296,7 +359,7 @@ int caniot_send_command(struct caniot_controller *ctrl,
 
 	memcpy(frame.buf, cmd->buf, cmd->len);
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return query_device(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
@@ -311,7 +374,7 @@ int caniot_read_attribute(struct caniot_controller *ctrl,
 		.attr.key = key
 	};
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return query_device(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
@@ -328,7 +391,7 @@ int caniot_write_attribute(struct caniot_controller *ctrl,
 		.attr.val = value
 	};
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return query_device(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_discover(struct caniot_controller *ctrl,
@@ -339,7 +402,7 @@ int caniot_discover(struct caniot_controller *ctrl,
 		.id.type = telemetry,
 	};
 
-	return caniot_controller_query(ctrl, CANIOT_DEVICE_BROADCAST,
+	return query_device(ctrl, CANIOT_DEVICE_BROADCAST,
 				       &frame, cb, timeout);
 }
 
@@ -348,34 +411,30 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 {
 	// Assert that frame is not NULL and is a response
 	if (!frame || frame->id.query != response) {
-		return -CANIOT_EINVAL;
+		return -CANIOT_EMLFRM;
 	}
 
 	// Get device entry from frame device id
-	union deviceid did = get_deviceid(frame);
-	struct caniot_device_entry *entry = get_device_entry(ctrl, did);
-
-	// If device entry is not found return error
-	if (!entry) {
+	struct caniot_device_entry *device =
+		get_device_entry(ctrl, get_deviceid(frame));
+	if (!device) {
 		return -CANIOT_EDEVICE;
 	}
 
 	// If a query is pending and the frame is the response for it
 	// Call callback and clear pending query
-	struct pendq *pq = get_pending_query(ctrl, entry);
-	if (pq != NULL) {
-		pq->callback(pq->did, frame);
-		pendq_remove(ctrl, pq);
-		pendq_free(ctrl, pq);
-	}
+	pendq_call_and_unregister(ctrl,
+				  get_pending_query(ctrl, device),
+				  frame);
+
 
 	// Update last seen timestamp for entry
-	ctrl->driv->get_time(&entry->last_seen, NULL);
+	ctrl->driv->get_time(&device->last_seen, NULL);
 
 	return 0;
 }
 
-int caniot_controller_process(struct caniot_controller *ctrl)
+static int recv_all(struct caniot_controller *ctrl)
 {
 	int ret;
 	struct caniot_frame frame;
@@ -387,27 +446,20 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {
-			goto error;
+			return ret;
 		}
 	}
 
-	uint32_t sec, usec, diff, ms;
-	ctrl->driv->get_time(&sec, &usec);
-	ms = sec*1000U + usec/1000U; 
-	diff = ctrl->last_process_ms - ms;
-	ctrl->last_process_ms = ms;
+	return 0;
+}
 
-	/* update timeouts */
-	pendq_shift(ctrl, diff);
+int caniot_controller_process(struct caniot_controller *ctrl)
+{
+	int ret = recv_all(ctrl);
 
-	/* call callbacks for expired queries */
-	struct pendq *pq;
-	while ((pq = pendq_get_expired(ctrl)) != NULL) {
-		pq->callback(pq->did, NULL);
-		pendq_remove(ctrl, pq);
-		pendq_free(ctrl, pq);
+	if (ret == 0) {
+		pendq_process(ctrl);
 	}
 
-error:
 	return ret;
 }

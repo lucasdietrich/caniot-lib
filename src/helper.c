@@ -104,9 +104,8 @@ void caniot_explain_id(union caniot_id id)
 		       get_id_query_str(id.query));
 	}
 
-	if (caniot_is_class_broadcast(CANIOT_DEVICE(id.cls, id.dev))) {
-		printf(F(" to %s BROADCAST : %s /"),
-		       get_id_class_str(id.cls),
+	if (caniot_is_broadcast(CANIOT_DEVICE(id.cls, id.dev))) {
+		printf(F(" to BROADCAST : %s /"),
 		       get_id_endpoint_str(id.endpoint));
 	} else {
 		printf(F(" to device %s %s : %s / "),

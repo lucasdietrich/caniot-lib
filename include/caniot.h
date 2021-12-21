@@ -35,7 +35,11 @@
 
 #define CANIOT_DEVICE(class, sub_id)	((union deviceid) { .cls = class, .dev = sub_id })
 
-#define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, CANIOT_CLASS_BROADCAST)
+#define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
+
+#define CANIOT_DEVICE_EQUAL(did1, did2) ((did1).val == (did2).val)
+
+#define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DEVICE_EQUAL(did, CANIOT_DEVICE_BROADCAST)
 
 union deviceid {
 	struct {
@@ -49,19 +53,15 @@ enum { command = 0, telemetry = 1, write_attribute = 2, read_attribute = 3 };
 enum { query = 0, response = 1 };
 enum { endpoint_default = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_broadcast = 3 };
 
-struct caniot_command
+struct caniot_data
 {
 	uint8_t ep;
 	uint8_t buf[8];
 	uint8_t len;
 };
 
-struct caniot_telemetry
-{
-	uint8_t ep;
-	uint8_t buf[8];
-	uint8_t len;
-};
+#define caniot_command caniot_data
+#define caniot_telemetry caniot_data
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
 union caniot_id {
@@ -153,9 +153,9 @@ static inline bool caniot_valid_deviceid(union deviceid id)
 }
 
 // Return if deviceid is broadcast
-static inline bool caniot_is_class_broadcast(union deviceid id)
+static inline bool caniot_is_broadcast(union deviceid id)
 {
-	return id.dev == CANIOT_CLASS_BROADCAST;
+	return CANIOT_DEVICE_IS_BROADCAST(id);
 }
 
 static inline void caniot_clear_frame(struct caniot_frame *frame)
@@ -169,6 +169,6 @@ static inline bool caniot_is_error(union caniot_id id)
 }
 
 // Check if drivers api is valid
-bool caniot_valid_drivers_api(struct caniot_drivers_api *api);
+bool caniot_validate_drivers_api(struct caniot_drivers_api *api);
 
 #endif

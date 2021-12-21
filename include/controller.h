@@ -45,7 +45,10 @@ struct caniot_controller {
 		struct caniot_pqt *timeout_queue;
 	} pendingq;
 
-	uint32_t last_process_ms;
+	struct {
+		uint32_t sec;
+		uint32_t ms;
+	} last_process;
 
 	const struct caniot_drivers_api *driv;
 };

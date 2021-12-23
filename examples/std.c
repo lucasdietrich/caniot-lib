@@ -29,11 +29,6 @@ void z_get_time(uint32_t *sec, uint32_t *usec)
 	*usec = spec.tv_nsec / 1000;
 }
 
-bool z_pending_telemetry(void)
-{
-	return false;
-}
-
 int z_send(struct caniot_frame *frame, uint32_t delay)
 {
 	printf(F("TX delay=%d"), delay);
@@ -55,15 +50,6 @@ int z_recv(struct caniot_frame *frame)
 
 	caniot_show_frame(frame);
 
-	return 0;
-}
-int z_set_filter(struct caniot_filter *filter)
-{
-	return 0;
-}
-
-int z_set_mask(struct caniot_filter *filter)
-{
 	return 0;
 }
 

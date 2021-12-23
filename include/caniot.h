@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "caniot_errors.h"
-#include "caniot_common.h"
 
 /**
  * @brief Helper for printing strings :
@@ -18,6 +17,8 @@
  * - AVR : printf_P(PSTR("Hello %d\n"), 42);
  * - ARM/x86/any : printf("Hello %d\n", 42);
  */
+#include <stdio.h>
+
 #ifdef __AVR__
 #include <avr/pgmspace.h>
 #define printf	printf_P
@@ -27,6 +28,37 @@
 #define FLASH_STRING(x) (x)
 #endif
 #define F(x) FLASH_STRING(x)
+
+/* 0 : NO DEBUG
+ * 1 : ERR
+ * 2 : WRN
+ * 3 : INF
+ * 4 : DBG
+ */
+#ifdef CONFIG_CANIOT_DEBUG_LEVEL
+#define CANIOT_DEBUG_LEVEL CONFIG_CANIOT_DEBUG_LEVEL
+#else
+#define CANIOT_DEBUG_LEVEL 4
+#endif
+
+#if CANIOT_DEBUG_LEVEL == 4
+#define CANIOT_LOG(...) printf(__VA_ARGS__)
+#elif CANIOT_DEBUG_LEVEL == 3
+#define CANIOT_LOG(...) printf(__VA_ARGS__)
+#elif CANIOT_DEBUG_LEVEL == 2
+#define CANIOT_LOG(...) printf(__VA_ARGS__)
+#elif CANIOT_DEBUG_LEVEL == 1
+#define CANIOT_LOG(...) printf(__VA_ARGS__)
+#else
+#define CANIOT_LOG(...)
+#endif
+
+
+#define CANIOT_VERSION1	1
+#define CANIOT_VERSION2 2
+#define CANIOT_VERSION 	CANIOT_VERSION2
+
+#define CANIOT_MAX_PENDING_QUERIES	2
 
 
 #define CANIOT_ID(t, q, c, d, e) ((t) | (q << 2) | (c << 3) | (d << 6) | (e << 9))
@@ -104,32 +136,20 @@ struct caniot_frame {
         uint8_t len;
 };
 
-struct caniot_filter
-{
-	uint32_t filter;
-	uint32_t mask;
-	uint8_t ext;
-};
-
 typedef int (*caniot_query_callback_t)(union deviceid did,
 				       struct caniot_frame *resp);
 
 struct caniot_drivers_api {
-	/* arch R/W */
-	void (*rom_read)(void *p, void *d, uint8_t size);
-	void (*persistent_read)(void *p, void *d, uint8_t size);
-	void (*persistent_write)(void *p, void *s, uint8_t size);
-
 	/* util */
 	void (*entropy)(uint8_t *buf, size_t len);
-	void (*get_time)(uint32_t *sec, uint32_t *usec);
+	void (*get_time)(uint32_t *sec, uint16_t *ms);
 
 	/**
 	 * @brief Send a CANIOT frame
 	 * 
 	 * Return 0 on success, any other value on error.
 	 */
-	int (*send)(struct caniot_frame *frame, uint32_t delay);
+	int (*send)(const struct caniot_frame *frame, uint32_t delay_ms);
 
 	/**
 	 * @brief Receive a CANIOT frame.
@@ -139,11 +159,8 @@ struct caniot_drivers_api {
 	int (*recv)(struct caniot_frame *frame);
 	
 	/* CAN configuration */
-	int (*set_filter) (struct caniot_filter *filter);
-	int (*set_mask) (struct caniot_filter *filter);
-
-	/* Device specific */
-	bool (*pending_telemetry)(void);
+	// int (*set_filter) (struct caniot_filter *filter);
+	// int (*set_mask) (struct caniot_filter *filter);
 };
 
 // Return if deviceid is valid

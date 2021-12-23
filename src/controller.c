@@ -272,10 +272,11 @@ static int pendq_call_expired(struct caniot_controller *controller)
 
 static uint32_t get_diff_ms(struct caniot_controller *controller)
 {
-	uint32_t sec, us;
-	controller->driv->get_time(&sec, &us);
+	uint32_t sec;
+	uint16_t ms;
+	controller->driv->get_time(&sec, &ms);
 
-	uint32_t diff_ms = us * 1000 - controller->last_process.ms;
+	uint16_t diff_ms = ms - controller->last_process.ms;
 	diff_ms += (sec - controller->last_process.sec) * 1000;
 
 	return diff_ms;

@@ -137,7 +137,7 @@ static const struct attr_section attr_sections[] ROM = {
     	SECTION(PERSISTENT, "configuration", config_attr),
 };
 
-static inline void arch_rom_cpy_byte(const uint8_t *p, uint8_t *d)
+static inline void arch_rom_cpy_byte(uint8_t *d, const uint8_t *p)
 {
 #ifdef __AVR__
 	*d = pgm_read_byte(p);
@@ -146,7 +146,7 @@ static inline void arch_rom_cpy_byte(const uint8_t *p, uint8_t *d)
 #endif
 }
 
-static inline void arch_rom_cpy_word(const uint16_t *p, uint16_t *d)
+static inline void arch_rom_cpy_word(uint16_t *d, const uint16_t *p)
 {
 #ifdef __AVR__
 	*d = pgm_read_word(p);
@@ -155,7 +155,7 @@ static inline void arch_rom_cpy_word(const uint16_t *p, uint16_t *d)
 #endif
 }
 
-static inline void arch_rom_cpy_dword(const uint32_t *p, uint32_t *d)
+static inline void arch_rom_cpy_dword(uint32_t *d, const uint32_t *p)
 {
 #ifdef __AVR__
 	*d = pgm_read_dword(p);
@@ -164,7 +164,7 @@ static inline void arch_rom_cpy_dword(const uint32_t *p, uint32_t *d)
 #endif
 }
 
-static inline void arch_rom_cpy_ptr(void **p, void **d)
+static inline void arch_rom_cpy_ptr(void **d, const void **p)
 {
 #ifdef __AVR__
 	*d = pgm_read_ptr(p);
@@ -173,7 +173,7 @@ static inline void arch_rom_cpy_ptr(void **p, void **d)
 #endif
 }
 
-static inline void arch_rom_cpy_mem(void *p, void *d, uint16_t size)
+static inline void arch_rom_cpy_mem(void *d, const void *p, uint16_t size)
 {
 #ifdef __AVR__
 	memcpy_P(d, p, size);
@@ -182,24 +182,24 @@ static inline void arch_rom_cpy_mem(void *p, void *d, uint16_t size)
 #endif
 }
 
-static inline void arch_rom_cpy(void *p, void *d, uint16_t size)
+static inline void arch_rom_cpy(void *d, const void *p, uint16_t size)
 {
 	switch (size) {
 	case 1u:
-		return arch_rom_cpy_byte(p, d);
+		return arch_rom_cpy_byte(d, p);
 	case 2u:
-		return arch_rom_cpy_word(p, d);
+		return arch_rom_cpy_word(d, p);
 	case 4u:
-		return arch_rom_cpy_dword(p, d);
+		return arch_rom_cpy_dword(d, p);
 	default:
-		return arch_rom_cpy_mem(p, d, size);
+		return arch_rom_cpy_mem(d, p, size);
 	}
 }
 
 static inline uint8_t attr_get_section_size(const struct attr_section *section)
 {
 	uint8_t size;
-	arch_rom_cpy_byte(&section->array_size, &size);
+	arch_rom_cpy_byte(&size, &section->array_size);
 	return size;
 }
 
@@ -207,35 +207,35 @@ static inline const struct attribute *attr_get_section_array(
 	const struct attr_section *section)
 {
 	const struct attribute *array;
-	arch_rom_cpy_ptr((void **) &section->array, (void**) &array);
+	arch_rom_cpy_ptr((void**) &array, (const void**) &section->array);
 	return array;
 }
 
 static inline enum section_option attr_get_section_option(const struct attr_section *section)
 {
 	uint8_t option;
-	arch_rom_cpy_byte((const uint8_t *) &section->option, &option);
+	arch_rom_cpy_byte(&option, (const uint8_t *) &section->option);
 	return option;
 }
 
 static inline uint8_t attr_get_size(const struct attribute *attr)
 {
 	uint8_t size;
-	arch_rom_cpy_byte(&attr->size, &size);
+	arch_rom_cpy_byte(&size, &attr->size);
 	return size;
 }
 
 static inline uint8_t attr_get_offset(const struct attribute *attr)
 {
 	uint8_t offset;
-	arch_rom_cpy_byte(&attr->offset, &offset);
+	arch_rom_cpy_byte(&offset, &attr->offset);
 	return offset;
 }
 
 static inline enum attr_option attr_get_option(const struct attribute *attr)
 {
 	uint8_t option;
-	arch_rom_cpy_byte(&attr->option, &option);
+	arch_rom_cpy_byte(&option, &attr->option);
 	return option;
 }
 
@@ -261,17 +261,17 @@ static int attr_resolve(key_t key, struct attr_ref *ref)
 {
 	const struct attr_section *section = attr_get_section(key);
 	if (!section) {
-		return -EINVAL; /* TODO return accurate error CANIOT_EKEYSECTION */
+		return -CANIOT_EKEYSECTION; /* TODO return accurate error CANIOT_EKEYSECTION */
 	}
 
 	const struct attribute *attr = attr_get(key, section);
 	if (!attr) {
-		return -EINVAL; /* TODO return accurate error CANIOT_EKEYATTR */
+		return -CANIOT_EKEYATTR; /* TODO return accurate error CANIOT_EKEYATTR */
 	}
 
 	uint8_t attr_size = attr_get_size(attr);
 	if (ATTR_KEY_OFFSET(key) >= attr_size) {
-		return -EINVAL; /* TODO return accurate error CANIOT_EKEYPART */
+		return -CANIOT_EKEYPART; /* TODO return accurate error CANIOT_EKEYPART */
 	}
 
 	ref->section = ATTR_KEY_SECTION(key);
@@ -294,6 +294,22 @@ static void read_identificate_attr(struct caniot_device *dev,
 		     &attr->val, ref->read_size);
 }
 
+static void read_rom_identification(struct caniot_identification *d,
+				    const struct caniot_identification *p)
+{
+	arch_rom_cpy_mem(d, p, sizeof(struct caniot_identification));
+}
+
+void caniot_print_device_identification(const struct caniot_device *dev)
+{
+	struct caniot_identification id;
+
+	read_rom_identification(&id, dev->identification);
+
+	printf(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
+	       id.name, id.did.cls, id.did.dev, id.version);
+}
+
 /*
 static inline uint16_t get_identification_version(struct caniot_device *dev)
 {
@@ -306,7 +322,7 @@ static inline uint16_t get_identification_version(struct caniot_device *dev)
 static inline void read_identification_nodeid(struct caniot_device *dev,
 					      union deviceid *did)
 {
-	arch_rom_cpy_byte((const uint8_t *)&dev->identification->did, &did->val);
+	arch_rom_cpy_byte(&did->val, (const uint8_t *)&dev->identification->did);
 }
 
 static int config_prepare_read(struct caniot_device *dev)
@@ -414,6 +430,8 @@ static int handle_read_attribute(struct caniot_device *dev,
 	int ret;
 	struct attr_ref ref;
 
+	CANIOT_LOG(F("Executing read attribute key = 0x%x\n"), key);
+
 	ret = attr_resolve(key, &ref);
 	if (ret != 0 && ret != -EINVAL) {
 		goto exit;
@@ -446,7 +464,26 @@ static int handle_write_attribute(struct caniot_device *dev,
 				  struct caniot_frame *resp,
 				  uint16_t key)
 {
+	CANIOT_LOG(F("Executing write attribute key = 0x%x\n"), key);
 	return -1;
+}
+
+static int command_resp(struct caniot_device *dev,
+			struct caniot_frame *req,
+			uint8_t ep)
+{
+	if (req->id.endpoint == endpoint_broadcast) {
+		return -CANIOT_ECMDEP;
+	}
+
+	if (dev->api->command_handler == NULL) {
+		return -CANIOT_EHANDLERC;
+	}
+
+	CANIOT_LOG(F("Executing command handler (0x%x) for endpoint %d\n"),
+		   dev->api->command_handler, ep);
+
+	return dev->api->command_handler(dev, ep, req->buf, req->len);
 }
 
 static int telemetry_resp(struct caniot_device *dev,
@@ -455,7 +492,14 @@ static int telemetry_resp(struct caniot_device *dev,
 {
 	int ret;
 
+	if (dev->api->telemetry == NULL) {
+		return -CANIOT_EHANDLERT;
+	}
+
 	prepare_response(dev, resp, telemetry);
+
+	CANIOT_LOG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
+		   dev->api->telemetry, ep);
 
 	/* buffer */
 	ret = dev->api->telemetry(dev, ep, resp->buf, &resp->len);
@@ -494,60 +538,52 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	/* no response in this case */
 	if (req->id.query != query) {
 		ret = -EINVAL;
-		goto error;
+		goto exit;
 	}
 
 	switch (req->id.type) {
 	case command:
-		if (req->id.endpoint == endpoint_broadcast) {
-			ret = -CANIOT_ECMDEP;
-			goto error;
-		}
-
-		ret = dev->api->command_handler(dev, req->id.endpoint,
-						req->buf, req->len);
+	{
+		ret = command_resp(dev, resp, req->id.endpoint);
 		if (ret != 0) {
-			goto error;
+			goto exit;
 		}
+	}
 	case telemetry:
+	{
 		ret = telemetry_resp(dev, resp, req->id.endpoint);
 		break;
+	}
 
 	case write_attribute:
+	{
 		ret = handle_write_attribute(dev, resp, req->attr.key);
 		if (ret != 0) {
-			goto error;
+			goto exit;
 		}
+	}
 	case read_attribute:
 		ret = handle_read_attribute(dev, resp, req->attr.key);
 		break;
 	}
 
-	/* on success */
-	if (ret == 0) {
-		return 0;
+exit:
+	if (ret != 0) {
+		prepare_error(dev, resp, ret);
 	}
-
-error:
-	prepare_error(dev, resp, ret);
 	return ret;
 }
 
-int caniot_device_process(struct caniot_device *dev)
+int caniot_device_process_rx_frame(struct caniot_device *dev,
+				   struct caniot_frame *req)
 {
+	CANIOT_LOG(F("caniot_device_process_rx_frame dev 0x%x req 0x%x\n"), dev, req);
+
 	int ret;
-	struct caniot_frame req;
 	struct caniot_frame resp;
 	uint32_t delay = 0;
 
-	caniot_clear_frame(&req);
-
-	ret = dev->driv->recv(&req);
-	if (ret) {
-		goto exit; /* failed to receive */
-	}
-
-	ret = caniot_device_handle_rx_frame(dev, &req, &resp);
+	ret = caniot_device_handle_rx_frame(dev, req, &resp);
 
 	/* If CANIOT error frames should be sent in case of error or not */
 	if (ret && !dev->config->error_response) {
@@ -555,13 +591,9 @@ int caniot_device_process(struct caniot_device *dev)
 	}
 
 	if (is_telemetry_response(&resp)) {
-		/* if there is a telemetry response which is not already sent
+		/* TODO if there is a telemetry response which is not already sent
 		 * we don't queue a new telemetry response
 		 */
-		if (dev->driv->pending_telemetry()) {
-			goto exit;
-		}
-
 		delay = get_telemetry_delay(dev);
 	}
 
@@ -572,6 +604,21 @@ int caniot_device_process(struct caniot_device *dev)
 	}
 exit:
 	return ret;
+}
+
+int caniot_device_process(struct caniot_device *dev)
+{
+	int ret;
+	struct caniot_frame req;
+
+	caniot_clear_frame(&req);
+
+	ret = dev->driv->recv(&req);
+	if (ret) {
+		return ret; /* failed to receive */
+	}
+
+	return caniot_device_process_rx_frame(dev, &req);
 }
 
 bool caniot_device_is_target(union deviceid did,

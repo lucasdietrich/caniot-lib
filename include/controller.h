@@ -47,7 +47,7 @@ struct caniot_controller {
 
 	struct {
 		uint32_t sec;
-		uint32_t ms;
+		uint16_t ms;
 	} last_process;
 
 	const struct caniot_drivers_api *driv;

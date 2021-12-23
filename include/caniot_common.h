@@ -1,7 +1,0 @@
-#ifndef _CANIOT_COMMON_H_
-#define _CANIOT_COMMON_H_
-
-#define CANIOT_MAX_PENDING_QUERIES 2
-
-#endif /* _CANIOT_COMMON_H_ */
-

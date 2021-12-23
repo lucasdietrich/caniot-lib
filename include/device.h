@@ -16,6 +16,7 @@ struct caniot_identification
 	union deviceid did;
         uint16_t version;
         char name[32];
+	uint32_t magic_number;
 };
 
 struct caniot_system
@@ -84,11 +85,11 @@ struct caniot_api
         int (*update_time)(struct caniot_device *dev, uint32_t ts);
 
 	struct {
-		/* called after configuration is updated */
-		int (*written)(struct caniot_device *dev, struct caniot_config *config);
-
 		/* called before configuration will be read */
 		int (*on_read)(struct caniot_device *dev, struct caniot_config *config);
+
+		/* called after configuration is updated */
+		int (*written)(struct caniot_device *dev, struct caniot_config *config);
 	} config;
 
         // int (*scheduled_handler)(struct caniot_device *dev, struct caniot_scheduled *sch);
@@ -105,6 +106,8 @@ struct caniot_api
         int (*telemetry)(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t *len);
 };
 
+void caniot_print_device_identification(const struct caniot_device *dev);
+
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
 			    struct caniot_frame *req,
 			    struct caniot_frame *resp);
@@ -116,6 +119,9 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
  * @return int 
  */
 int caniot_device_process(struct caniot_device *dev);
+
+int caniot_device_process_rx_frame(struct caniot_device *dev,
+				   struct caniot_frame *req);
 
 bool caniot_device_is_target(union deviceid did,
 			     struct caniot_frame *frame);

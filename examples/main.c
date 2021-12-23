@@ -22,7 +22,7 @@ int main(void)
 	if (caniot_device_is_target(tempsens.dev.identification->did, &req)) {
 		ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
 		caniot_explain_frame(&resp);
-		printf(F("ret = %x\n"), -ret);
+		printf(F("ret = 0x%x\n"), -ret);
 	} else {
 		printf(F("not for me\n"));
 	}
@@ -34,7 +34,7 @@ int main(void)
 	if (caniot_device_is_target(tempsens.dev.identification->did, &req)) {
 		ret = caniot_device_handle_rx_frame(&tempsens.dev, &req, &resp);
 		caniot_explain_frame(&resp);
-		printf(F("ret = %x\n"), -ret);
+		printf(F("ret = 0x%x\n"), -ret);
 	} else {
 		printf(F("not for me\n"));
 	}

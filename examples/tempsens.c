@@ -60,7 +60,6 @@ const struct caniot_identification id = {
 const struct caniot_drivers_api drivers = {
 	.entropy = z_entropy,
 	.get_time = z_get_time,
-	.pending_telemetry = z_pending_telemetry,
 	.recv = z_recv,
 	.send = z_send,
 	.set_filter = z_set_filter,

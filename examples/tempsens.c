@@ -52,7 +52,7 @@ const struct caniot_identification id = {
 			.name = "TempSens1",
 			.did = {
 				.cls = 2,
-				.dev = 1
+				.sid = 1
 			},
 			.version = 1
 };
@@ -79,7 +79,7 @@ struct caniot_config config = {
 struct tempdev tempsens = {
 	.trigger_temp = 0xDDAAAA,
 	.measured_temp = 0x1234,
-	.dev = {
+	.sid = {
 		.identification = &id,
 		.api = &tempsens_api,
 		.driv = &drivers,

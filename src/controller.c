@@ -8,7 +8,7 @@
 // Get deviceid from frame
 static inline union deviceid get_deviceid(const struct caniot_frame *frame)
 {
-	return CANIOT_DEVICE(frame->id.cls, frame->id.dev);
+	return CANIOT_DEVICE(frame->id.cls, frame->id.sid);
 }
 
 static bool is_query_pending(struct caniot_device_entry *device)
@@ -22,7 +22,7 @@ static void finalize_query_frame(struct caniot_frame *frame, union deviceid did)
 	frame->id.query = query;
 
 	frame->id.cls = did.cls;
-	frame->id.dev = did.dev;
+	frame->id.sid = did.sid;
 }
 
 // Return device entry corresponding to device id or last entry if broadcast

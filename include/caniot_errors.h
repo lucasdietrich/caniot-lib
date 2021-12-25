@@ -1,6 +1,8 @@
 #ifndef _CANIOT_ERRORS_H
 #define _CANIOT_ERRORS_H
 
+/* TODO rework all error codes */
+
 /* Tells if error i related to caniot lib */
 #define CANIOT_IS_ERR(err)	   ((err == 0) || (err >= 0xCA00 && err <= 0xCAFF))
 
@@ -47,6 +49,9 @@
 #define CANIOT_EDEVICE	   0xCA40	  /* ERROR DEVICE */
 #define CANIOT_EFRAME	   0xCA41	  /* ERROR FRAME, not a valid caniot frame*/
 #define CANIOT_EMLFRM	   0xCA41	  /* ERROR MALFORMED FRAME */
+
+#define CANIOT_ECLASS      0xCA51	  /* ERROR INVALID CLASS */
+#define CANIOT_ECFG        0xCA52	  /* ERROR INVALID CONFIGURATION */
 
 #define CANIOT_EBUSY	   CANIOT_EAGAIN
 

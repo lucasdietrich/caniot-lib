@@ -104,13 +104,13 @@ void caniot_explain_id(union caniot_id id)
 		       get_id_query_str(id.query));
 	}
 
-	if (caniot_is_broadcast(CANIOT_DEVICE(id.cls, id.dev))) {
+	if (caniot_is_broadcast(CANIOT_DEVICE(id.cls, id.sid))) {
 		printf(F(" to BROADCAST : %s /"),
 		       get_id_endpoint_str(id.endpoint));
 	} else {
 		printf(F(" to device %s %s : %s / "),
 		       get_id_class_str(id.cls),
-		       get_id_dev_str(id.dev),
+		       get_id_dev_str(id.sid),
 		       get_id_endpoint_str(id.endpoint));
 	}
 }
@@ -143,7 +143,7 @@ void caniot_build_query_telemtry(struct caniot_frame *frame,
 	struct caniot_frame tmp = {
 		.id = {
 			.cls = did.cls,
-			.dev = did.dev,
+			.sid = did.sid,
 			.type = telemetry,
 			.query = query,
 			.endpoint = endpoint
@@ -164,7 +164,7 @@ void caniot_build_query_command(struct caniot_frame *frame,
 	struct caniot_frame tmp = {
 		.id = {
 			.cls = did.cls,
-			.dev = did.dev,
+			.sid = did.sid,
 			.type = command,
 			.query = query,
 			.endpoint = endpoint

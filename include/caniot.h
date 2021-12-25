@@ -8,6 +8,12 @@
 
 #include "caniot_errors.h"
 
+#ifdef CONFIG_CANIOT_DRIVERS_API
+#define CANIOT_DRIVERS_API CONFIG_CANIOT_DRIVERS_API
+#else
+#define CANIOT_DRIVERS_API 0
+#endif /* CONFIG_CANIOT_DRIVERS_API */
+
 /**
  * @brief Helper for printing strings :
  * 
@@ -65,7 +71,7 @@
 
 #define CANIOT_CLASS_BROADCAST	0x7
 
-#define CANIOT_DEVICE(class, sub_id)	((union deviceid) { .cls = class, .dev = sub_id })
+#define CANIOT_DEVICE(class, sub_id)	((union deviceid) { .cls = class, .sid = sub_id })
 
 #define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
 
@@ -73,10 +79,17 @@
 
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DEVICE_EQUAL(did, CANIOT_DEVICE_BROADCAST)
 
+#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	50
+#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	1000
+#define CANIOT_TELEMETRY_DELAY_DEFAULT		100
+#define CANIOT_TELEMETRY_PERIOD_DEFAULT		60000
+
+#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	0x00
+
 union deviceid {
 	struct {
-		uint8_t cls : 3;
-		uint8_t dev : 3;
+		uint8_t cls : 3; /* device class */
+		uint8_t sid : 3; /* device sub-id */
 	};
 	uint8_t val;
 };
@@ -101,7 +114,7 @@ union caniot_id {
 		uint16_t type : 2;
 		uint16_t query : 1;
 		uint16_t cls : 3;
-		uint16_t dev : 3;
+		uint16_t sid : 3;
 		uint16_t endpoint : 2;
 	};
 	uint16_t raw;
@@ -183,6 +196,11 @@ static inline void caniot_clear_frame(struct caniot_frame *frame)
 static inline bool caniot_is_error(union caniot_id id)
 {
 	return (id.query == response) && (id.type == command);
+}
+
+static inline bool is_telemetry_response(struct caniot_frame *frame)
+{
+	return frame->id.query == response && frame->id.type == telemetry;
 }
 
 // Check if drivers api is valid

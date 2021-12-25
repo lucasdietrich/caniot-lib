@@ -9,7 +9,7 @@
 static bool frame_match(struct caniot_device *dev, struct caniot_frame *frame)
 {
 	return (dev->identification->did.cls == frame->id.cls) &&
-		(dev->identification->did.dev == frame->id.dev);
+		(dev->identification->did.sid == frame->id.sid);
 }
 
 int process_rx_frame(struct caniot_device *dev_list[],

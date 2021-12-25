@@ -345,24 +345,6 @@ static int prepare_config_read(struct caniot_device *dev)
 	return 0;
 }
 
-uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
-{
-	if (prepare_config_read(dev) == 0) {
-		uint32_t now;
-		dev->driv->get_time(&now, NULL);
-		
-		uint32_t diff = now - dev->system.last_telemetry;
-		if (dev->config->telemetry.period <= diff) {
-			return 0;
-		} else {
-			return dev->config->telemetry.period - diff;
-		}
-	}
-
-	/* default 1 second */
-	return 1000u;
-}
-
 static int read_config_attr(struct caniot_device *dev,
 			    const struct attr_ref *ref,
 			    struct caniot_attribute *attr)
@@ -596,6 +578,23 @@ int caniot_device_verify(struct caniot_device *dev)
 /*___________________________________________________________________________*/
 
 #if CANIOT_DRIVERS_API
+uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
+{
+	if (prepare_config_read(dev) == 0) {
+		uint32_t now;
+		dev->driv->get_time(&now, NULL);
+		
+		uint32_t diff = now - dev->system.last_telemetry;
+		if (dev->config->telemetry.period <= diff) {
+			return 0;
+		} else {
+			return dev->config->telemetry.period - diff;
+		}
+	}
+
+	/* default 1 second */
+	return 1000u;
+}
 
 static uint32_t get_response_delay(struct caniot_device *dev,
 				   struct caniot_frame *frame)

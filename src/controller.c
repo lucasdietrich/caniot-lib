@@ -506,7 +506,7 @@ static int process_incoming_frames(struct caniot_controller *ctrl)
 		ret = ctrl->driv->recv(&frame);
 		if (ret == 0) {
 			ret = caniot_controller_handle_rx_frame(ctrl, &frame);
-			printf(F("Processing frame returned: -%04x\n"), -ret);
+			printf(F("Processing incoming frame: -%04x\n"), -ret);
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {

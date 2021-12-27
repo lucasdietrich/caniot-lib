@@ -40,10 +40,10 @@ static const char *get_unknown(void)
 static const char *get_type_str(uint8_t type)
 {
 	switch (type) {
-	case telemetry:
-		return F("Telemetry");
 	case command:
 		return F("Command");
+	case telemetry:
+		return F("Telemetry");
 	case write_attribute:
 		return F("Write-attribute");
 	case read_attribute:
@@ -97,13 +97,13 @@ static const char *get_endpoint_str(uint8_t endpoint)
 {
 	switch (endpoint) {
 	case endpoint_default:
-		return F("endpoint-default");
+		return F("ep-0");
 	case endpoint_1:
-		return F("endpoint-1");
+		return F("ep-1");
 	case endpoint_2:
-		return F("endpoint-2");
+		return F("ep-2");
 	case endpoint_broadcast:
-		return F("endpoint-broadcast");
+		return F("ep-broadcast");
 	default:
 		return get_unknown();
 	}
@@ -113,7 +113,7 @@ void caniot_show_deviceid(union deviceid did)
 {
 	if (caniot_valid_deviceid(did)) {
 		if (CANIOT_DEVICE_IS_BROADCAST(did)) {
-			printf(F("did BROADCAST"));
+			printf(F("BROADCAST"));
 		} else {
 			char cls[3], sid[3];
 			cpy_class_str(did.cls, cls);
@@ -122,8 +122,8 @@ void caniot_show_deviceid(union deviceid did)
 			cls[2] = '\0';
 			sid[2] = '\0';
 
-			printf(F("did %02x, cls = %s (%01x), sid = %s (%01x)"),
-			       did.val, cls, did.cls, sid, did.sid);
+			printf(F("0x%02x (cls=%s sid=%s)"),
+			       did.val, cls, sid);
 		}
 	} else {
 		printf(F("invalid did"));
@@ -145,13 +145,16 @@ void caniot_explain_id(union caniot_id id)
 		return;
 	} else {
 		printf(get_type_str(id.type));
-		printf(" ");
+		printf(F(" "));
 		printf(get_query_str(id.query));
+		printf(F(" "));
 	}
 
 	caniot_show_deviceid(CANIOT_DEVICE(id.cls, id.sid));
 
-	printf(F(" : %s /"), get_endpoint_str(id.endpoint));
+	printf(F(" : "));
+	printf(get_endpoint_str(id.endpoint));
+	printf(F(" / "));
 }
 
 void caniot_explain_frame(struct caniot_frame *frame)
@@ -159,7 +162,7 @@ void caniot_explain_frame(struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error(frame->id)) {
-		printf(F(": -%04x \n"), (uint32_t)-frame->err);
+		printf(F(": -%04x \n"), (uint32_t) -frame->err);
 		return;
 	}
 
@@ -175,7 +178,7 @@ void caniot_explain_frame(struct caniot_frame *frame)
 	printf(F("\n"));
 }
 
-void caniot_build_query_telemtry(struct caniot_frame *frame,
+void caniot_build_query_telemetry(struct caniot_frame *frame,
 				 union deviceid did,
 				 uint8_t endpoint)
 {

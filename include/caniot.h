@@ -212,7 +212,7 @@ void caniot_explain_id(union caniot_id id);
 
 void caniot_explain_frame(struct caniot_frame *frame);
 
-void caniot_build_query_telemtry(struct caniot_frame *frame,
+void caniot_build_query_telemetry(struct caniot_frame *frame,
 				 union deviceid did,
 				 uint8_t endpoint);
 

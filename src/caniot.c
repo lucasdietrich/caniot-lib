@@ -140,7 +140,7 @@ void caniot_show_frame(const struct caniot_frame *frame)
 
 void caniot_explain_id(union caniot_id id)
 {
-	if (caniot_is_error(id)) {
+	if (caniot_is_error_frame(id)) {
 		printf(F("Error frame "));
 		return;
 	} else {
@@ -158,7 +158,7 @@ void caniot_explain_frame(struct caniot_frame *frame)
 {
 	caniot_explain_id(frame->id);
 
-	if (caniot_is_error(frame->id)) {
+	if (caniot_is_error_frame(frame->id)) {
 		printf(F(": -%04x \n"), (uint32_t)-frame->err);
 		return;
 	}
@@ -220,4 +220,20 @@ bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 {
 	return api->entropy && api->get_time && 
 		api->send && api->recv;
+}
+
+bool caniot_is_error(int cterr)
+{
+	return (-cterr >= CANIOT_ERROR_BASE && -cterr <= (CANIOT_ERROR_BASE + 0xFF));
+}
+
+void caniot_show_error(int cterr)
+{
+	if (caniot_is_error(cterr) == false) {
+		return;
+	}
+
+	// TODO show error name foreach error
+
+	printf(F("CANIOT -%04x\n"), -cterr);
 }

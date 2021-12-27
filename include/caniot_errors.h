@@ -6,6 +6,8 @@
 /* Tells if error i related to caniot lib */
 #define CANIOT_IS_ERR(err)	   ((err == 0) || (err >= 0xCA00 && err <= 0xCAFF))
 
+#define CANIOT_ERROR_BASE	   0xCA00
+
 #define CANIOT_OK          0x0000         /* OK */
 #define CANIOT_EINVAL	   0xCA00	  /* Invalid argument */
 #define CANIOT_ENPROC      0xCA01         /* ERROR UNPROCESSABLE */

@@ -29,9 +29,11 @@
 #include <avr/pgmspace.h>
 #define printf	printf_P
 #define FLASH_STRING(x) PSTR(x)
+#define memcpy_P memcpy_P
 #else
 #define printf  printf
 #define FLASH_STRING(x) (x)
+#define memcpy_P memcpy
 #endif
 #define F(x) FLASH_STRING(x)
 
@@ -105,9 +107,6 @@ struct caniot_data
 	uint8_t len;
 };
 
-#define caniot_command caniot_data
-#define caniot_telemetry caniot_data
-
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
 union caniot_id {
 	struct {
@@ -140,7 +139,6 @@ struct caniot_attribute
 
 struct caniot_frame {
 	union caniot_id id;
-	
         union {
 		char buf[8];
                 struct caniot_attribute attr;
@@ -205,5 +203,24 @@ static inline bool is_telemetry_response(struct caniot_frame *frame)
 
 // Check if drivers api is valid
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api);
+
+void caniot_show_deviceid(union deviceid did);
+
+void caniot_show_frame(const struct caniot_frame *frame);
+
+void caniot_explain_id(union caniot_id id);
+
+void caniot_explain_frame(struct caniot_frame *frame);
+
+void caniot_build_query_telemtry(struct caniot_frame *frame,
+				 union deviceid did,
+				 uint8_t endpoint);
+
+void caniot_build_query_command(struct caniot_frame *frame,
+				union deviceid did,
+				uint8_t endpoint,
+				const uint8_t *buf,
+				uint8_t size);
+
 
 #endif

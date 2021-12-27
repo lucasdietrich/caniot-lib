@@ -58,17 +58,25 @@ int caniot_controller_init(struct caniot_controller *controller);
 
 int caniot_controller_deinit(struct caniot_controller *ctrl);
 
-int caniot_send_command(struct caniot_controller *ctrl,
-			union deviceid did,
-			struct caniot_command *cmd,
-			caniot_query_callback_t cb,
-			int32_t timeout);
+int caniot_controller_query(struct caniot_controller *controller,
+			    union deviceid did,
+			    struct caniot_frame *frame,
+			    caniot_query_callback_t cb,
+			    int32_t timeout);
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     union deviceid did,
 			     uint8_t ep,
 			     caniot_query_callback_t cb,
 			     int32_t timeout);
+
+int caniot_command(struct caniot_controller *ctrl,
+		   union deviceid did,
+		   uint8_t ep,
+		   uint8_t *buf,
+		   uint8_t len,
+		   caniot_query_callback_t cb,
+		   int32_t timeout);
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
 			  union deviceid did,
@@ -90,6 +98,7 @@ int caniot_discover(struct caniot_controller *ctrl,
 int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 				      struct caniot_frame *frame);
 
+bool caniot_controller_is_target(struct caniot_frame *frame);
 
 /**
  * @brief Check timeouts and receive incoming CANIOT message if any and handle it

@@ -292,11 +292,11 @@ static void pendq_process(struct caniot_controller *ctrl)
 }
 
 // Send query to device and prepare response callback
-static int query_device(struct caniot_controller *controller,
-				   union deviceid did,
-				   struct caniot_frame *frame,
-				   caniot_query_callback_t cb,
-				   int32_t timeout)
+int caniot_controller_query(struct caniot_controller *controller,
+			    union deviceid did,
+			    struct caniot_frame *frame,
+			    caniot_query_callback_t cb,
+			    int32_t timeout)
 {
 	int ret;
 	struct caniot_device_entry *device;
@@ -331,36 +331,83 @@ error:
 	return ret;
 }
 
+static inline int prepare_request_telemetry(struct caniot_frame *frame,
+					    uint8_t ep)
+{
+	if (ep > endpoint_broadcast) {
+		return -CANIOT_EINVAL;
+	}
+
+	frame->id.endpoint = ep;
+	frame->id.type = telemetry;
+	frame->len = 0;
+
+	return 0;
+}
+
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     union deviceid did,
 			     uint8_t ep,
 			     caniot_query_callback_t cb,
 			     int32_t timeout)
 {
-	struct caniot_frame frame = {
-		.id.endpoint = ep,
-		.id.type = telemetry,
-		.len = 0,
-	};
+	int ret;
+	struct caniot_frame frame;
 
-	return query_device(ctrl, did, &frame, cb, timeout);
+	ret = prepare_request_telemetry(&frame, ep);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
 }
 
-int caniot_send_command(struct caniot_controller *ctrl,
-			union deviceid did,
-			struct caniot_command *cmd,
-			caniot_query_callback_t cb,
-			int32_t timeout)
+static inline int prepare_command(struct caniot_frame *frame,
+				  uint8_t ep,
+				  uint8_t *buf,
+				  uint8_t len)
 {
-	struct caniot_frame frame = {
-		.id.type = command,
-		.id.endpoint = cmd->ep,
-		.len = cmd->len,
-	};
+	if (buf == NULL) {
+		return -CANIOT_EINVAL;
+	}
 
-	memcpy(frame.buf, cmd->buf, cmd->len);
+	len = len > sizeof(frame->buf) ? sizeof(frame->buf) : len;
 
-	return query_device(ctrl, did, &frame, cb, timeout);
+	frame->id.endpoint = ep;
+	frame->id.type = command;
+	frame->len = len;
+	memcpy(frame->buf, buf, len);
+
+	return 0;
+}
+
+int caniot_command(struct caniot_controller *ctrl,
+		   union deviceid did,
+		   uint8_t ep,
+		   uint8_t *buf,
+		   uint8_t len,
+		   caniot_query_callback_t cb,
+		   int32_t timeout)
+{
+	int ret;
+	struct caniot_frame frame;
+
+	ret = prepare_command(&frame, ep, buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+}
+
+static inline int prepare_read_attribute(struct caniot_frame *frame,
+					 uint16_t key)
+{
+	frame->id.type = read_attribute;
+	frame->len = 2u;
+	frame->attr.key = key;
+
+	return 0;
 }
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
@@ -369,13 +416,27 @@ int caniot_read_attribute(struct caniot_controller *ctrl,
 			  caniot_query_callback_t cb,
 			  int32_t timeout)
 {
-	struct caniot_frame frame = {
-		.id.type = read_attribute,
-		.len = 2u,
-		.attr.key = key
-	};
+	int ret;
+	struct caniot_frame frame;
 
-	return query_device(ctrl, did, &frame, cb, timeout);
+	ret = prepare_read_attribute(&frame, key);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+}
+
+static inline int prepare_write_attribute(struct caniot_frame *frame,
+					  uint16_t key,
+					  uint32_t value)
+{
+	frame->id.type = write_attribute;
+	frame->len = 6u;
+	frame->attr.key = key;
+	frame->attr.val = value;
+
+	return 0;
 }
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
@@ -385,25 +446,26 @@ int caniot_write_attribute(struct caniot_controller *ctrl,
 			   caniot_query_callback_t cb,
 			   int32_t timeout)
 {
-	struct caniot_frame frame = {
-		.id.type = write_attribute,
-		.len = 6u,
-		.attr.key = key,
-		.attr.val = value
-	};
+	int ret;
+	struct caniot_frame frame;
 
-	return query_device(ctrl, did, &frame, cb, timeout);
+	ret = prepare_write_attribute(&frame, key, value);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
 }
 
 int caniot_discover(struct caniot_controller *ctrl,
 		    caniot_query_callback_t cb,
 		    int32_t timeout)
 {
-	struct caniot_frame frame = {
-		.id.type = telemetry,
-	};
+	struct caniot_frame frame;
 
-	return query_device(ctrl, CANIOT_DEVICE_BROADCAST,
+	prepare_request_telemetry(&frame, endpoint_default);
+
+	return caniot_controller_query(ctrl, CANIOT_DEVICE_BROADCAST,
 				       &frame, cb, timeout);
 }
 
@@ -435,7 +497,7 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	return 0;
 }
 
-static int recv_all(struct caniot_controller *ctrl)
+static int process_incoming_frames(struct caniot_controller *ctrl)
 {
 	int ret;
 	struct caniot_frame frame;
@@ -443,7 +505,8 @@ static int recv_all(struct caniot_controller *ctrl)
 	while (true) {
 		ret = ctrl->driv->recv(&frame);
 		if (ret == 0) {
-			caniot_controller_handle_rx_frame(ctrl, &frame);
+			ret = caniot_controller_handle_rx_frame(ctrl, &frame);
+			printf(F("Processing frame returned: -%04x\n"), -ret);
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {
@@ -456,11 +519,16 @@ static int recv_all(struct caniot_controller *ctrl)
 
 int caniot_controller_process(struct caniot_controller *ctrl)
 {
-	int ret = recv_all(ctrl);
+	int ret = process_incoming_frames(ctrl);
 
 	if (ret == 0) {
 		pendq_process(ctrl);
 	}
 
 	return ret;
+}
+
+bool caniot_controller_is_target(struct caniot_frame *frame)
+{
+	return frame->id.query == response;
 }

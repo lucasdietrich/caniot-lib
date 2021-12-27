@@ -436,7 +436,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 	int ret;
 	struct attr_ref ref;
 
-	CANIOT_LOG(F("Executing read attribute key = 0x%x\n"), key);
+	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), key);
 
 	ret = attr_resolve(key, &ref);
 	if (ret != 0 && ret != -EINVAL) {
@@ -470,7 +470,7 @@ static int handle_write_attribute(struct caniot_device *dev,
 				  struct caniot_frame *resp,
 				  uint16_t key)
 {
-	CANIOT_LOG(F("Executing write attribute key = 0x%x\n"), key);
+	CANIOT_DBG(F("Executing write attribute key = 0x%x\n"), key);
 	return -1;
 }
 
@@ -486,7 +486,7 @@ static int command_resp(struct caniot_device *dev,
 		return -CANIOT_EHANDLERC;
 	}
 
-	CANIOT_LOG(F("Executing command handler (0x%x) for endpoint %d\n"),
+	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
 		   dev->api->command_handler, ep);
 
 	return dev->api->command_handler(dev, ep, req->buf, req->len);
@@ -506,7 +506,7 @@ static int telemetry_resp(struct caniot_device *dev,
 
 	prepare_response(dev, resp, telemetry);
 
-	CANIOT_LOG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
+	CANIOT_DBG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
 		   dev->api->telemetry, ep);
 
 	/* buffer */
@@ -588,7 +588,7 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 		if (dev->config->telemetry.period <= diff) {
 			return 0;
 		} else {
-			return dev->config->telemetry.period - diff;
+			return (dev->config->telemetry.period - diff) * 1000;
 		}
 	}
 
@@ -640,6 +640,8 @@ int caniot_device_process(struct caniot_device *dev)
 	prepare_config_read(dev);
 	if (now - dev->system.last_telemetry >= dev->config->telemetry.period) {
 		dev->flags.request_telemetry = 1;
+
+		CANIOT_DBG(F("Requesting telemetry\n"));
 	}
 
 	/* received any incoming frame */

@@ -103,7 +103,7 @@ struct caniot_api
 		int (*on_read)(struct caniot_device *dev,
 			       struct caniot_config *config);
 
-			       /* called after configuration is updated */
+		/* called after configuration is updated */
 		int (*written)(struct caniot_device *dev,
 			       struct caniot_config *config);
 	} config;

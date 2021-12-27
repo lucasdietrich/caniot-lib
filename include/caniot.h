@@ -49,17 +49,29 @@
 #define CANIOT_DEBUG_LEVEL 4
 #endif
 
-#if CANIOT_DEBUG_LEVEL == 4
-#define CANIOT_LOG(...) printf(__VA_ARGS__)
-#elif CANIOT_DEBUG_LEVEL == 3
-#define CANIOT_LOG(...) printf(__VA_ARGS__)
-#elif CANIOT_DEBUG_LEVEL == 2
-#define CANIOT_LOG(...) printf(__VA_ARGS__)
-#elif CANIOT_DEBUG_LEVEL == 1
-#define CANIOT_LOG(...) printf(__VA_ARGS__)
+#if CANIOT_DEBUG_LEVEL >= 4
+#define CANIOT_DBG(...) printf(__VA_ARGS__)
 #else
-#define CANIOT_LOG(...)
-#endif
+#define CANIOT_DBG(...)
+#endif /* CANIOT_DEBUG_LEVEL >= 4 */
+
+#if CANIOT_DEBUG_LEVEL >= 3
+#define CANIOT_INF(...) printf(__VA_ARGS__)
+#else
+#define CANIOT_INF(...)
+#endif /* CANIOT_DEBUG_LEVEL >= 3 */
+
+#if CANIOT_DEBUG_LEVEL >= 2
+#define CANIOT_WRN(...) printf(__VA_ARGS__)
+#else
+#define CANIOT_WRN(...)
+#endif /* CANIOT_DEBUG_LEVEL >= 2 */
+
+#if CANIOT_DEBUG_LEVEL >= 1
+#define CANIOT_ERR(...) printf(__VA_ARGS__)
+#else
+#define CANIOT_ERR(...)
+#endif /* CANIOT_DEBUG_LEVEL >= 1 */
 
 
 #define CANIOT_VERSION1	1
@@ -84,7 +96,7 @@
 #define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	50
 #define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	1000
 #define CANIOT_TELEMETRY_DELAY_DEFAULT		100
-#define CANIOT_TELEMETRY_PERIOD_DEFAULT		60000
+#define CANIOT_TELEMETRY_PERIOD_DEFAULT		60
 
 #define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	0x00
 
@@ -191,7 +203,7 @@ static inline void caniot_clear_frame(struct caniot_frame *frame)
 	memset(frame, 0x00, sizeof(struct caniot_frame));
 }
 
-static inline bool caniot_is_error(union caniot_id id)
+static inline bool caniot_is_error_frame(union caniot_id id)
 {
 	return (id.query == response) && (id.type == command);
 }
@@ -221,6 +233,11 @@ void caniot_build_query_command(struct caniot_frame *frame,
 				uint8_t endpoint,
 				const uint8_t *buf,
 				uint8_t size);
+
+bool caniot_is_error(int cterr);
+
+void caniot_show_error(int cterr);
+
 
 
 #endif

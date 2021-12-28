@@ -431,14 +431,14 @@ static void prepare_error(struct caniot_device *dev,
 
 static int handle_read_attribute(struct caniot_device *dev,
 				 struct caniot_frame *resp,
-				 uint16_t key)
+				 struct caniot_attribute *attr)
 {
 	int ret;
 	struct attr_ref ref;
 
-	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), key);
+	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), attr->key);
 
-	ret = attr_resolve(key, &ref);
+	ret = attr_resolve(attr->key, &ref);
 	if (ret != 0 && ret != -EINVAL) {
 		goto exit;
 	}
@@ -447,7 +447,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 
 	if (ret == -EINVAL) { /* if custom attribute */
 		if (dev->api->custom_attr.read != NULL) {
-			ret = dev->api->custom_attr.read(dev, key, &resp->attr.val);
+			ret = dev->api->custom_attr.read(dev, attr->key, &resp->attr.val);
 		} else {
 			ret = -CANIOT_ENOTSUP; /* not supported attribute */
 		}
@@ -459,7 +459,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 	/* finalize response */
 	if (ret == 0) {
 		resp->len = 6u;
-		resp->attr.key = key;
+		resp->attr.key = attr->key;
 	}
 
 exit:
@@ -468,9 +468,9 @@ exit:
 
 static int handle_write_attribute(struct caniot_device *dev,
 				  struct caniot_frame *resp,
-				  uint16_t key)
+				  struct caniot_attribute *attr)
 {
-	CANIOT_DBG(F("Executing write attribute key = 0x%x\n"), key);
+	CANIOT_DBG(F("Executing write attribute key = 0x%x\n"), attr->key);
 	return -1;
 }
 
@@ -499,6 +499,11 @@ static int telemetry_resp(struct caniot_device *dev,
 	int ret;
 
 	dev->flags.request_telemetry = 0;
+
+	// What should be the behavior when requesting endpoint "broadcast" ?
+	if (ep >= endpoint_broadcast) {
+		return -CANIOT_EEP;
+	}
 
 	if (dev->api->telemetry == NULL) {
 		return -CANIOT_EHANDLERT;
@@ -546,13 +551,13 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 
 	case write_attribute:
 	{
-		ret = handle_write_attribute(dev, resp, req->attr.key);
+		ret = handle_write_attribute(dev, resp, &req->attr);
 		if (ret != 0) {
 			goto exit;
 		}
 	}
 	case read_attribute:
-		ret = handle_read_attribute(dev, resp, req->attr.key);
+		ret = handle_read_attribute(dev, resp, &req->attr);
 		break;
 	}
 

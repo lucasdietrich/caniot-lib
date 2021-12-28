@@ -1,4 +1,4 @@
-#include "class.h"
+#include "datatype.h"
 
 #include <stdbool.h>
 
@@ -7,7 +7,7 @@ static inline bool is_valid_class(uint8_t class)
 	return class <= 0x7u;
 }
 
-int caniot_class_endpoints_count(uint8_t class)
+int caniot_dt_endpoints_counts(uint8_t class)
 {
 	switch (class) {
 	case 0:
@@ -31,7 +31,7 @@ int caniot_class_endpoints_count(uint8_t class)
 	}
 }
 
-bool caniot_class_valid_endpoint(uint8_t class, uint8_t endpoint)
+bool caniot_dt_valid_endpoint(uint8_t class, uint8_t endpoint)
 {
 	int ret;
 

@@ -1,9 +1,23 @@
 #include "controller.h"
 
-#define pendq caniot_pendq
-#define pqt caniot_pqt
+#ifdef __AVR__
+#include <avr/pgmspace.h>
+#define printf	printf_P
+#define FLASH_STRING(x) PSTR(x)
+#define memcpy_P memcpy_P
+#define ROM	PROGMEM
+#else
+#define printf  printf
+#define FLASH_STRING(x) (x)
+#define memcpy_P memcpy
+#define ROM
+#endif
+#define F(x) FLASH_STRING(x)
 
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
+
+#define pendq caniot_pendq
+#define pqt caniot_pqt
 
 // Get deviceid from frame
 static inline union deviceid get_deviceid(const struct caniot_frame *frame)
@@ -268,21 +282,16 @@ static int pendq_call_expired(struct caniot_controller *controller)
 	return 0;
 }
 
-static uint32_t get_diff_ms(struct caniot_controller *controller)
+static uint32_t process_get_diff_ms(struct caniot_controller *controller)
 {
-	uint32_t sec;
-	uint16_t ms;
-	controller->driv->get_time(&sec, &ms);
+	const uint32_t last_sec = controller->last_process.sec;
+	const uint16_t last_ms = controller->last_process.ms;
 
-	uint32_t diff_ms = (sec - controller->last_process.sec) * 1000;
-	diff_ms += ms;
-	diff_ms -= controller->last_process.ms;
+	controller->driv->get_time(&controller->last_process.sec,
+				   &controller->last_process.ms);
 
-	// TODO move elsewhere
-	controller->last_process.sec = sec;
-	controller->last_process.ms = ms;
-
-	return diff_ms;
+	return (controller->last_process.sec - last_sec) * 1000 +
+		controller->last_process.ms - last_ms;
 }
 
 // Send query to device and prepare response callback
@@ -502,7 +511,12 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 		if (ret == 0) {
 			ret = caniot_controller_handle_rx_frame(ctrl, &frame);
 			
-			CANIOT_DBG(F("Processing incoming frame: -%04x\n"), -ret);
+			if (ret < 0) {
+				CANIOT_ERR(F("Process failed: -%04x\n"), -ret);
+
+				return ret;
+			}
+			
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {
@@ -510,8 +524,11 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 		}
 	}
 
+	// calculate last process time, update and get difference
+
+
 	/* update timeouts */
-	pendq_shift(ctrl, get_diff_ms(ctrl));
+	pendq_shift(ctrl, process_get_diff_ms(ctrl));
 
 	/* call callbacks for expired queries */
 	pendq_call_expired(ctrl);

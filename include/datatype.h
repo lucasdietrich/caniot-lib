@@ -1,5 +1,5 @@
-#ifndef _CANIOT_CLASS_H
-#define _CANIOT_CLASS_H
+#ifndef _CANIOT_DATATYPE_H
+#define _CANIOT_DATATYPE_H
 
 #include "caniot.h"
 
@@ -8,7 +8,7 @@
 /* Data types */
 
 // MASK 0b0000001111111111000000111111111100000011111111111111111111111111
-struct caniot_C0 {
+struct caniot_CRTHP {
 	union {
 		struct {
 			uint8_t c0 : 1;
@@ -49,13 +49,13 @@ struct caniot_C0 {
 #define CANIOT_INTERPRET(buf, s) \
 	((struct s *)buf)
 
-#define CANIOT_INTERPRET_C0(buf) \
-	CANIOT_INTERPRET(buf, caniot_C0)
+#define CANIOT_INTERPRET_CRTHP(buf) \
+	CANIOT_INTERPRET(buf, caniot_CRTHP)
 
-int caniot_class_endpoints_count(uint8_t class);
+int caniot_dt_endpoints_counts(uint8_t class);
 
-bool caniot_class_valid_endpoint(uint8_t class, uint8_t endpoint);
+bool caniot_dt_valid_endpoint(uint8_t class, uint8_t endpoint);
 
 /* Class 0 */
 
-#endif /* _CANIOT_CLASS_H */
+#endif /* _CANIOT_DATATYPE_H */

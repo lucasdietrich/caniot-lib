@@ -2,7 +2,6 @@
 
 #include <errno.h>
 #include <string.h>
-#include <class.h>
 
 #ifdef __AVR__
 #include <avr/pgmspace.h>
@@ -271,17 +270,17 @@ static int attr_resolve(key_t key, struct attr_ref *ref)
 {
 	const struct attr_section *section = attr_get_section(key);
 	if (!section) {
-		return -CANIOT_EKEYSECTION; /* TODO return accurate error CANIOT_EKEYSECTION */
+		return -CANIOT_EKEYSECTION;
 	}
 
 	const struct attribute *attr = attr_get(key, section);
 	if (!attr) {
-		return -CANIOT_EKEYATTR; /* TODO return accurate error CANIOT_EKEYATTR */
+		return -CANIOT_EKEYATTR;
 	}
 
 	uint8_t attr_size = attr_get_size(attr);
 	if (ATTR_KEY_OFFSET(key) >= attr_size) {
-		return -CANIOT_EKEYPART; /* TODO return accurate error CANIOT_EKEYPART */
+		return -CANIOT_EKEYPART;
 	}
 
 	ref->section = ATTR_KEY_SECTION(key);

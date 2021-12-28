@@ -6,10 +6,17 @@
 
 #ifdef __AVR__
 #include <avr/pgmspace.h>
+#define printf	printf_P
+#define FLASH_STRING(x) PSTR(x)
+#define memcpy_P memcpy_P
 #define ROM	PROGMEM
 #else
-#define ROM	
+#define printf  printf
+#define FLASH_STRING(x) (x)
+#define memcpy_P memcpy
+#define ROM
 #endif
+#define F(x) FLASH_STRING(x)
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 

@@ -2,10 +2,17 @@
 
 #ifdef __AVR__
 #include <avr/pgmspace.h>
+#define printf	printf_P
+#define FLASH_STRING(x) PSTR(x)
+#define memcpy_P memcpy_P
 #define ROM	PROGMEM
 #else
-#define ROM	
+#define printf  printf
+#define FLASH_STRING(x) (x)
+#define memcpy_P memcpy
+#define ROM
 #endif
+#define F(x) FLASH_STRING(x)
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -132,10 +139,11 @@ void caniot_show_deviceid(union deviceid did)
 
 void caniot_show_frame(const struct caniot_frame *frame)
 {
-	printf(F("%x [ %x %x %x %x %x %x %x %x] len = %d\n"),
-	       frame->id.raw, frame->buf[0], frame->buf[1],
-	       frame->buf[2], frame->buf[3], frame->buf[4], frame->buf[5],
-	       frame->buf[6], frame->buf[7], frame->len);
+	printf(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
+	       frame->id.raw, (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
+	       (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
+	       (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
+	       (uint8_t)frame->len);
 }
 
 void caniot_explain_id(union caniot_id id)
@@ -157,7 +165,7 @@ void caniot_explain_id(union caniot_id id)
 	printf(F(" / "));
 }
 
-void caniot_explain_frame(struct caniot_frame *frame)
+void caniot_explain_frame(const struct caniot_frame *frame)
 {
 	caniot_explain_id(frame->id);
 
@@ -168,14 +176,12 @@ void caniot_explain_frame(struct caniot_frame *frame)
 
 	if ((frame->id.type == telemetry) || (frame->id.type == command)) {
 		for (int i = 0; i < frame->len; i++) {
-			printf(F("%02hhx "), frame->buf[i]);
+			printf(F("%02hhx "), (uint8_t) frame->buf[i]);
 		}
 	} else {
 		printf(F("LEN = %d, key = %02x val = %04lx"), frame->len,
 		       frame->attr.key, frame->attr.val);
 	}
-
-	printf(F("\n"));
 }
 
 void caniot_build_query_telemetry(struct caniot_frame *frame,
@@ -232,11 +238,15 @@ bool caniot_is_error(int cterr)
 
 void caniot_show_error(int cterr)
 {
-	if (caniot_is_error(cterr) == false) {
+	if (cterr == 0) {
 		return;
 	}
+	
+	if (caniot_is_error(cterr) == false) {
+		printf(F("Error -%04x (%d)\n"), -cterr, cterr);
+	} else {
+		// TODO show error name foreach error
 
-	// TODO show error name foreach error
-
-	printf(F("CANIOT -%04x\n"), -cterr);
+		printf(F("CANIOT -%04x\n"), -cterr);
+	}
 }

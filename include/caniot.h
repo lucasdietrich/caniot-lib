@@ -25,53 +25,41 @@
  */
 #include <stdio.h>
 
-#ifdef __AVR__
-#include <avr/pgmspace.h>
-#define printf	printf_P
-#define FLASH_STRING(x) PSTR(x)
-#define memcpy_P memcpy_P
-#else
-#define printf  printf
-#define FLASH_STRING(x) (x)
-#define memcpy_P memcpy
-#endif
-#define F(x) FLASH_STRING(x)
-
 /* 0 : NO DEBUG
  * 1 : ERR
  * 2 : WRN
  * 3 : INF
  * 4 : DBG
  */
-#ifdef CONFIG_CANIOT_DEBUG_LEVEL
-#define CANIOT_DEBUG_LEVEL CONFIG_CANIOT_DEBUG_LEVEL
+#ifdef CONFIG_CANIOT_LOG_LEVEL
+#define CANIOT_LOG_LEVEL CONFIG_CANIOT_LOG_LEVEL
 #else
-#define CANIOT_DEBUG_LEVEL 4
+#define CANIOT_LOG_LEVEL 4
 #endif
 
-#if CANIOT_DEBUG_LEVEL >= 4
+#if CANIOT_LOG_LEVEL >= 4
 #define CANIOT_DBG(...) printf(__VA_ARGS__)
 #else
 #define CANIOT_DBG(...)
-#endif /* CANIOT_DEBUG_LEVEL >= 4 */
+#endif /* CANIOT_LOG_LEVEL >= 4 */
 
-#if CANIOT_DEBUG_LEVEL >= 3
+#if CANIOT_LOG_LEVEL >= 3
 #define CANIOT_INF(...) printf(__VA_ARGS__)
 #else
 #define CANIOT_INF(...)
-#endif /* CANIOT_DEBUG_LEVEL >= 3 */
+#endif /* CANIOT_LOG_LEVEL >= 3 */
 
-#if CANIOT_DEBUG_LEVEL >= 2
+#if CANIOT_LOG_LEVEL >= 2
 #define CANIOT_WRN(...) printf(__VA_ARGS__)
 #else
 #define CANIOT_WRN(...)
-#endif /* CANIOT_DEBUG_LEVEL >= 2 */
+#endif /* CANIOT_LOG_LEVEL >= 2 */
 
-#if CANIOT_DEBUG_LEVEL >= 1
+#if CANIOT_LOG_LEVEL >= 1
 #define CANIOT_ERR(...) printf(__VA_ARGS__)
 #else
 #define CANIOT_ERR(...)
-#endif /* CANIOT_DEBUG_LEVEL >= 1 */
+#endif /* CANIOT_LOG_LEVEL >= 1 */
 
 
 #define CANIOT_VERSION1	1
@@ -222,7 +210,7 @@ void caniot_show_frame(const struct caniot_frame *frame);
 
 void caniot_explain_id(union caniot_id id);
 
-void caniot_explain_frame(struct caniot_frame *frame);
+void caniot_explain_frame(const struct caniot_frame *frame);
 
 void caniot_build_query_telemetry(struct caniot_frame *frame,
 				 union deviceid did,

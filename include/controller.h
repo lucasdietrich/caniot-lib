@@ -28,8 +28,8 @@ struct caniot_pendq
 	caniot_query_callback_t callback;
 
 	union {
-		struct caniot_pqt tie;
-		struct caniot_pendq *next;
+		struct caniot_pqt tie; /* for timeout queue */
+		struct caniot_pendq *next; /* for memory allocation */
 	};
 };
 
@@ -62,13 +62,13 @@ int caniot_controller_query(struct caniot_controller *controller,
 			    union deviceid did,
 			    struct caniot_frame *frame,
 			    caniot_query_callback_t cb,
-			    int32_t timeout);
+			    uint32_t timeout);
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     union deviceid did,
 			     uint8_t ep,
 			     caniot_query_callback_t cb,
-			     int32_t timeout);
+			     uint32_t timeout);
 
 int caniot_command(struct caniot_controller *ctrl,
 		   union deviceid did,
@@ -76,24 +76,24 @@ int caniot_command(struct caniot_controller *ctrl,
 		   uint8_t *buf,
 		   uint8_t len,
 		   caniot_query_callback_t cb,
-		   int32_t timeout);
+		   uint32_t timeout);
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
 			  union deviceid did,
 			  uint16_t key,
 			  caniot_query_callback_t cb,
-			  int32_t timeout);
+			  uint32_t timeout);
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
 			   union deviceid did,
 			   uint16_t key,
 			   uint32_t value,
 			   caniot_query_callback_t cb,
-			   int32_t timeout);
+			   uint32_t timeout);
 
 int caniot_discover(struct caniot_controller *ctrl,
 		    caniot_query_callback_t cb,
-		    int32_t timeout);
+		    uint32_t timeout);
 
 int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 				      struct caniot_frame *frame);
@@ -108,7 +108,8 @@ bool caniot_controller_is_target(struct caniot_frame *frame);
  * @param ctrl 
  * @return int 
  */
-int caniot_controller_process(struct caniot_controller *ctrl /*,
-			      struct caniot_frame *frame */);
+int caniot_controller_process(struct caniot_controller *ctrl);
+
+// int caniot_debug_pendq(struct caniot_controller *ctrl);
 
 #endif /* _CANIOT_CONTROLLER_H */

@@ -52,7 +52,7 @@ struct caniot_CRTHP {
 #define CANIOT_INTERPRET_CRTHP(buf) \
 	CANIOT_INTERPRET(buf, caniot_CRTHP)
 
-int caniot_dt_endpoints_counts(uint8_t class);
+int caniot_dt_endpoints_count(uint8_t class);
 
 bool caniot_dt_valid_endpoint(uint8_t class, uint8_t endpoint);
 

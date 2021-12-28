@@ -71,9 +71,9 @@
 
 #define CANIOT_ID(t, q, c, d, e) ((t) | (q << 2) | (c << 3) | (d << 6) | (e << 9))
 
-#define CANIOT_CLASS_BROADCAST	0x7
+#define CANIOT_CLASS_BROADCAST	(0x7)
 
-#define CANIOT_DEVICE(class, sub_id)	((union deviceid) { .cls = class, .sid = sub_id })
+#define CANIOT_DEVICE(class_id, sub_id)	((union deviceid) { { .cls = class_id, .sid = sub_id} })
 
 #define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
 
@@ -81,9 +81,12 @@
 
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DEVICE_EQUAL(did, CANIOT_DEVICE_BROADCAST)
 
-#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	50
-#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	1000
-#define CANIOT_TELEMETRY_DELAY_DEFAULT		100
+/* milliseconds */
+#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	0
+#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	100
+#define CANIOT_TELEMETRY_DELAY_DEFAULT		5
+
+/* seconds */
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT		60
 
 #define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	0x00
@@ -168,16 +171,13 @@ struct caniot_drivers_api {
 	 * Return 0 on success, -EAGAIN if no frame is available.
 	 */
 	int (*recv)(struct caniot_frame *frame);
-	
-	/* CAN configuration */
-	// int (*set_filter) (struct caniot_filter *filter);
-	// int (*set_mask) (struct caniot_filter *filter);
 };
 
 // Return if deviceid is valid
 static inline bool caniot_valid_deviceid(union deviceid id)
 {
 	return id.val <= CANIOT_DEVICE_BROADCAST.val;
+
 }
 
 // Return if deviceid is broadcast
@@ -225,7 +225,5 @@ void caniot_build_query_command(struct caniot_frame *frame,
 bool caniot_is_error(int cterr);
 
 void caniot_show_error(int cterr);
-
-
 
 #endif

@@ -5,12 +5,6 @@
 
 #include <stdbool.h>
 
-#define CANIOT_MASK_SELF(cls, dev) CANIOT_ID(0b00, 0b1, 0b111, 0b111, 0b00)
-#define CANIOT_FILTER_SELF(cls, dev) CANIOT_ID(0b00, 0b1, cls, dev, 0b00)
-
-#define CANIOT_MASK_BROADCAST(cls, dev) CANIOT_ID(0b00, 0b1, 0b111, 0b111, 0b00)
-#define CANIOT_FILTER_BROADCAST(cls, dev) CANIOT_ID(0b00, 0b1, cls, 0b111, 0b00)
-
 struct caniot_identification
 {
 	union deviceid did;
@@ -139,6 +133,51 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 union deviceid caniot_device_get_id(struct caniot_device *dev);
 
 uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev);
+
+static inline uint16_t caniot_device_get_mask(void)
+{
+	const union caniot_id mask = {
+		{
+			.type = 0,
+			.query = 1,
+			.cls = 0b111,
+			.sid = 0b111,
+			.endpoint = 0
+		}
+	};
+
+	return mask.raw;
+}
+
+static inline uint16_t caniot_device_get_filter(union deviceid did)
+{
+	const union caniot_id filter = {
+		{
+			.type = 0,
+			.query = query,
+			.cls = did.cls,
+			.sid = did.sid,
+			.endpoint = 0
+		}
+	};
+
+	return filter.raw;
+}
+
+static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
+{
+	const union caniot_id filter = {
+		{
+			.type = 0,
+			.query = query,
+			.cls = did.cls,
+			.sid = 0b111,
+			.endpoint = 0
+		}
+	};
+
+	return filter.raw;
+}
 
 /*___________________________________________________________________________*/
 

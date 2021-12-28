@@ -111,25 +111,25 @@ static const struct attribute identification_attr[] ROM = {
 };
 
 static const struct attribute system_attr[] ROM = {
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "uptime", uptime),
-	ATTRIBUTE(struct caniot_system, WRITABLE, "abstime", abstime),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "calculated_abstime", calculated_abstime),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "uptime_shift", uptime_shift),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_telemetry", last_telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.total", received.total),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.read_attribute", received.read_attribute),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.write_attribute", received.write_attribute),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.command", received.command),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.request_telemetry", received.request_telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.processed", received.processed),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "received.query_failed", received.query_failed),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "sent.total", sent.total),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "sent.telemetry", sent.telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "sent.events", events.total),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_query_error", last_query_error),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_telemetry_error", last_telemetry_error),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "last_event_error", last_event_error), 
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "battery", battery),
+	ATTRIBUTE(struct caniot_system, READABLE, "uptime", uptime),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "abstime", abstime),
+	ATTRIBUTE(struct caniot_system, READABLE, "calculated_abstime", calculated_abstime),
+	ATTRIBUTE(struct caniot_system, READABLE, "uptime_shift", uptime_shift),
+	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry", last_telemetry),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.total", received.total),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.read_attribute", received.read_attribute),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.write_attribute", received.write_attribute),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.command", received.command),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.request_telemetry", received.request_telemetry),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.processed", received.processed),
+	ATTRIBUTE(struct caniot_system, READABLE, "received.query_failed", received.query_failed),
+	ATTRIBUTE(struct caniot_system, READABLE, "sent.total", sent.total),
+	ATTRIBUTE(struct caniot_system, READABLE, "sent.telemetry", sent.telemetry),
+	ATTRIBUTE(struct caniot_system, READABLE, "sent.events", events.total),
+	ATTRIBUTE(struct caniot_system, READABLE, "last_query_error", last_query_error),
+	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry_error", last_telemetry_error),
+	ATTRIBUTE(struct caniot_system, READABLE, "last_event_error", last_event_error), 
+	ATTRIBUTE(struct caniot_system, READABLE, "battery", battery),
 };
 
 static const struct attribute config_attr[] ROM = {
@@ -594,6 +594,8 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 	if (prepare_config_read(dev) == 0) {
 		uint32_t now;
 		dev->driv->get_time(&now, NULL);
+
+		CANIOT_DBG(F("now = %lu last_telemetry = %lu\n"), now, dev->system.last_telemetry);
 		
 		uint32_t diff = now - dev->system.last_telemetry;
 		if (dev->config->telemetry.period <= diff) {

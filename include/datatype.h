@@ -36,14 +36,12 @@ struct caniot_CRTHP {
 		uint8_t relays;
 	};
 	struct {
-		uint16_t temperature: 10;
-	};
-	struct {
+		uint16_t int_temperature: 10;
 		uint16_t humidity: 10;
-	};
-	struct {
 		uint16_t pressure: 10;
+		uint16_t ext_temperature: 10;
 	};
+	uint8_t _unused;
 };
 
 #define CANIOT_INTERPRET(buf, s) \

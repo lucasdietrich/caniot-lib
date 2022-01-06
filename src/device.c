@@ -473,16 +473,15 @@ exit:
 }
 
 static int handle_write_attribute(struct caniot_device *dev,
-				  struct caniot_frame *resp,
+				  struct caniot_frame *req,
 				  struct caniot_attribute *attr)
 {
 	CANIOT_DBG(F("Executing write attribute key = 0x%x\n"), attr->key);
 	return -1;
 }
 
-static int command_resp(struct caniot_device *dev,
-			struct caniot_frame *req,
-			uint8_t ep)
+static int handle_command_req(struct caniot_device *dev,
+			      struct caniot_frame *req)
 {
 	if (req->id.endpoint == endpoint_broadcast) {
 		return -CANIOT_ECMDEP;
@@ -493,12 +492,12 @@ static int command_resp(struct caniot_device *dev,
 	}
 
 	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
-		   dev->api->command_handler, ep);
+		   dev->api->command_handler, req->id.endpoint);
 
-	return dev->api->command_handler(dev, ep, req->buf, req->len);
+	return dev->api->command_handler(dev, req->id.endpoint, req->buf, req->len);
 }
 
-static int telemetry_resp(struct caniot_device *dev,
+static int build_telemetry_resp(struct caniot_device *dev,
 			  struct caniot_frame *resp,
 			  uint8_t ep)
 {
@@ -544,20 +543,20 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	switch (req->id.type) {
 	case command:
 	{
-		ret = command_resp(dev, resp, req->id.endpoint);
+		ret = handle_command_req(dev, req);
 		if (ret != 0) {
 			goto exit;
 		}
 	}
 	case telemetry:
 	{
-		ret = telemetry_resp(dev, resp, req->id.endpoint);
+		ret = build_telemetry_resp(dev, resp, req->id.endpoint);
 		break;
 	}
 
 	case write_attribute:
 	{
-		ret = handle_write_attribute(dev, resp, &req->attr);
+		ret = handle_write_attribute(dev, req, &req->attr);
 		if (ret != 0) {
 			goto exit;
 		}
@@ -668,7 +667,7 @@ int caniot_device_process(struct caniot_device *dev)
 	/* if we didn't received a frame and telemetry is requested */
 	} else if (telemetry_requested(dev)) {
 		/* prepare telemetry response */
-		ret = telemetry_resp(dev, &resp, dev->config->flags.telemetry_endpoint);
+		ret = build_telemetry_resp(dev, &resp, dev->config->flags.telemetry_endpoint);
 	} else {
 		/* next call would block */
 		return -CANIOT_EAGAIN;

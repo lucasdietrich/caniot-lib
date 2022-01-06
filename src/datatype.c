@@ -2,14 +2,17 @@
 
 #include <stdbool.h>
 
-static inline bool is_valid_class(uint8_t class)
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+static inline bool is_valid_class(uint8_t cls)
 {
-	return class <= 0x7u;
+	return cls <= 0x7u;
 }
 
-int caniot_dt_endpoints_count(uint8_t class)
+int caniot_dt_endpoints_count(uint8_t cls)
 {
-	switch (class) {
+	switch (cls) {
 	case 0:
 		return 1;
 	case 1:
@@ -31,13 +34,28 @@ int caniot_dt_endpoints_count(uint8_t class)
 	}
 }
 
-bool caniot_dt_valid_endpoint(uint8_t class, uint8_t endpoint)
+bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint)
 {
 	int ret;
 
-	ret = caniot_dt_endpoints_count(class);
+	ret = caniot_dt_endpoints_count(cls);
 	if (ret < 0)
 		return false;
 	
 	return endpoint < ret;
+}
+
+uint16_t caniot_dt_T16_to_Temp(int16_t T16)
+{
+	T16 /= 10;
+	T16 = MAX(MIN(T16, 720), -280);
+
+	const uint16_t T10 = T16 + 280;
+
+	return T10;
+}
+
+int16_t caniot_dt_Temp_to_T16(uint16_t T)
+{
+	return ((int16_t)T * 10) - 2800;
 }

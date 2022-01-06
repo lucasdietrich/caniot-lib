@@ -7,11 +7,9 @@
 
 /* Data types */
 
-// MASK 0b0000001111111111000000111111111100000011111111111111111111111111
-struct caniot_CRTHP {
+struct caniot_CRTHPT {
 	union {
 		struct {
-			uint8_t c0 : 1;
 			uint8_t c1 : 1;
 			uint8_t c2 : 1;
 			uint8_t c3 : 1;
@@ -19,12 +17,12 @@ struct caniot_CRTHP {
 			uint8_t c5 : 1;
 			uint8_t c6 : 1;
 			uint8_t c7 : 1;
+			uint8_t c8 : 1;
 		};
 		uint8_t contacts;
 	};
 	union {
 		struct {
-			uint8_t r0:1;
 			uint8_t r1:1;
 			uint8_t r2:1;
 			uint8_t r3:1;
@@ -32,6 +30,7 @@ struct caniot_CRTHP {
 			uint8_t r5:1;
 			uint8_t r6:1;
 			uint8_t r7:1;
+			uint8_t r8:1;
 		};
 		uint8_t relays;
 	};
@@ -41,19 +40,27 @@ struct caniot_CRTHP {
 		uint16_t pressure: 10;
 		uint16_t ext_temperature: 10;
 	};
-	uint8_t _unused;
 };
 
 #define CANIOT_INTERPRET(buf, s) \
 	((struct s *)buf)
 
 #define CANIOT_INTERPRET_CRTHP(buf) \
-	CANIOT_INTERPRET(buf, caniot_CRTHP)
+	CANIOT_INTERPRET(buf, caniot_CRTHPT)
 
-int caniot_dt_endpoints_count(uint8_t class);
+#define AS(buf, s) CANIOT_INTERPRET(buf, s)
 
-bool caniot_dt_valid_endpoint(uint8_t class, uint8_t endpoint);
+#define AS_CRTHPT(buf) CANIOT_INTERPRET(buf, caniot_CRTHPT)
 
-/* Class 0 */
+int caniot_dt_endpoints_count(uint8_t cls);
+
+bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint);
+
+/* conversion functions */
+
+uint16_t caniot_dt_T16_to_Temp(int16_t T16);
+
+int16_t caniot_dt_Temp_to_T16(uint16_t T);
+
 
 #endif /* _CANIOT_DATATYPE_H */

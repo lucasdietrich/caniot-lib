@@ -108,6 +108,7 @@ static const struct attribute identification_attr[] ROM = {
 	ATTRIBUTE(struct caniot_identification, READABLE, "nodeid", did),
 	ATTRIBUTE(struct caniot_identification, READABLE, "version", version),
 	ATTRIBUTE(struct caniot_identification, READABLE, "name", name),
+	ATTRIBUTE(struct caniot_identification, READABLE, "magic_number", magic_number),
 };
 
 static const struct attribute system_attr[] ROM = {
@@ -510,6 +511,8 @@ static int build_telemetry_resp(struct caniot_device *dev,
 		return -CANIOT_EEP;
 	}
 
+	/* TODO check endpoint relative to class*/
+
 	if (dev->api->telemetry == NULL) {
 		return -CANIOT_EHANDLERT;
 	}
@@ -524,6 +527,8 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	if (ret == 0) {
 		resp->id.endpoint = ep;
 	}
+
+	/* TODO check and force response length */
 
 	return ret;
 }

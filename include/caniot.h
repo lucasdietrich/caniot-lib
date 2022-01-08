@@ -177,7 +177,6 @@ struct caniot_drivers_api {
 static inline bool caniot_valid_deviceid(union deviceid id)
 {
 	return id.val <= CANIOT_DEVICE_BROADCAST.val;
-
 }
 
 // Return if deviceid is broadcast

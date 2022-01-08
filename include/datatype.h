@@ -7,6 +7,14 @@
 
 /* Data types */
 
+typedef enum
+{
+	CANIOT_LIGHT_CMD_NONE = 0,
+	CANIOT_LIGHT_CMD_ON,
+	CANIOT_LIGHT_CMD_OFF,
+	CANIOT_LIGHT_CMD_TOGGLE,
+} caniot_light_cmd_t;
+
 struct caniot_CRTHPT {
 	union {
 		struct {
@@ -23,22 +31,36 @@ struct caniot_CRTHPT {
 	};
 	union {
 		struct {
-			uint8_t r1:1;
-			uint8_t r2:1;
-			uint8_t r3:1;
-			uint8_t r4:1;
-			uint8_t r5:1;
-			uint8_t r6:1;
-			uint8_t r7:1;
-			uint8_t r8:1;
+			uint8_t r1 : 1;
+			uint8_t r2 : 1;
+			uint8_t r3 : 1;
+			uint8_t r4 : 1;
+			uint8_t r5 : 1;
+			uint8_t r6 : 1;
+			uint8_t r7 : 1;
+			uint8_t r8 : 1;
 		};
 		uint8_t relays;
+		union {
+			struct {
+				caniot_light_cmd_t lights1 : 2;
+				caniot_light_cmd_t lights2 : 2;
+				caniot_light_cmd_t lights3 : 2;
+				caniot_light_cmd_t lights4 : 2;
+			};
+			struct {
+				caniot_light_cmd_t cmd1 : 2;
+				caniot_light_cmd_t cmd2 : 2;
+				caniot_light_cmd_t cmd3 : 2;
+				caniot_light_cmd_t cmd4 : 2;
+			};
+		};
 	};
 	struct {
-		uint16_t int_temperature: 10;
-		uint16_t humidity: 10;
-		uint16_t pressure: 10;
-		uint16_t ext_temperature: 10;
+		uint16_t int_temperature : 10;
+		uint16_t humidity : 10;
+		uint16_t pressure : 10;
+		uint16_t ext_temperature : 10;
 	};
 };
 

@@ -118,7 +118,7 @@ struct caniot_api
 			       uint8_t ep, char *buf,
 			       uint8_t len);
 
-			       /* Build telemetry */
+	/* Build telemetry */
 	int (*telemetry)(struct caniot_device *dev,
 			 uint8_t ep, char *buf,
 			 uint8_t *len);
@@ -204,5 +204,45 @@ int caniot_device_scales_rdmdelay(struct caniot_device *dev,
  * @return int 
  */
 int caniot_device_verify(struct caniot_device *dev);
+
+/*___________________________________________________________________________*/
+
+#define CANIOT_CONFIG_DEFAULT_INIT() \
+{ \
+	.telemetry = { \
+		.period = CANIOT_TELEMETRY_PERIOD_DEFAULT,  \
+		.delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT,  \
+		.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT,  \
+	},  \
+	.flags = { \
+		.error_response = 1u,  \
+		.telemetry_delay_rdm = 1u,  \
+		.telemetry_endpoint = CANIOT_TELEMETRY_ENDPOINT_DEFAULT  \
+	}  \
+}
+
+#define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, ut, attr, attw) \
+{ \
+	.update_time = ut,  \
+	.config = { \
+		.on_read = cfgr,  \
+		.written = cfgw  \
+	},  \
+	.custom_attr = { \
+		.read = attr,  \
+		.write = attw  \
+	},  \
+	.command_handler = cmd,  \
+	.telemetry = tlm  \
+}
+
+#define CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw, ut) \
+	CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, ut, NULL, NULL)
+
+#define CANIOT_API_CFG_INIT(cmd, tlm, cfgr, cfgw) \
+	CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw, NULL)
+
+#define CANIOT_API_MIN_INIT(cmd, tlm) \
+	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)
 
 #endif /* _CANIOT_DEVICE_H */

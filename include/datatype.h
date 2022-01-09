@@ -7,6 +7,19 @@
 
 /* Data types */
 
+/**
+ * @brief Commands for controlling a two state output:
+ * 
+ * Note: TS stands for "TwoState"
+ */
+typedef enum
+{
+	CANIOT_TS_CMD_NONE = 0,
+	CANIOT_TS_CMD_ON,
+	CANIOT_TS_CMD_OFF,
+	CANIOT_TS_CMD_TOGGLE,
+} caniot_twostate_cmd_t;
+
 typedef enum
 {
 	CANIOT_LIGHT_CMD_NONE = 0,

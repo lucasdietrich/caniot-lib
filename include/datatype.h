@@ -97,5 +97,10 @@ uint16_t caniot_dt_T16_to_Temp(int16_t T16);
 
 int16_t caniot_dt_Temp_to_T16(uint16_t T);
 
+/* constants */
+#define CANIOT_DT_T16_INVALID ((int16_t) 32767)
+#define CANIOT_DT_T10_INVALID ((uint16_t) 0x3FFU)
+#define CANIOT_DT_T8_INVALID ((uint8_t) 0xFFU)
+
 
 #endif /* _CANIOT_DATATYPE_H */

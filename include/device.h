@@ -15,10 +15,10 @@ struct caniot_identification
 
 struct caniot_system
 {
-        uint32_t uptime;
-        uint32_t abstime;
-        uint32_t calculated_abstime;
-        uint32_t uptime_shift;
+        uint32_t _unused1;
+        uint32_t time;
+        uint32_t _unused2;
+        uint32_t _unused3;
         uint32_t last_telemetry;
         struct {
                 uint32_t total;
@@ -88,10 +88,6 @@ struct caniot_device
 
 struct caniot_api
 {
-	/* called when time is updated with new time */
-	int (*update_time)(struct caniot_device *dev,
-			   uint32_t ts);
-
 	struct {
 		/* called before configuration will be read */
 		int (*on_read)(struct caniot_device *dev,
@@ -170,7 +166,7 @@ static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
 		{
 			.type = 0,
 			.query = query,
-			.cls = did.cls,
+			.cls = 0b111, /* broadcast is over all classes */
 			.sid = 0b111,
 			.endpoint = 0
 		}
@@ -221,9 +217,8 @@ int caniot_device_verify(struct caniot_device *dev);
 	}  \
 }
 
-#define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, ut, attr, attw) \
+#define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, attr, attw) \
 { \
-	.update_time = ut,  \
 	.config = { \
 		.on_read = cfgr,  \
 		.written = cfgw  \
@@ -236,11 +231,11 @@ int caniot_device_verify(struct caniot_device *dev);
 	.telemetry = tlm  \
 }
 
-#define CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw, ut) \
-	CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, ut, NULL, NULL)
+#define CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw) \
+	CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, NULL, NULL)
 
 #define CANIOT_API_CFG_INIT(cmd, tlm, cfgr, cfgw) \
-	CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw, NULL)
+	CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw)
 
 #define CANIOT_API_MIN_INIT(cmd, tlm) \
 	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)

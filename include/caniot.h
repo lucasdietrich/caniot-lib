@@ -157,7 +157,7 @@ struct caniot_drivers_api {
 	/* util */
 	void (*entropy)(uint8_t *buf, size_t len);
 	void (*get_time)(uint32_t *sec, uint16_t *ms);
-
+	void (*set_time)(uint32_t sec);
 	/**
 	 * @brief Send a CANIOT frame
 	 * 

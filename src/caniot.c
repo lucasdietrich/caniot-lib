@@ -148,6 +148,7 @@ void caniot_show_frame(const struct caniot_frame *frame)
 
 void caniot_explain_id(union caniot_id id)
 {
+	printf(F("[ %x ] "), id.raw);
 	if (caniot_is_error_frame(id)) {
 		printf(F("Error frame "));
 		return;

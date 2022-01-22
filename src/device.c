@@ -110,10 +110,10 @@ static const struct attribute identification_attr[] ROM = {
 };
 
 static const struct attribute system_attr[] ROM = {
-	ATTRIBUTE(struct caniot_system, READABLE, "uptime", uptime),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "abstime", abstime),
-	ATTRIBUTE(struct caniot_system, READABLE, "calculated_abstime", calculated_abstime),
-	ATTRIBUTE(struct caniot_system, READABLE, "uptime_shift", uptime_shift),
+	ATTRIBUTE(struct caniot_system, READABLE, "", _unused1),
+	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "time", time),
+	ATTRIBUTE(struct caniot_system, READABLE, "", _unused2),
+	ATTRIBUTE(struct caniot_system, READABLE, "", _unused3),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry", last_telemetry),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.total", received.total),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.read_attribute", received.read_attribute),
@@ -365,7 +365,6 @@ static int read_config_attr(struct caniot_device *dev,
 	return 0;
 }
 
-
 static int attribute_read(struct caniot_device *dev,
 			  const struct attr_ref *ref,
 			  struct caniot_attribute *attr)
@@ -476,7 +475,21 @@ static int handle_write_attribute(struct caniot_device *dev,
 				  struct caniot_attribute *attr)
 {
 	CANIOT_DBG(F("Executing write attribute key = 0x%x\n"), attr->key);
-	return -1;
+
+	if (attr->key == 0x1010U) {
+		uint32_t prev;
+		dev->driv->get_time(&prev, NULL);
+		dev->driv->set_time(attr->u32);
+
+		/* adjust last_telemetry time, in order to not trigger it on time update */
+		dev->system.last_telemetry += attr->u32 - prev;
+		
+		return 0;
+	}
+
+	CANIOT_ERR(F("handle_write_attribute Not implemeted\n"));
+	
+	return -CANIOT_ENIMPL;
 }
 
 static int handle_command_req(struct caniot_device *dev,
@@ -542,6 +555,8 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		ret = -EINVAL;
 		goto exit;
 	}
+
+	dev->system.received.total++;
 
 	switch (req->id.type) {
 	case command:
@@ -648,12 +663,12 @@ int caniot_device_process(struct caniot_device *dev)
 	struct caniot_frame req, resp;
 
 	/* get current time */
-	uint32_t now;
-	dev->driv->get_time(&now, NULL);
+	dev->driv->get_time(&dev->system.time, NULL);
 
-	/* check if we need to send telemetry */
+	/* check if we need to send telemetry (calculated in seconds) */
 	prepare_config_read(dev);
-	if (now - dev->system.last_telemetry >= dev->config->telemetry.period) {
+	if (dev->system.time - dev->system.last_telemetry >=
+	    dev->config->telemetry.period) {
 		dev->flags.request_telemetry = 1;
 
 		CANIOT_DBG(F("Requesting telemetry\n"));
@@ -687,8 +702,12 @@ int caniot_device_process(struct caniot_device *dev)
 
 	/* send response or error frame if configured */
 	ret = dev->driv->send(&resp, get_response_delay(dev, &resp));
-	if (ret == 0 && is_telemetry_response(&resp)) {
-		dev->system.last_telemetry = now;
+	if (ret == 0) {
+		dev->system.sent.total++;
+
+		if (is_telemetry_response(&resp) == true) {
+			dev->system.last_telemetry = dev->system.time;
+		}
 	}
 
 exit:

@@ -481,8 +481,16 @@ static int handle_write_attribute(struct caniot_device *dev,
 		dev->driv->get_time(&prev, NULL);
 		dev->driv->set_time(attr->u32);
 
-		/* adjust last_telemetry time, in order to not trigger it on time update */
+		/* adjust last_telemetry time, 
+		 * in order to not trigger it on time update
+		 */
 		dev->system.last_telemetry += attr->u32 - prev;
+
+		/* sets the system time for the current loop, 
+		 * the response to reading an attribute will 
+		 * send the value acknowledgement.
+		 */
+		dev->system.time = attr->u32; 
 		
 		return 0;
 	}

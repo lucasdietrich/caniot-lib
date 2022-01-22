@@ -476,6 +476,7 @@ static int handle_write_attribute(struct caniot_device *dev,
 {
 	CANIOT_DBG(F("Executing write attribute key = 0x%x\n"), attr->key);
 
+#if CANIOT_DRIVERS_API
 	if (attr->key == 0x1010U) {
 		uint32_t prev;
 		dev->driv->get_time(&prev, NULL);
@@ -494,6 +495,7 @@ static int handle_write_attribute(struct caniot_device *dev,
 		
 		return 0;
 	}
+#endif 
 
 	CANIOT_ERR(F("handle_write_attribute Not implemeted\n"));
 	

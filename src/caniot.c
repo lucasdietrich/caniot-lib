@@ -129,8 +129,8 @@ void caniot_show_deviceid(union deviceid did)
 			cls[2] = '\0';
 			sid[2] = '\0';
 
-			printf(F("0x%02x (cls=%s sid=%s)"),
-			       did.val, cls, sid);
+			printf(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+			       did.val, did.val, cls, sid);
 		}
 	} else {
 		printf(F("invalid did"));

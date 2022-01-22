@@ -61,12 +61,12 @@ struct caniot_config
 	} flags;
 };
 
-struct caniot_scheduled
-{
-        uint8_t days;
-        uint8_t time;
-        uint32_t command;
-};
+// struct caniot_scheduled
+// {
+//         uint8_t days;
+//         uint8_t time;
+//         uint32_t command;
+// };
 
 struct caniot_device
 {

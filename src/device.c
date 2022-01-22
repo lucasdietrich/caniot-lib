@@ -75,13 +75,13 @@ struct attribute
 	uint8_t offset;
 	uint8_t size;
 	uint8_t option;
-	char name[32];
+	// char name[32];
 };
 
 struct attr_section
 {
 	enum section_option option;
-	char name[16];
+	// char name[16];
 	const struct attribute *array;
 	uint8_t array_size;
 };
@@ -93,13 +93,11 @@ struct attr_section
         (uint8_t) offsetof(s, param),       	\
             (uint8_t)MEMBER_SIZEOF(s, param),   \
             (uint8_t)rw,   			\
-            name                                \
     }
 
 #define SECTION(options, name, array) \
     {                                 \
         options,                      \
-            name,                     \
             array,                    \
             ARRAY_SIZE(array)         \
     }
@@ -126,7 +124,7 @@ static const struct attribute system_attr[] ROM = {
 	ATTRIBUTE(struct caniot_system, READABLE, "received.query_failed", received.query_failed),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.total", sent.total),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.telemetry", sent.telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE, "sent.events", events.total),
+	ATTRIBUTE(struct caniot_system, READABLE, "events.total", events.total),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_query_error", last_query_error),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry_error", last_telemetry_error),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_event_error", last_event_error), 
@@ -138,7 +136,7 @@ static const struct attribute config_attr[] ROM = {
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay", telemetry.delay),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay_min", telemetry.delay_min),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay_max", telemetry.delay_max),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.flags", flags),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "flags", flags),
 };
 
 static const struct attr_section attr_sections[] ROM = {

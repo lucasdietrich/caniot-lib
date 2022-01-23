@@ -17,8 +17,8 @@ struct caniot_system
 {
         uint32_t _unused1;
         uint32_t time;
-        uint32_t _unused2;
-        uint32_t _unused3;
+        uint32_t uptime;
+        uint32_t start_time;
         uint32_t last_telemetry;
         struct {
                 uint32_t total;
@@ -37,10 +37,10 @@ struct caniot_system
                 uint32_t total;
 
         } events;
-        int32_t last_query_error;
-        int32_t last_telemetry_error;
-        int32_t last_event_error;
-        int32_t battery;
+        int16_t last_query_error;
+        int16_t last_telemetry_error;
+        int16_t last_event_error;
+        uint8_t battery;
 };
 
 struct caniot_config
@@ -59,6 +59,13 @@ struct caniot_config
 		uint8_t telemetry_delay_rdm: 1;
 		uint8_t telemetry_endpoint: 2;
 	} flags;
+
+	int32_t timezone;
+
+	struct {
+		char region[2];
+		char country[2];
+	} location;
 };
 
 // struct caniot_scheduled
@@ -94,7 +101,7 @@ struct caniot_api
 			       struct caniot_config *config);
 
 		/* called after configuration is updated */
-		int (*written)(struct caniot_device *dev,
+		int (*on_write)(struct caniot_device *dev,
 			       struct caniot_config *config);
 	} config;
 
@@ -177,6 +184,8 @@ static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
 
 /*___________________________________________________________________________*/
 
+void caniot_device_init(struct caniot_device *dev);
+
 /**
  * @brief Receive incoming CANIOT message if any and handle it
  * 
@@ -214,14 +223,19 @@ int caniot_device_verify(struct caniot_device *dev);
 		.error_response = 1u,  \
 		.telemetry_delay_rdm = 1u,  \
 		.telemetry_endpoint = CANIOT_TELEMETRY_ENDPOINT_DEFAULT  \
-	}  \
+	},  \
+	.timezone = CANIOT_TIMEZONE_DEFAULT,  \
+	.location = { \
+		.region = CANIOT_LOCATION_REGION_DEFAULT,  \
+		.country = CANIOT_LOCATION_COUNTRY_DEFAULT,  \
+	},  \
 }
 
 #define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, attr, attw) \
 { \
 	.config = { \
 		.on_read = cfgr,  \
-		.written = cfgw  \
+		.on_write = cfgw  \
 	},  \
 	.custom_attr = { \
 		.read = attr,  \

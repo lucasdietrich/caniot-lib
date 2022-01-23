@@ -14,53 +14,6 @@
 #define CANIOT_DRIVERS_API 0
 #endif /* CONFIG_CANIOT_DRIVERS_API */
 
-/**
- * @brief Helper for printing strings :
- * 
- * printf(F("Hello %d\n"), 42);
- * 
- * Equivalent to :
- * - AVR : printf_P(PSTR("Hello %d\n"), 42);
- * - ARM/x86/any : printf("Hello %d\n", 42);
- */
-#include <stdio.h>
-
-/* 0 : NO DEBUG
- * 1 : ERR
- * 2 : WRN
- * 3 : INF
- * 4 : DBG
- */
-#ifdef CONFIG_CANIOT_LOG_LEVEL
-#define CANIOT_LOG_LEVEL CONFIG_CANIOT_LOG_LEVEL
-#else
-#define CANIOT_LOG_LEVEL 4
-#endif
-
-#if CANIOT_LOG_LEVEL >= 4
-#define CANIOT_DBG(...) printf(__VA_ARGS__)
-#else
-#define CANIOT_DBG(...)
-#endif /* CANIOT_LOG_LEVEL >= 4 */
-
-#if CANIOT_LOG_LEVEL >= 3
-#define CANIOT_INF(...) printf(__VA_ARGS__)
-#else
-#define CANIOT_INF(...)
-#endif /* CANIOT_LOG_LEVEL >= 3 */
-
-#if CANIOT_LOG_LEVEL >= 2
-#define CANIOT_WRN(...) printf(__VA_ARGS__)
-#else
-#define CANIOT_WRN(...)
-#endif /* CANIOT_LOG_LEVEL >= 2 */
-
-#if CANIOT_LOG_LEVEL >= 1
-#define CANIOT_ERR(...) printf(__VA_ARGS__)
-#else
-#define CANIOT_ERR(...)
-#endif /* CANIOT_LOG_LEVEL >= 1 */
-
 
 #define CANIOT_VERSION1	1
 #define CANIOT_VERSION2 2
@@ -90,6 +43,11 @@
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT		60
 
 #define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	0x00
+
+#define CANIOT_TIMEZONE_DEFAULT			3600
+#define CANIOT_LOCATION_REGION_DEFAULT		{'E', 'U'}
+#define CANIOT_LOCATION_COUNTRY_DEFAULT		{'F', 'R'}
+
 
 union deviceid {
 	struct {

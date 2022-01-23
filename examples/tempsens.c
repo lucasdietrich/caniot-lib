@@ -44,7 +44,7 @@ static const struct caniot_api tempsens_api = {
 	},
 	.config = {
 		.on_read = NULL,
-		.written = NULL,
+		.on_write = NULL,
 	},
 };
 

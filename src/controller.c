@@ -1,20 +1,6 @@
 #include "controller.h"
 
-#ifdef __AVR__
-#include <avr/pgmspace.h>
-#define printf	printf_P
-#define FLASH_STRING(x) PSTR(x)
-#define memcpy_P memcpy_P
-#define ROM	PROGMEM
-#else
-#define printf  printf
-#define FLASH_STRING(x) (x)
-#define memcpy_P memcpy
-#define ROM
-#endif
-#define F(x) FLASH_STRING(x)
-
-#define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
+#include "archutils.h"
 
 #define pendq caniot_pendq
 #define pqt caniot_pqt

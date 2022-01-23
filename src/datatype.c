@@ -1,9 +1,8 @@
 #include "datatype.h"
 
-#include <stdbool.h>
+#include "archutils.h"
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#include <stdbool.h>
 
 static inline bool is_valid_class(uint8_t cls)
 {

@@ -106,14 +106,14 @@ static const struct attribute system_attr[] ROM = {
 	ATTRIBUTE(struct caniot_system, READABLE, "received.write_attribute", received.write_attribute),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.command", received.command),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.request_telemetry", received.request_telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE, "received.processed", received.processed),
-	ATTRIBUTE(struct caniot_system, READABLE, "received.query_failed", received.query_failed),
+	ATTRIBUTE(struct caniot_system, READABLE, "", received._unused2),
+	ATTRIBUTE(struct caniot_system, READABLE, "", received._unused3),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.total", sent.total),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.telemetry", sent.telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE, "events.total", events.total),
-	ATTRIBUTE(struct caniot_system, READABLE, "last_query_error", last_query_error),
+	ATTRIBUTE(struct caniot_system, READABLE, "", _unused4),
+	ATTRIBUTE(struct caniot_system, READABLE, "last_command_error", last_command_error),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry_error", last_telemetry_error),
-	ATTRIBUTE(struct caniot_system, READABLE, "last_event_error", last_event_error), 
+	ATTRIBUTE(struct caniot_system, READABLE, "", _unused5), 
 	ATTRIBUTE(struct caniot_system, READABLE, "battery", battery),
 };
 
@@ -577,7 +577,10 @@ static int handle_command_req(struct caniot_device *dev,
 	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
 		   dev->api->command_handler, req->id.endpoint);
 
-	return dev->api->command_handler(dev, req->id.endpoint, req->buf, req->len);
+	const int ret = dev->api->command_handler(dev, req->id.endpoint,
+						  req->buf, req->len);
+	dev->system.last_command_error = ret;
+	return ret;
 }
 
 static int build_telemetry_resp(struct caniot_device *dev,
@@ -610,6 +613,9 @@ static int build_telemetry_resp(struct caniot_device *dev,
 		resp->id.endpoint = ep;
 	}
 
+	dev->system.sent.telemetry++;
+	dev->system.last_telemetry_error = ret;
+
 	/* TODO check and force response length */
 
 	return ret;
@@ -634,9 +640,10 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	{
 		dev->system.received.command++;
 		ret = handle_command_req(dev, req);
-		if (ret != 0) {
-			goto exit;
+		if (ret == 0) {
+			ret = build_telemetry_resp(dev, resp, req->id.endpoint);
 		}
+		break;
 	}
 	case telemetry:
 	{
@@ -650,8 +657,9 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		dev->system.received.write_attribute++;
 		ret = handle_write_attribute(dev, req, &req->attr);
 		if (ret != 0) {
-			goto exit;
+			ret = handle_read_attribute(dev, resp, &req->attr);
 		}
+		break;
 	}
 	case read_attribute:
 		dev->system.received.read_attribute++;

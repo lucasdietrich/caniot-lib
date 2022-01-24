@@ -26,20 +26,17 @@ struct caniot_system
                 uint32_t write_attribute;
                 uint32_t command;
                 uint32_t request_telemetry;
-                uint32_t processed;
-                uint32_t query_failed;
+                uint32_t _unused2;
+                uint32_t _unused3;
         } received;
         struct {
                 uint32_t total;
                 uint32_t telemetry;
         } sent;
-        struct {
-                uint32_t total;
-
-        } events;
-        int16_t last_query_error;
+        uint32_t _unused4;
+        int16_t last_command_error;
         int16_t last_telemetry_error;
-        int16_t last_event_error;
+        int16_t _unused5;
         uint8_t battery;
 };
 

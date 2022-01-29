@@ -7,6 +7,12 @@
 
 /* Data types */
 
+typedef enum 
+{
+	CANIOT_OS_CMD_NONE = 0,
+	CANIOT_OS_CMD_SET
+} caniot_onestate_cmd_t;
+
 /**
  * @brief Commands for controlling a two state output:
  * 
@@ -27,6 +33,15 @@ typedef enum
 	CANIOT_LIGHT_CMD_OFF,
 	CANIOT_LIGHT_CMD_TOGGLE,
 } caniot_light_cmd_t;
+
+struct caniot_control_cmd
+{
+	struct {
+		caniot_onestate_cmd_t reset: 1;
+		caniot_twostate_cmd_t watchdog: 2;
+		uint8_t _unused: 7;
+	};
+};
 
 struct caniot_CRTHPT {
 	union {
@@ -86,6 +101,7 @@ struct caniot_CRTHPT {
 #define AS(buf, s) CANIOT_INTERPRET(buf, s)
 
 #define AS_CRTHPT(buf) CANIOT_INTERPRET(buf, caniot_CRTHPT)
+#define AS_CONTROL_CMD(buf) CANIOT_INTERPRET(buf, caniot_control_cmd)
 
 int caniot_dt_endpoints_count(uint8_t cls);
 

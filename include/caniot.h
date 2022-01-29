@@ -59,7 +59,7 @@ union deviceid {
 
 enum { command = 0, telemetry = 1, write_attribute = 2, read_attribute = 3 };
 enum { query = 0, response = 1 };
-enum { endpoint_default = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_broadcast = 3 };
+enum { endpoint_default = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_control = 3 };
 
 struct caniot_data
 {

@@ -90,6 +90,18 @@ struct caniot_device
 	} flags;
 };
 
+typedef int (caniot_telemetry_handler_t)(struct caniot_device *dev,
+					  uint8_t ep, char *buf,
+					  uint8_t *len);
+
+typedef int (caniot_control_handler_t)(struct caniot_device *dev,
+				       char *buf,
+				       uint8_t len);
+
+typedef int (caniot_command_handler_t)(struct caniot_device *dev,
+					uint8_t ep, char *buf,
+					uint8_t len);
+
 struct caniot_api
 {
 	struct {
@@ -114,14 +126,14 @@ struct caniot_api
 	} custom_attr;
 
 	/* Handle command */
-	int (*command_handler)(struct caniot_device *dev,
-			       uint8_t ep, char *buf,
-			       uint8_t len);
+	caniot_command_handler_t *command_handler;
+
+	/* Handle control command (EP-C/3) */
+	caniot_control_handler_t *control_handler;
 
 	/* Build telemetry */
-	int (*telemetry)(struct caniot_device *dev,
-			 uint8_t ep, char *buf,
-			 uint8_t *len);
+	caniot_telemetry_handler_t *telemetry_handler;
+
 };
 
 void caniot_print_device_identification(const struct caniot_device *dev);
@@ -228,7 +240,7 @@ int caniot_device_verify(struct caniot_device *dev);
 	},  \
 }
 
-#define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, attr, attw) \
+#define CANIOT_API_FULL_INIT(cmd, tlm, ctrl, cfgr, cfgw, attr, attw) \
 { \
 	.config = { \
 		.on_read = cfgr,  \
@@ -239,16 +251,17 @@ int caniot_device_verify(struct caniot_device *dev);
 		.write = attw  \
 	},  \
 	.command_handler = cmd,  \
-	.telemetry = tlm  \
+	.control_handler = ctrl, \
+	.telemetry_handler = tlm  \
 }
 
-#define CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw) \
-	CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, NULL, NULL)
+#define CANIOT_API_STD_INIT(cmd, tlm, ctrl, cfgr, cfgw) \
+	CANIOT_API_FULL_INIT(cmd, tlm, ctrl, cfgr, cfgw, NULL, NULL)
 
-#define CANIOT_API_CFG_INIT(cmd, tlm, cfgr, cfgw) \
-	CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw)
+#define CANIOT_API_CFG_INIT(cmd, tlm, ctrl, cfgr, cfgw) \
+	CANIOT_API_STD_INIT(cmd, tlm, ctrl, cfgr, cfgw)
 
-#define CANIOT_API_MIN_INIT(cmd, tlm) \
-	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)
+#define CANIOT_API_MIN_INIT(cmd, tlm, ctrl) \
+	CANIOT_API_CFG_INIT(cmd, tlm, ctrl, NULL, NULL)
 
 #endif /* _CANIOT_DEVICE_H */

@@ -331,12 +331,35 @@ static int prepare_config_read(struct caniot_device *dev)
 
 static int config_written(struct caniot_device *dev)
 {
+	int ret = 0;
+
+	// useless 
+
 	/* local configuration in RAM should be updated */
 	if (dev->api->config.on_write != NULL) {
-		return dev->api->config.on_write(dev, dev->config);
+		/* we update the last telemetry time which could
+		 * have changed if the timezone changed
+		 */
+		uint32_t prev, new;
+		dev->driv->get_time(&prev, NULL);
+
+		/* call application callback to apply the new configuration */
+		ret = dev->api->config.on_write(dev, dev->config);
+		
+		/* do adjustement if needed */	
+		dev->driv->get_time(&new, NULL);
+		if (new != prev) {
+			const int32_t diff = new - prev;
+
+			/* adjust last_telemetry time,
+			 * in order to not trigger it on time update
+			 */
+			dev->system.last_telemetry += diff;
+			dev->system.start_time += diff;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int read_config_attr(struct caniot_device *dev,
@@ -566,20 +589,29 @@ exit:
 static int handle_command_req(struct caniot_device *dev,
 			      struct caniot_frame *req)
 {
-	if (req->id.endpoint == endpoint_broadcast) {
-		return -CANIOT_ECMDEP;
-	}
-
-	if (dev->api->command_handler == NULL) {
-		return -CANIOT_EHANDLERC;
-	}
+	int ret;
+	const uint8_t ep = req->id.endpoint;
 
 	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
-		   dev->api->command_handler, req->id.endpoint);
+		   dev->api->command_handler, ep);
 
-	const int ret = dev->api->command_handler(dev, req->id.endpoint,
-						  req->buf, req->len);
+	/* if control endpoint */
+	if (ep == endpoint_control) {
+		if (dev->api->control_handler != NULL) {
+			ret = dev->api->control_handler(dev, req->buf, req->len);
+		} else {
+			ret = -CANIOT_EHDLRCTRL;
+		}
+	} else { /* endpoints 0, 1, 2 */
+		if (dev->api->command_handler != NULL) {
+			ret = dev->api->command_handler(dev, ep, req->buf, req->len);
+		} else {
+			ret = -CANIOT_EHANDLERC;
+		}
+	}
+
 	dev->system.last_command_error = ret;
+
 	return ret;
 }
 
@@ -591,14 +623,9 @@ static int build_telemetry_resp(struct caniot_device *dev,
 
 	dev->flags.request_telemetry = 0;
 
-	// What should be the behavior when requesting endpoint "broadcast" ?
-	if (ep >= endpoint_broadcast) {
-		return -CANIOT_EEP;
-	}
-
 	/* TODO check endpoint relative to class*/
 
-	if (dev->api->telemetry == NULL) {
+	if (dev->api->telemetry_handler == NULL) {
 		return -CANIOT_EHANDLERT;
 	}
 
@@ -608,7 +635,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 		   dev->api->telemetry, ep);
 
 	/* buffer */
-	ret = dev->api->telemetry(dev, ep, resp->buf, &resp->len);
+	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
 	if (ret == 0) {
 		resp->id.endpoint = ep;
 	}
@@ -656,7 +683,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	{
 		dev->system.received.write_attribute++;
 		ret = handle_write_attribute(dev, req, &req->attr);
-		if (ret != 0) {
+		if (ret == 0) {
 			ret = handle_read_attribute(dev, resp, &req->attr);
 		}
 		break;

@@ -94,8 +94,8 @@ static const char *get_endpoint_str(uint8_t endpoint)
 		return F("ep-1");
 	case endpoint_2:
 		return F("ep-2");
-	case endpoint_broadcast:
-		return F("ep-broadcast");
+	case endpoint_control:
+		return F("ep-c");
 	default:
 		return get_unknown();
 	}

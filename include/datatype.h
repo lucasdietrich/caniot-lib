@@ -37,9 +37,25 @@ typedef enum
 struct caniot_control_cmd
 {
 	struct {
+		/* in the case of the AVR, proper software reset should use the watchdog :
+		 * https://www.avrfreaks.net/comment/178013#comment-178013
+		 */
+
+		/* Default reset function (Recommended). Can be linked to Watchdog reset if 
+		 * using the watchdog is recommanded for a proper MCU reset.
+		 */
 		caniot_onestate_cmd_t reset: 1;
+
+		/* Software reset by calling reset vector */
+		caniot_onestate_cmd_t software_reset: 1;
+
+		/* Reset by forcing the watchdog to timeout */
+		caniot_onestate_cmd_t watchdog_reset: 1;
+
+		/* Enable/disable the watchdog */
 		caniot_twostate_cmd_t watchdog: 2;
-		uint8_t _unused: 7;
+		
+		uint8_t _unused: 3;
 	};
 };
 

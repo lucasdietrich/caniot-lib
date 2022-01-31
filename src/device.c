@@ -96,7 +96,7 @@ static const struct attribute identification_attr[] ROM = {
 };
 
 static const struct attribute system_attr[] ROM = {
-	ATTRIBUTE(struct caniot_system, READABLE, "", _unused1),
+	ATTRIBUTE(struct caniot_system, READABLE, "uptime_synced", uptime_synced),
 	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "time", time),
 	ATTRIBUTE(struct caniot_system, READABLE, "uptime", uptime),
 	ATTRIBUTE(struct caniot_system, READABLE, "start_time", start_time),
@@ -515,6 +515,9 @@ static int write_system_attr(struct caniot_device *dev,
 		 * send the value acknowledgement.
 		 */
 		dev->system.time = attr->u32;
+	
+		/* last uptime when the UNIX time was set */
+		dev->system.uptime_synced = attr->u32 - dev->system.start_time;
 
 		return 0;
 	}
@@ -711,6 +714,11 @@ bool caniot_device_is_target(union deviceid did,
 int caniot_device_verify(struct caniot_device *dev)
 {
 	return -CANIOT_ENIMPL;
+}
+
+bool caniot_device_time_synced(struct caniot_device *dev)
+{
+	return dev->system.uptime_synced != 0;
 }
 
 /*___________________________________________________________________________*/

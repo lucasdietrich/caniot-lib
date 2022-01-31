@@ -15,7 +15,7 @@ struct caniot_identification
 
 struct caniot_system
 {
-        uint32_t _unused1;
+        uint32_t uptime_synced;
         uint32_t time;
         uint32_t uptime;
         uint32_t start_time;
@@ -208,6 +208,8 @@ bool caniot_device_is_target(union deviceid did,
 
 int caniot_device_scales_rdmdelay(struct caniot_device *dev,
 				  uint32_t *rdmdelay);
+
+bool caniot_device_time_synced(struct caniot_device *dev);
 
 /*___________________________________________________________________________*/
 

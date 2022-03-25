@@ -42,7 +42,7 @@
 /* seconds */
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT		60
 
-#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	0x00
+#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	endpoint_app
 
 #define CANIOT_TIMEZONE_DEFAULT			3600
 #define CANIOT_LOCATION_REGION_DEFAULT		{'E', 'U'}
@@ -59,7 +59,7 @@ union deviceid {
 
 enum { command = 0, telemetry = 1, write_attribute = 2, read_attribute = 3 };
 enum { query = 0, response = 1 };
-enum { endpoint_default = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_control = 3 };
+enum { endpoint_app = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_board_control = 3 };
 
 struct caniot_data
 {

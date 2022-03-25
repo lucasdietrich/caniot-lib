@@ -324,7 +324,7 @@ static inline int prepare_request_telemetry(struct caniot_frame *frame,
 					    uint8_t ep)
 {
 	// Can we request telemetry broadcast ? would say no
-	if (ep > endpoint_control) {
+	if (ep > endpoint_board_control) {
 		return -CANIOT_EEP;
 	}
 
@@ -453,7 +453,7 @@ int caniot_discover(struct caniot_controller *ctrl,
 {
 	struct caniot_frame frame;
 
-	prepare_request_telemetry(&frame, endpoint_default);
+	prepare_request_telemetry(&frame, endpoint_app);
 
 	return caniot_controller_query(ctrl, CANIOT_DEVICE_BROADCAST,
 				       &frame, cb, timeout);

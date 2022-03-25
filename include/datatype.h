@@ -7,10 +7,16 @@
 
 /* Data types */
 
+typedef enum
+{
+	CANIOT_STATE_OFF = 0,
+	CANIOT_STATE_ON
+} caniot_state_t;
+
 typedef enum 
 {
-	CANIOT_OS_CMD_NONE = 0,
-	CANIOT_OS_CMD_SET
+	CANIOT_SS_CMD_RESET = 0,
+	CANIOT_SS_CMD_SET
 } caniot_onestate_cmd_t;
 
 /**
@@ -34,29 +40,63 @@ typedef enum
 	CANIOT_LIGHT_CMD_TOGGLE,
 } caniot_light_cmd_t;
 
-struct caniot_control_cmd
+typedef enum {
+	CANIOT_PHYS_HYSTERESIS_UNDEF = 0,
+	CANIOT_PHYS_HYSTERESIS_LOW,
+	CANIOT_PHYS_HYSTERESIS_HIGH,
+} caniot_phys_hysteresis_state_t;
+
+struct caniot_board_control_telemetry
 {
-	struct {
-		/* in the case of the AVR, proper software reset should use the watchdog :
-		 * https://www.avrfreaks.net/comment/178013#comment-178013
-		 */
+	uint8_t r1 : 1;
+	uint8_t _unused1 : 1;
+	uint8_t r2 : 1;
+	uint8_t _unused2 : 1;
+	uint8_t oc1 : 1;
+	uint8_t _unused3 : 1;
+	uint8_t oc2 : 1;
+	uint8_t _unused4 : 1;
+	uint8_t in1 : 1;
+	uint8_t _unused5 : 1;
+	uint8_t in2 : 1;
+	uint8_t _unused6 : 1;
+	uint8_t in3 : 1;
+	uint8_t _unused7 : 1;
+	uint8_t in4 : 1;
+	uint8_t _unused8 : 1;
 
-		/* Default reset function (Recommended). Can be linked to Watchdog reset if 
-		 * using the watchdog is recommanded for a proper MCU reset.
-		 */
-		caniot_onestate_cmd_t reset: 1;
+	uint16_t int_temperature : 10;
+	uint16_t ext_temperature : 10;
+};
 
-		/* Software reset by calling reset vector */
-		caniot_onestate_cmd_t software_reset: 1;
+struct caniot_board_control_command
+{
+	caniot_twostate_cmd_t r1 : 2;
+	caniot_twostate_cmd_t r2 : 2;
+	caniot_twostate_cmd_t oc1 : 2;
+	caniot_twostate_cmd_t oc2 : 2;
 
-		/* Reset by forcing the watchdog to timeout */
-		caniot_onestate_cmd_t watchdog_reset: 1;
+	uint8_t _unused9[6];
 
-		/* Enable/disable the watchdog */
-		caniot_twostate_cmd_t watchdog: 2;
-		
-		uint8_t _unused: 3;
-	};
+	/* in the case of the AVR, proper software reset should use the watchdog :
+	* https://www.avrfreaks.net/comment/178013#comment-178013
+	*/
+
+	/* Default reset function (Recommended). Can be linked to Watchdog reset if
+	* using the watchdog is recommanded for a proper MCU reset.
+	*/
+	caniot_onestate_cmd_t reset : 1;
+
+	/* Software reset by calling reset vector */
+	caniot_onestate_cmd_t software_reset : 1;
+
+	/* Reset by forcing the watchdog to timeout */
+	caniot_onestate_cmd_t watchdog_reset : 1;
+
+	/* Enable/disable the watchdog */
+	caniot_twostate_cmd_t watchdog : 2;
+
+	uint8_t _unused10 : 3;
 };
 
 struct caniot_CRTHPT {
@@ -117,7 +157,8 @@ struct caniot_CRTHPT {
 #define AS(buf, s) CANIOT_INTERPRET(buf, s)
 
 #define AS_CRTHPT(buf) CANIOT_INTERPRET(buf, caniot_CRTHPT)
-#define AS_CONTROL_CMD(buf) CANIOT_INTERPRET(buf, caniot_control_cmd)
+#define AS_BOARD_CONTROL_CMD(buf) CANIOT_INTERPRET(buf, caniot_board_control_command)
+#define AS_BOARD_CONTROL_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_board_control_telemetry)
 
 int caniot_dt_endpoints_count(uint8_t cls);
 

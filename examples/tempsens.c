@@ -14,7 +14,7 @@ static int update_time(struct caniot_device *dev, uint32_t ts) {
 
 static int tmp_command(struct caniot_device *dev, uint8_t ep, char *buf, uint8_t len)
 {
-	if (ep != endpoint_default) {
+	if (ep != endpoint_app) {
 		return -CANIOT_EEP;
 	}
 	

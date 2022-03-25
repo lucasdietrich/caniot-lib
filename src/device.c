@@ -598,19 +598,10 @@ static int handle_command_req(struct caniot_device *dev,
 	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
 		   dev->api->command_handler, ep);
 
-	/* if control endpoint */
-	if (ep == endpoint_control) {
-		if (dev->api->control_handler != NULL) {
-			ret = dev->api->control_handler(dev, req->buf, req->len);
-		} else {
-			ret = -CANIOT_EHDLRCTRL;
-		}
-	} else { /* endpoints 0, 1, 2 */
-		if (dev->api->command_handler != NULL) {
-			ret = dev->api->command_handler(dev, ep, req->buf, req->len);
-		} else {
-			ret = -CANIOT_EHANDLERC;
-		}
+	if (dev->api->command_handler != NULL) {
+		ret = dev->api->command_handler(dev, ep, req->buf, req->len);
+	} else {
+		return -CANIOT_EHANDLERC;
 	}
 
 	dev->system.last_command_error = ret;
@@ -619,8 +610,8 @@ static int handle_command_req(struct caniot_device *dev,
 }
 
 static int build_telemetry_resp(struct caniot_device *dev,
-			  struct caniot_frame *resp,
-			  uint8_t ep)
+				struct caniot_frame *resp,
+				uint8_t ep)
 {
 	int ret;
 

@@ -88,13 +88,13 @@ static void cpy_sid_str(uint8_t sid, char buf[2])
 static const char *get_endpoint_str(uint8_t endpoint)
 {
 	switch (endpoint) {
-	case endpoint_default:
+	case endpoint_app:
 		return F("ep-0");
 	case endpoint_1:
 		return F("ep-1");
 	case endpoint_2:
 		return F("ep-2");
-	case endpoint_control:
+	case endpoint_board_control:
 		return F("ep-c");
 	default:
 		return get_unknown();

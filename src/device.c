@@ -626,7 +626,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	prepare_response(dev, resp, telemetry);
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
-		   dev->api->telemetry, ep);
+		   dev->api->telemetry_handler, ep);
 
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);

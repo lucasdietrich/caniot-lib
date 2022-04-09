@@ -467,7 +467,7 @@ static void prepare_error(struct caniot_device *dev,
 	prepare_response(dev, resp, command);
 
 	resp->err = (int32_t)error;
-	resp->len = 4;
+	resp->len = 4U;
 }
 
 static int handle_read_attribute(struct caniot_device *dev,
@@ -642,10 +642,14 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
 	if (ret == 0) {
+		/* set endpoint */
 		resp->id.endpoint = ep;
+
+		/* increment counter */
+		dev->system.sent.telemetry++;
 	}
 
-	dev->system.sent.telemetry++;
+	
 	dev->system.last_telemetry_error = ret;
 
 	/* TODO check and force response length */
@@ -818,7 +822,7 @@ int caniot_device_process(struct caniot_device *dev)
 	if (ret != 0) {
 		prepare_config_read(dev);
 
-		/* we "error frame" are not enabled */
+		/* if "error frame" are not enabled */
 		if (dev->config->flags.error_response == 0u) {
 			goto exit;
 		}

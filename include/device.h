@@ -69,10 +69,10 @@ struct caniot_config
 			union {
 				uint32_t array[4];
 				struct {
-					uint32_t rl1;
-					uint32_t rl2;
 					uint32_t oc1;
 					uint32_t oc2;
+					uint32_t rl1;
+					uint32_t rl2;
 				};
 			} pulse_duration;
 			struct {

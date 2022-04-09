@@ -91,10 +91,10 @@ struct caniot_board_control_telemetry
 
 struct caniot_board_control_command
 {
-	caniot_complex_digital_cmd_t crl1 : 3;
-	caniot_complex_digital_cmd_t crl2 : 3;
 	caniot_complex_digital_cmd_t coc1 : 3;
 	caniot_complex_digital_cmd_t coc2 : 3;
+	caniot_complex_digital_cmd_t crl1 : 3;
+	caniot_complex_digital_cmd_t crl2 : 3;
 
 	uint8_t _unused : 4;
 	

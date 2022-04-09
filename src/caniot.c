@@ -1,6 +1,5 @@
-#include "caniot.h"
-
-#include "archutils.h"
+#include <caniot/caniot.h>
+#include <caniot/archutils.h>
 
 static const char cls_str[][2] ROM = {
 	"C0",
@@ -138,17 +137,12 @@ void caniot_explain_id(union caniot_id id)
 		printf(F("Error frame "));
 		return;
 	} else {
-		printf(get_type_str(id.type));
-		printf(F(" "));
-		printf(get_query_str(id.query));
-		printf(F(" "));
+		prinf("%s %s ", get_type_str(id.type), get_query_str(id.query));
 	}
 
 	caniot_show_deviceid(CANIOT_DEVICE(id.cls, id.sid));
 
-	printf(F(" : "));
-	printf(get_endpoint_str(id.endpoint));
-	printf(F(" / "));
+	printf(F(" : %s / "), get_endpoint_str(id.endpoint));
 }
 
 void caniot_explain_frame(const struct caniot_frame *frame)

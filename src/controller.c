@@ -1,6 +1,5 @@
-#include "controller.h"
-
-#include "archutils.h"
+#include <caniot/controller.h>
+#include <caniot/archutils.h>
 
 #define pendq caniot_pendq
 #define pqt caniot_pqt

@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "caniot_errors.h"
+#include <caniot/errors.h>
 
 #ifdef CONFIG_CANIOT_DRIVERS_API
 #define CANIOT_DRIVERS_API CONFIG_CANIOT_DRIVERS_API

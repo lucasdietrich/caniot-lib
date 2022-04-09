@@ -1,6 +1,5 @@
-#include "datatype.h"
-
-#include "archutils.h"
+#include <caniot/datatype.h>
+#include <caniot/archutils.h>
 
 #include <stdbool.h>
 

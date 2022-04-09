@@ -1,6 +1,5 @@
-#include "device.h"
-
-#include "archutils.h"
+#include <caniot/device.h>
+#include <caniot/archutils.h>
 
 #include <errno.h>
 #include <string.h>
@@ -350,15 +349,18 @@ static int config_written(struct caniot_device *dev)
 
 	/* local configuration in RAM should be updated */
 	if (dev->api->config.on_write != NULL) {
+#if CANIOT_DRIVERS_API
 		/* we update the last telemetry time which could
 		 * have changed if the timezone changed
 		 */
 		uint32_t prev, new;
 		dev->driv->get_time(&prev, NULL);
+#endif /* CANIOT_DRIVERS_API */
 
 		/* call application callback to apply the new configuration */
 		ret = dev->api->config.on_write(dev, dev->config);
 		
+#if CANIOT_DRIVERS_API
 		/* do adjustement if needed */	
 		dev->driv->get_time(&new, NULL);
 		if (new != prev) {
@@ -370,6 +372,7 @@ static int config_written(struct caniot_device *dev)
 			dev->system.last_telemetry += diff;
 			dev->system.start_time += diff;
 		}
+#endif /* CANIOT_DRIVERS_API */
 	}
 
 	return ret;

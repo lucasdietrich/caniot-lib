@@ -46,24 +46,44 @@ typedef enum {
 	CANIOT_PHYS_HYSTERESIS_HIGH,
 } caniot_phys_hysteresis_state_t;
 
+/**
+ * @brief 
+ * 
+ * Note: Is compatible with caniot_twostate_cmd_t or caniot_light_cmd_t for example
+ */
+typedef enum {
+	CANIOT_XPS_NONE = 0,
+	CANIOT_XPS_SET_ON,
+	CANIOT_XPS_SET_OFF,
+	CANIOT_XPS_TOGGLE,
+	CANIOT_XPS_RESET,
+	CANIOT_XPS_PULSE_ON,
+	CANIOT_XPS_PULSE_OFF,
+	CANIOT_XPS_PULSE_CANCEL,
+} caniot_complex_digital_cmd_t;
+
 struct caniot_board_control_telemetry
 {
-	uint8_t r1 : 1;
-	uint8_t _unused1 : 1;
-	uint8_t r2 : 1;
-	uint8_t _unused2 : 1;
-	uint8_t oc1 : 1;
-	uint8_t _unused3 : 1;
-	uint8_t oc2 : 1;
-	uint8_t _unused4 : 1;
-	uint8_t in1 : 1;
-	uint8_t _unused5 : 1;
-	uint8_t in2 : 1;
-	uint8_t _unused6 : 1;
-	uint8_t in3 : 1;
-	uint8_t _unused7 : 1;
-	uint8_t in4 : 1;
-	uint8_t _unused8 : 1;
+	union {
+		struct {
+			uint8_t rl1 : 1;
+			uint8_t rl2 : 1;
+			uint8_t oc1 : 1;
+			uint8_t oc2 : 1;
+			uint8_t in1 : 1;
+			uint8_t in2 : 1;
+			uint8_t in3 : 1;
+			uint8_t in4 : 1;
+		};
+		uint8_t dio;
+	};
+
+	uint8_t poc1 : 1;
+	uint8_t poc2 : 1;
+	uint8_t prl1 : 1;
+	uint8_t prl2 : 1;
+
+	uint8_t _unused : 4;
 
 	uint16_t int_temperature : 10;
 	uint16_t ext_temperature : 10;
@@ -71,12 +91,14 @@ struct caniot_board_control_telemetry
 
 struct caniot_board_control_command
 {
-	caniot_twostate_cmd_t r1 : 2;
-	caniot_twostate_cmd_t r2 : 2;
-	caniot_twostate_cmd_t oc1 : 2;
-	caniot_twostate_cmd_t oc2 : 2;
+	caniot_complex_digital_cmd_t crl1 : 3;
+	caniot_complex_digital_cmd_t crl2 : 3;
+	caniot_complex_digital_cmd_t coc1 : 3;
+	caniot_complex_digital_cmd_t coc2 : 3;
 
-	uint8_t _unused9[6];
+	uint8_t _unused : 4;
+	
+	uint8_t _unused9[5];
 
 	/* in the case of the AVR, proper software reset should use the watchdog :
 	* https://www.avrfreaks.net/comment/178013#comment-178013

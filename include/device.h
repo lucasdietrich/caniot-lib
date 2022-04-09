@@ -63,6 +63,54 @@ struct caniot_config
 		char region[2];
 		char country[2];
 	} location;
+
+	struct {
+		struct {
+			union {
+				uint32_t array[4];
+				struct {
+					uint32_t rl1;
+					uint32_t rl2;
+					uint32_t oc1;
+					uint32_t oc2;
+				};
+			} pulse_duration;
+			struct {
+				union {
+					uint32_t mask;
+					struct {
+						uint8_t open_collectors: 2;
+						uint8_t relays: 2;
+					};
+					struct {
+						uint8_t oc1: 1;
+						uint8_t oc2: 1;
+						uint8_t rl1: 1;
+						uint8_t rl2: 1;
+					};
+				} outputs_default;
+
+				union {
+					uint32_t mask;
+					struct {
+						uint8_t relays: 2;
+						uint8_t open_collectors: 2;
+						uint8_t inputs: 4;
+					};
+					struct {
+						uint8_t rl1: 1;
+						uint8_t rl2: 1;
+						uint8_t oc1: 1;
+						uint8_t oc2: 1;
+						uint8_t in1: 1;
+						uint8_t in2: 1;
+						uint8_t in3: 1;
+						uint8_t in4: 1;
+					};
+				} telemetry_on_change;
+			} mask;
+		} gpio;
+	} custompcb;
 };
 
 // struct caniot_scheduled
@@ -186,7 +234,7 @@ static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
 
 /*___________________________________________________________________________*/
 
-void caniot_device_init(struct caniot_device *dev);
+void caniot_app_init(struct caniot_device *dev);
 
 /**
  * @brief Receive incoming CANIOT message if any and handle it
@@ -233,6 +281,20 @@ int caniot_device_verify(struct caniot_device *dev);
 		.region = CANIOT_LOCATION_REGION_DEFAULT,  \
 		.country = CANIOT_LOCATION_COUNTRY_DEFAULT,  \
 	},  \
+	.custompcb = { \
+		.gpio = { \
+			.pulse_duration = { \
+				.rl1 = 0U, \
+				.rl2 = 0U, \
+				.oc1 = 0U, \
+				.oc2 = 0U, \
+			}, \
+			mask = { \
+				.outputs_default = 0U, \
+				.telemetry_on_change = 0xFFFFFFFFLU, \
+			} \
+		} \
+	}\
 }
 
 #define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, attr, attw) \
@@ -257,5 +319,7 @@ int caniot_device_verify(struct caniot_device *dev);
 
 #define CANIOT_API_MIN_INIT(cmd, tlm) \
 	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)
+
+#define TELEMTRY_MASK
 
 #endif /* _CANIOT_DEVICE_H */

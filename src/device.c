@@ -35,6 +35,7 @@ enum section_option
 
 enum attr_option
 {
+	DISABLED = 0,
 	READABLE = 1 << 0,
 	WRITABLE = 1 << 1,
 };
@@ -106,14 +107,14 @@ static const struct attribute system_attr[] ROM = {
 	ATTRIBUTE(struct caniot_system, READABLE, "received.write_attribute", received.write_attribute),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.command", received.command),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.request_telemetry", received.request_telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE, "", received._unused2),
-	ATTRIBUTE(struct caniot_system, READABLE, "", received._unused3),
+	ATTRIBUTE(struct caniot_system, DISABLED, "", received._unused2),
+	ATTRIBUTE(struct caniot_system, DISABLED, "", received._unused3),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.total", sent.total),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.telemetry", sent.telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE, "", _unused4),
+	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused4),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_command_error", last_command_error),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry_error", last_telemetry_error),
-	ATTRIBUTE(struct caniot_system, READABLE, "", _unused5), 
+	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused5), 
 	ATTRIBUTE(struct caniot_system, READABLE, "battery", battery),
 };
 
@@ -125,6 +126,18 @@ static const struct attribute config_attr[] ROM = {
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "flags", flags),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "timezone", timezone),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "location", location),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.oc1", 
+		custompcb.gpio.pulse_duration.oc1),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.oc2", 
+		custompcb.gpio.pulse_duration.oc2),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.rl1", 
+		custompcb.gpio.pulse_duration.rl1),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.rl2", 
+		custompcb.gpio.pulse_duration.rl2),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.mask.outputs_default", 
+		custompcb.gpio.mask.outputs_default.mask),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.mask.telemetry_on_change",
+		custompcb.gpio.mask.telemetry_on_change.mask),
 };
 
 static const struct attr_section attr_sections[] ROM = {
@@ -615,8 +628,6 @@ static int build_telemetry_resp(struct caniot_device *dev,
 {
 	int ret;
 
-	dev->flags.request_telemetry = 0;
-
 	/* TODO check endpoint relative to class*/
 
 	if (dev->api->telemetry_handler == NULL) {
@@ -820,6 +831,7 @@ int caniot_device_process(struct caniot_device *dev)
 
 		if (is_telemetry_response(&resp) == true) {
 			dev->system.last_telemetry = dev->system.time;
+			dev->flags.request_telemetry = 0;
 		}
 	}
 
@@ -827,7 +839,7 @@ exit:
 	return ret;
 }
 
-void caniot_device_init(struct caniot_device *dev)
+void caniot_app_init(struct caniot_device *dev)
 {
 	memset(&dev->system, 0x00U, sizeof(dev->system));
 

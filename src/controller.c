@@ -242,10 +242,13 @@ static int pendq_call_and_unregister(struct caniot_controller *controller,
 	if (pq != NULL) {
 		/* void should we discard the callback ? */
 		ret = pq->callback(pq->did, frame);
-		
-		get_device_entry(controller, pq->did)->flags.pending = 0U;
-		pendq_remove(controller, pq);
-		pendq_free(controller, pq);
+
+		/* if broadcast query, we expect more devices reponses */
+		if (caniot_is_broadcast(pq->did) == false) {
+			get_device_entry(controller, pq->did)->flags.pending = 0U;
+			pendq_remove(controller, pq);
+			pendq_free(controller, pq);
+		}
 	}
 
 	return ret;

@@ -177,7 +177,7 @@ static inline void arch_rom_cpy_ptr(void **d, const void **p)
 #ifdef __AVR__
 	*d = pgm_read_ptr(p);
 #else
-	*d = *p;
+	*d = (void*) *p;
 #endif
 }
 
@@ -298,7 +298,7 @@ static void read_identificate_attr(struct caniot_device *dev,
 				   const struct attr_ref *ref,
 				   struct caniot_attribute *attr)
 {
-	arch_rom_cpy(&attr->val, (void *)dev->identification + ref->offset,
+	arch_rom_cpy(&attr->val, (uint8_t *)dev->identification + ref->offset,
 		     ref->size);
 }
 
@@ -386,7 +386,7 @@ static int read_config_attr(struct caniot_device *dev,
 	int ret = prepare_config_read(dev);
 
 	if (ret == 0) {
-		memcpy(&attr->val, (void *)dev->config + ref->offset, ref->size);
+		memcpy(&attr->val, (uint8_t *)dev->config + ref->offset, ref->size);
 	}
 
 	return ret;
@@ -396,7 +396,7 @@ static int write_config_attr(struct caniot_device *dev,
 			     const struct attr_ref *ref,
 			     const struct caniot_attribute *attr)
 {
-	memcpy((void *)dev->config + ref->offset, &attr->val, ref->size);
+	memcpy((uint8_t *)dev->config + ref->offset, &attr->val, ref->size);
 
 	return config_written(dev);
 }
@@ -420,7 +420,7 @@ static int attribute_read(struct caniot_device *dev,
 
 	case section_system:
 	{
-		memcpy(&attr->val, (void *)&dev->system + ref->offset,
+		memcpy(&attr->val, (uint8_t *)&dev->system + ref->offset,
 		       ref->size);
 		break;
 	}
@@ -539,7 +539,7 @@ static int write_system_attr(struct caniot_device *dev,
 	}
 #endif 
 
-	memcpy((void *)&dev->system + ref->offset, &attr->val,
+	memcpy((uint8_t *)&dev->system + ref->offset, &attr->val,
 	       ref->size);
 
 	return 0;

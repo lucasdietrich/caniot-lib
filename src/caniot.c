@@ -137,7 +137,7 @@ void caniot_explain_id(union caniot_id id)
 		printf(F("Error frame "));
 		return;
 	} else {
-		prinf("%s %s ", get_type_str(id.type), get_query_str(id.query));
+		printf(F("%s %s "), get_type_str(id.type), get_query_str(id.query));
 	}
 
 	caniot_show_deviceid(CANIOT_DEVICE(id.cls, id.sid));

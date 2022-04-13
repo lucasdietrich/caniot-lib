@@ -19,14 +19,14 @@
 #ifdef __AVR__
 #	include <avr/pgmspace.h>
 #	define printf	printf_P
-#	define snprintf snprintf
+#	define snprintf snprintf_P
 #	define F(x) PSTR(x) 
 #	define memcpy_P memcpy_P
 #	define ROM	PROGMEM
 #else
 #	include <stdio.h>
 #	define printf  printk
-#	define snprintf snprintf_P
+#	define snprintf snprintf
 #	define F(x) (x)
 #	define memcpy_P memcpy
 #	define ROM

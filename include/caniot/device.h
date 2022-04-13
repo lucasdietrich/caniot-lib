@@ -189,47 +189,41 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev);
 
 static inline uint16_t caniot_device_get_mask(void)
 {
-	const union caniot_id mask = {
-		{
-			.type = 0,
-			.query = 1,
-			.cls = 0b111,
-			.sid = 0b111,
-			.endpoint = 0
-		}
+	const caniot_id_t mask = {
+		.type = 0,
+		.query = 1,
+		.cls = 0b111,
+		.sid = 0b111,
+		.endpoint = 0
 	};
 
-	return mask.raw;
+	return caniot_id_to_canid(mask);
 }
 
 static inline uint16_t caniot_device_get_filter(union deviceid did)
 {
-	const union caniot_id filter = {
-		{
-			.type = 0,
-			.query = query,
-			.cls = did.cls,
-			.sid = did.sid,
-			.endpoint = 0
-		}
+	const caniot_id_t filter = {
+		.type = 0,
+		.query = CANIOT_QUERY,
+		.cls = did.cls,
+		.sid = did.sid,
+		.endpoint = 0
 	};
 
-	return filter.raw;
+	return caniot_id_to_canid(filter);
 }
 
 static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
 {
-	const union caniot_id filter = {
-		{
-			.type = 0,
-			.query = query,
-			.cls = 0b111, /* broadcast is over all classes */
-			.sid = 0b111,
-			.endpoint = 0
-		}
+	const caniot_id_t filter = {
+		.type = 0,
+		.query = CANIOT_QUERY,
+		.cls = 0b111, /* broadcast is over all classes */
+		.sid = 0b111,
+		.endpoint = 0
 	};
 
-	return filter.raw;
+	return caniot_id_to_canid(filter);
 }
 
 /*___________________________________________________________________________*/

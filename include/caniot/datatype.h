@@ -62,6 +62,7 @@ typedef enum {
 	CANIOT_XPS_PULSE_CANCEL,
 } caniot_complex_digital_cmd_t;
 
+#pragma pack(push, 1)
 struct caniot_board_control_telemetry
 {
 	union {
@@ -89,6 +90,7 @@ struct caniot_board_control_telemetry
 	uint16_t ext_temperature : 10;
 };
 
+#pragma pack(push, 1)
 struct caniot_board_control_command
 {
 	caniot_complex_digital_cmd_t coc1 : 3;
@@ -121,6 +123,7 @@ struct caniot_board_control_command
 	uint8_t _unused10 : 3;
 };
 
+#pragma pack(push, 1)
 struct caniot_CRTHPT {
 	union {
 		struct {
@@ -188,14 +191,17 @@ bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint);
 
 /* conversion functions */
 
-uint16_t caniot_dt_T16_to_Temp(int16_t T16);
+uint16_t caniot_dt_T16_to_T10(int16_t T16);
 
-int16_t caniot_dt_Temp_to_T16(uint16_t T);
+int16_t caniot_dt_T10_to_T16(uint16_t T);
 
 /* constants */
 #define CANIOT_DT_T16_INVALID ((int16_t) 32767)
 #define CANIOT_DT_T10_INVALID ((uint16_t) 0x3FFU)
 #define CANIOT_DT_T8_INVALID ((uint8_t) 0xFFU)
+
+#define CANIOT_DT_VALID_T16_TEMP(temp) ((temp) != CANIOT_DT_T16_INVALID)
+#define CANIOT_DT_VALID_T10_TEMP(temp) ((temp) != CANIOT_DT_T10_INVALID)
 
 
 #endif /* _CANIOT_DATATYPE_H */

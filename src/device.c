@@ -314,7 +314,7 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 
 	read_rom_identification(&id, dev->identification);
 
-	printf(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
+	CANIOT_DBG(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
 	       id.name, id.did.cls, id.did.sid, id.version);
 }
 
@@ -456,7 +456,7 @@ static void prepare_response(struct caniot_device *dev,
 
 	/* id */
 	resp->id.type = type;
-	resp->id.query = response;
+	resp->id.query = CANIOT_RESPONSE;
 
 	resp->id.cls = did.cls;
 	resp->id.sid = did.sid;
@@ -467,7 +467,7 @@ static void prepare_error(struct caniot_device *dev,
 			  struct caniot_frame *resp,
 			  int error)
 {
-	prepare_response(dev, resp, command);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_COMMAND);
 
 	resp->err = (int32_t)error;
 	resp->len = 4U;
@@ -487,7 +487,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 		goto exit;
 	}
 
-	prepare_response(dev, resp, read_attribute);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
 
 	if (ret == 0) {
 		/* if standart attribute */
@@ -637,7 +637,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 		return -CANIOT_EHANDLERT;
 	}
 
-	prepare_response(dev, resp, telemetry);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
 		   dev->api->telemetry_handler, ep);
@@ -667,7 +667,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	int ret;
 
 	/* no response in this case */
-	if (req->id.query != query) {
+	if (req->id.query != CANIOT_QUERY) {
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -675,7 +675,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	dev->system.received.total++;
 
 	switch (req->id.type) {
-	case command:
+	case CANIOT_FRAME_TYPE_COMMAND:
 	{
 		dev->system.received.command++;
 		ret = handle_command_req(dev, req);
@@ -684,14 +684,14 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		}
 		break;
 	}
-	case telemetry:
+	case CANIOT_FRAME_TYPE_TELEMETRY:
 	{
 		dev->system.received.request_telemetry++;
 		ret = build_telemetry_resp(dev, resp, req->id.endpoint);
 		break;
 	}
 
-	case write_attribute:
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
 	{
 		dev->system.received.write_attribute++;
 		ret = handle_write_attribute(dev, req, &req->attr);
@@ -700,7 +700,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		}
 		break;
 	}
-	case read_attribute:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
 		dev->system.received.read_attribute++;
 		ret = handle_read_attribute(dev, resp, &req->attr);
 		break;
@@ -716,7 +716,7 @@ exit:
 bool caniot_device_is_target(union deviceid did,
 			     struct caniot_frame *frame)
 {
-	return (frame->id.query == query) && (frame->id.cls == did.cls) &&
+	return (frame->id.query == CANIOT_QUERY) && (frame->id.cls == did.cls) &&
 		(frame->id.sid == did.sid || frame->id.sid == CANIOT_CLASS_BROADCAST);
 }
 

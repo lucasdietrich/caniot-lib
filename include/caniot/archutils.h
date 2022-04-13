@@ -12,6 +12,10 @@
  */
 #include <stdio.h>
 
+#if !defined(CONFIG_CANIOT_ARCH_AGNOSTIC)
+#	define CONFIG_CANIOT_ARCH_AGNOSTIC 1
+#endif
+
 #ifdef __AVR__
 #	include <avr/pgmspace.h>
 #	define printf	printf_P
@@ -19,7 +23,8 @@
 #	define memcpy_P memcpy_P
 #	define ROM	PROGMEM
 #else
-#	define printf  printf
+#	include <stdio.h>
+#	define printf  printk
 #	define F(x) (x)
 #	define memcpy_P memcpy
 #	define ROM

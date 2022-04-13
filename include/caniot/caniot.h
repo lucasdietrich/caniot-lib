@@ -27,6 +27,7 @@
 #define CANIOT_CLASS_BROADCAST	(0x7)
 
 #define CANIOT_DEVICE(class_id, sub_id)	((union deviceid) { { .cls = class_id, .sid = sub_id} })
+#define CANIOT_DEVICE_FROM_RAW(raw)	((union deviceid) { .raw = raw })
 
 #define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
 
@@ -42,12 +43,19 @@
 /* seconds */
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT		60
 
-#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	endpoint_board_control
+#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	CANIOT_ENDPOINT_BOARD_CONTROL
 
 #define CANIOT_TIMEZONE_DEFAULT			3600
 #define CANIOT_LOCATION_REGION_DEFAULT		{'E', 'U'}
 #define CANIOT_LOCATION_COUNTRY_DEFAULT		{'F', 'R'}
 
+#define CANIOT_ID_GET_TYPE(id) ((caniot_frame_type_t) (id & 0x3))
+#define CANIOT_ID_GET_QUERY(id) ((caniot_frame_dir_t) ((id >> 2) & 0x1))
+#define CANIOT_ID_GET_CLASS(id) ((caniot_device_class_t) ((id >> 3) & 0x7))
+#define CANIOT_ID_GET_SUBID(id) ((caniot_device_subid_t) ((id >> 6) & 0x7))
+#define CANIOT_ID_GET_ENDPOINT(id) ((caniot_endpoint_t) ((id >> 9) & 0x3))
+
+#define CANIOT_ADDR_LEN sizeof("0x3f")
 
 union deviceid {
 	struct {
@@ -57,9 +65,50 @@ union deviceid {
 	uint8_t val;
 };
 
-enum { command = 0, telemetry = 1, write_attribute = 2, read_attribute = 3 };
-enum { query = 0, response = 1 };
-enum { endpoint_app = 0, endpoint_1 = 1, endpoint_2 = 2, endpoint_board_control = 3 };
+typedef enum
+{
+	CANIOT_DEVICE_CLASS0 = 0,
+	CANIOT_DEVICE_CLASS1,
+	CANIOT_DEVICE_CLASS2,
+	CANIOT_DEVICE_CLASS3,
+	CANIOT_DEVICE_CLASS4,
+	CANIOT_DEVICE_CLASS5,
+	CANIOT_DEVICE_CLASS6,
+	CANIOT_DEVICE_CLASS7,
+} caniot_device_class_t;
+
+typedef enum
+{
+	CANIOT_DEVICE_SID0 = 0,
+	CANIOT_DEVICE_SID1,
+	CANIOT_DEVICE_SID2,
+	CANIOT_DEVICE_SID3,
+	CANIOT_DEVICE_SID4,
+	CANIOT_DEVICE_SID5,
+	CANIOT_DEVICE_SID6,
+	CANIOT_DEVICE_SID7,
+} caniot_device_subid_t;
+
+typedef enum
+{
+	CANIOT_FRAME_TYPE_COMMAND = 0,
+	CANIOT_FRAME_TYPE_TELEMETRY = 1,
+	CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE = 2,
+	CANIOT_FRAME_TYPE_READ_ATTRIBUTE = 3,
+} caniot_frame_type_t;
+
+typedef enum
+{
+	CANIOT_QUERY = 0,
+	CANIOT_RESPONSE = 1,
+} caniot_frame_dir_t;
+
+typedef enum {
+	CANIOT_ENDPOINT_APP = 0,
+	CANIOT_ENDPOINT_1 = 1,
+	CANIOT_ENDPOINT_2 = 2,
+	CANIOT_ENDPOINT_BOARD_CONTROL = 3,
+} caniot_endpoint_t;
 
 struct caniot_data
 {
@@ -68,17 +117,29 @@ struct caniot_data
 	uint8_t len;
 };
 
+#pragma pack(push, 1)
+
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
-union caniot_id {
+#if CONFIG_CANIOT_ARCH_AGNOSTIC
+typedef struct {
+	caniot_frame_type_t type : 2U;
+	caniot_frame_dir_t query : 1U;
+	caniot_device_class_t cls : 3U;
+	caniot_device_subid_t sid : 3U;
+	caniot_endpoint_t endpoint : 2U;
+} caniot_id_t;
+#else 
+typedef union {
 	struct {
-		uint16_t type : 2;
-		uint16_t query : 1;
-		uint16_t cls : 3;
-		uint16_t sid : 3;
-		uint16_t endpoint : 2;
+		caniot_frame_type_t type : 2U;
+		caniot_frame_dir_t query : 1U;
+		caniot_device_class_t cls : 3U;
+		caniot_device_subid_t sid : 3U;
+		caniot_endpoint_t endpoint : 2U;
 	};
 	uint16_t raw;
-};
+} caniot_id_t;
+#endif
 
 struct caniot_attribute
 {
@@ -99,7 +160,7 @@ struct caniot_attribute
 };
 
 struct caniot_frame {
-	union caniot_id id;
+	caniot_id_t id;
         union {
 		char buf[8];
                 struct caniot_attribute attr;
@@ -148,14 +209,16 @@ static inline void caniot_clear_frame(struct caniot_frame *frame)
 	memset(frame, 0x00, sizeof(struct caniot_frame));
 }
 
-static inline bool caniot_is_error_frame(union caniot_id id)
+static inline bool caniot_is_error_frame(caniot_id_t id)
 {
-	return (id.query == response) && (id.type == command);
+	return (id.query == CANIOT_RESPONSE) &&
+		(id.type == CANIOT_FRAME_TYPE_COMMAND);
 }
 
 static inline bool is_telemetry_response(struct caniot_frame *frame)
 {
-	return frame->id.query == response && frame->id.type == telemetry;
+	return (frame->id.query == CANIOT_RESPONSE) &&
+		(frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
 }
 
 // Check if drivers api is valid
@@ -165,13 +228,17 @@ void caniot_show_deviceid(union deviceid did);
 
 void caniot_show_frame(const struct caniot_frame *frame);
 
-void caniot_explain_id(union caniot_id id);
+void caniot_explain_id(caniot_id_t id);
 
 void caniot_explain_frame(const struct caniot_frame *frame);
 
+int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len);
+
+int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t len);
+
 void caniot_build_query_telemetry(struct caniot_frame *frame,
-				 union deviceid did,
-				 uint8_t endpoint);
+				  union deviceid did,
+				  uint8_t endpoint);
 
 void caniot_build_query_command(struct caniot_frame *frame,
 				union deviceid did,
@@ -182,5 +249,68 @@ void caniot_build_query_command(struct caniot_frame *frame,
 bool caniot_is_error(int cterr);
 
 void caniot_show_error(int cterr);
+
+int caniot_encode_deviceid(union deviceid did, uint8_t *buf, size_t len);
+
+bool caniot_deviceid_equal(union deviceid a, union deviceid b);
+
+/**
+ * @brief Compare CANIOT device addresses
+ * 
+ * @param a First CANIOT device address to compare
+ * @param b Second CANIOT device address to compare
+ * @return int negative value if @a a < @a b, 0 if @a a == @a b, else positive
+ */
+int caniot_deviceid_cmp(union deviceid a, union deviceid b);
+
+#if CONFIG_CANIOT_ARCH_AGNOSTIC == 1
+/**
+ * @brief Convert CAN id to caniot ID format 
+ * 
+ * Note: Architecture agnostic.
+ * 
+ * @param id 
+ * @return uint16_t 
+ */
+static inline uint16_t caniot_id_to_canid(caniot_id_t id)
+{
+	return (id.type) | (id.query << 2U) | (id.cls << 3U) |
+		(id.sid << 6U) | (id.endpoint << 9U);
+}
+
+/**
+ * @brief Convert CANIOT id to caniot ID format
+ * 
+ * Note: Architecture agnostic.
+ * 
+ * @param canid 
+ * @return caniot_id_t 
+ */
+static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
+{
+	caniot_id_t id = {
+		.type = CANIOT_ID_GET_TYPE(canid),
+		.query = CANIOT_ID_GET_QUERY(canid),
+		.cls = CANIOT_ID_GET_CLASS(canid),
+		.sid = CANIOT_ID_GET_SUBID(canid),
+		.endpoint = CANIOT_ID_GET_ENDPOINT(canid),
+	};
+
+	return id;
+}
+
+#else
+
+static inline uint16_t caniot_id_to_canid(caniot_id_t id)
+{
+	return id.raw;
+}
+
+static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
+{
+	return (caniot_id_t) { .raw = canid };
+}
+
+#endif
 
 #endif

@@ -44,7 +44,8 @@ bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint)
 	return endpoint < ret;
 }
 
-uint16_t caniot_dt_T16_to_Temp(int16_t T16)
+
+uint16_t caniot_dt_T16_to_T10(int16_t T16)
 {
 	T16 /= 10;
 	T16 = MAX(MIN(T16, 720), -280);

@@ -12,19 +12,25 @@
  */
 #include <stdio.h>
 
-#ifdef __AVR__
-#include <avr/pgmspace.h>
-#define printf	printf_P
-#define FLASH_STRING(x) PSTR(x)
-#define memcpy_P memcpy_P
-#define ROM	PROGMEM
-#else
-#define printf  printf
-#define FLASH_STRING(x) (x)
-#define memcpy_P memcpy
-#define ROM
+#if !defined(CONFIG_CANIOT_ARCH_AGNOSTIC)
+#	define CONFIG_CANIOT_ARCH_AGNOSTIC 1
 #endif
-#define F(x) FLASH_STRING(x)
+
+#ifdef __AVR__
+#	include <avr/pgmspace.h>
+#	define printf	printf_P
+#	define snprintf snprintf
+#	define F(x) PSTR(x) 
+#	define memcpy_P memcpy_P
+#	define ROM	PROGMEM
+#else
+#	include <stdio.h>
+#	define printf  printk
+#	define snprintf snprintf_P
+#	define F(x) (x)
+#	define memcpy_P memcpy
+#	define ROM
+#endif
 
 
 /* 0 : NO DEBUG
@@ -33,10 +39,10 @@
  * 3 : INF
  * 4 : DBG
  */
-#ifdef CONFIG_CANIOT_LOG_LEVEL
-#define CANIOT_LOG_LEVEL CONFIG_CANIOT_LOG_LEVEL
+#if defined(CONFIG_CANIOT_LOG_LEVEL)
+#	define CANIOT_LOG_LEVEL CONFIG_CANIOT_LOG_LEVEL
 #else
-#define CANIOT_LOG_LEVEL 4
+#	define CANIOT_LOG_LEVEL 1
 #endif
 
 #if CANIOT_LOG_LEVEL >= 4
@@ -62,8 +68,6 @@
 #else
 #define CANIOT_ERR(...)
 #endif /* CANIOT_LOG_LEVEL >= 1 */
-
-
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

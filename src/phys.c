@@ -1,17 +1,7 @@
+#include <caniot/phys.h>
+#include <caniot/errors.h>
+
 #include <stddef.h>
-
-#include "phys.h"
-#include "caniot_errors.h"
-
-// void caniot_show_temperature(uint8_t t)
-// {
-// 	printf("Temperature: %d.%1u\n", (t - 56) / 2, (t - 56) % 2);
-// }
-
-// void caniot_show_Temperature(uint16_t T)
-// {
-// 	printf("Temperature: %d.%1u\n", (T - 280) / 10, (T - 280) % 10);
-// }
 
 int caniot_phys_hysteresis_init(caniot_phys_hysteresis_t *hysteresis,
 				int low,

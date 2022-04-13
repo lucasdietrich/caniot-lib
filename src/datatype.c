@@ -1,6 +1,5 @@
-#include "datatype.h"
-
-#include "archutils.h"
+#include <caniot/datatype.h>
+#include <caniot/archutils.h>
 
 #include <stdbool.h>
 
@@ -44,7 +43,6 @@ bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint)
 	return endpoint < ret;
 }
 
-
 uint16_t caniot_dt_T16_to_T10(int16_t T16)
 {
 	T16 /= 10;
@@ -55,7 +53,7 @@ uint16_t caniot_dt_T16_to_T10(int16_t T16)
 	return T10;
 }
 
-int16_t caniot_dt_Temp_to_T16(uint16_t T)
+int16_t caniot_dt_T10_to_T16(uint16_t T)
 {
 	return ((int16_t)T * 10) - 2800;
 }

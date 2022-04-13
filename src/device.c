@@ -1,6 +1,5 @@
-#include "device.h"
-
-#include "archutils.h"
+#include <caniot/device.h>
+#include <caniot/archutils.h>
 
 #include <errno.h>
 #include <string.h>
@@ -178,7 +177,7 @@ static inline void arch_rom_cpy_ptr(void **d, const void **p)
 #ifdef __AVR__
 	*d = pgm_read_ptr(p);
 #else
-	*d = *p;
+	*d = (void*) *p;
 #endif
 }
 
@@ -299,7 +298,7 @@ static void read_identificate_attr(struct caniot_device *dev,
 				   const struct attr_ref *ref,
 				   struct caniot_attribute *attr)
 {
-	arch_rom_cpy(&attr->val, (void *)dev->identification + ref->offset,
+	arch_rom_cpy(&attr->val, (uint8_t *)dev->identification + ref->offset,
 		     ref->size);
 }
 
@@ -315,7 +314,7 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 
 	read_rom_identification(&id, dev->identification);
 
-	printf(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
+	CANIOT_DBG(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
 	       id.name, id.did.cls, id.did.sid, id.version);
 }
 
@@ -350,15 +349,18 @@ static int config_written(struct caniot_device *dev)
 
 	/* local configuration in RAM should be updated */
 	if (dev->api->config.on_write != NULL) {
+#if CANIOT_DRIVERS_API
 		/* we update the last telemetry time which could
 		 * have changed if the timezone changed
 		 */
 		uint32_t prev, new;
 		dev->driv->get_time(&prev, NULL);
+#endif /* CANIOT_DRIVERS_API */
 
 		/* call application callback to apply the new configuration */
 		ret = dev->api->config.on_write(dev, dev->config);
 		
+#if CANIOT_DRIVERS_API
 		/* do adjustement if needed */	
 		dev->driv->get_time(&new, NULL);
 		if (new != prev) {
@@ -370,6 +372,7 @@ static int config_written(struct caniot_device *dev)
 			dev->system.last_telemetry += diff;
 			dev->system.start_time += diff;
 		}
+#endif /* CANIOT_DRIVERS_API */
 	}
 
 	return ret;
@@ -383,7 +386,7 @@ static int read_config_attr(struct caniot_device *dev,
 	int ret = prepare_config_read(dev);
 
 	if (ret == 0) {
-		memcpy(&attr->val, (void *)dev->config + ref->offset, ref->size);
+		memcpy(&attr->val, (uint8_t *)dev->config + ref->offset, ref->size);
 	}
 
 	return ret;
@@ -393,7 +396,7 @@ static int write_config_attr(struct caniot_device *dev,
 			     const struct attr_ref *ref,
 			     const struct caniot_attribute *attr)
 {
-	memcpy((void *)dev->config + ref->offset, &attr->val, ref->size);
+	memcpy((uint8_t *)dev->config + ref->offset, &attr->val, ref->size);
 
 	return config_written(dev);
 }
@@ -417,7 +420,7 @@ static int attribute_read(struct caniot_device *dev,
 
 	case section_system:
 	{
-		memcpy(&attr->val, (void *)&dev->system + ref->offset,
+		memcpy(&attr->val, (uint8_t *)&dev->system + ref->offset,
 		       ref->size);
 		break;
 	}
@@ -453,7 +456,7 @@ static void prepare_response(struct caniot_device *dev,
 
 	/* id */
 	resp->id.type = type;
-	resp->id.query = response;
+	resp->id.query = CANIOT_RESPONSE;
 
 	resp->id.cls = did.cls;
 	resp->id.sid = did.sid;
@@ -464,7 +467,7 @@ static void prepare_error(struct caniot_device *dev,
 			  struct caniot_frame *resp,
 			  int error)
 {
-	prepare_response(dev, resp, command);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_COMMAND);
 
 	resp->err = (int32_t)error;
 	resp->len = 4U;
@@ -484,7 +487,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 		goto exit;
 	}
 
-	prepare_response(dev, resp, read_attribute);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
 
 	if (ret == 0) {
 		/* if standart attribute */
@@ -536,7 +539,7 @@ static int write_system_attr(struct caniot_device *dev,
 	}
 #endif 
 
-	memcpy((void *)&dev->system + ref->offset, &attr->val,
+	memcpy((uint8_t *)&dev->system + ref->offset, &attr->val,
 	       ref->size);
 
 	return 0;
@@ -634,7 +637,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 		return -CANIOT_EHANDLERT;
 	}
 
-	prepare_response(dev, resp, telemetry);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
 		   dev->api->telemetry_handler, ep);
@@ -664,7 +667,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	int ret;
 
 	/* no response in this case */
-	if (req->id.query != query) {
+	if (req->id.query != CANIOT_QUERY) {
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -672,7 +675,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	dev->system.received.total++;
 
 	switch (req->id.type) {
-	case command:
+	case CANIOT_FRAME_TYPE_COMMAND:
 	{
 		dev->system.received.command++;
 		ret = handle_command_req(dev, req);
@@ -681,14 +684,14 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		}
 		break;
 	}
-	case telemetry:
+	case CANIOT_FRAME_TYPE_TELEMETRY:
 	{
 		dev->system.received.request_telemetry++;
 		ret = build_telemetry_resp(dev, resp, req->id.endpoint);
 		break;
 	}
 
-	case write_attribute:
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
 	{
 		dev->system.received.write_attribute++;
 		ret = handle_write_attribute(dev, req, &req->attr);
@@ -697,7 +700,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		}
 		break;
 	}
-	case read_attribute:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
 		dev->system.received.read_attribute++;
 		ret = handle_read_attribute(dev, resp, &req->attr);
 		break;
@@ -713,7 +716,7 @@ exit:
 bool caniot_device_is_target(union deviceid did,
 			     struct caniot_frame *frame)
 {
-	return (frame->id.query == query) && (frame->id.cls == did.cls) &&
+	return (frame->id.query == CANIOT_QUERY) && (frame->id.cls == did.cls) &&
 		(frame->id.sid == did.sid || frame->id.sid == CANIOT_CLASS_BROADCAST);
 }
 

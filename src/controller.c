@@ -1,6 +1,5 @@
-#include "controller.h"
-
-#include "archutils.h"
+#include <caniot/controller.h>
+#include <caniot/archutils.h>
 
 #define pendq caniot_pendq
 #define pqt caniot_pqt
@@ -19,7 +18,7 @@ static bool is_query_pending(struct caniot_device_entry *device)
 // Finalize frame with device id
 static void finalize_query_frame(struct caniot_frame *frame, union deviceid did)
 {
-	frame->id.query = query;
+	frame->id.query = CANIOT_QUERY;
 
 	frame->id.cls = did.cls;
 	frame->id.sid = did.sid;
@@ -243,10 +242,13 @@ static int pendq_call_and_unregister(struct caniot_controller *controller,
 	if (pq != NULL) {
 		/* void should we discard the callback ? */
 		ret = pq->callback(pq->did, frame);
-		
-		get_device_entry(controller, pq->did)->flags.pending = 0U;
-		pendq_remove(controller, pq);
-		pendq_free(controller, pq);
+
+		/* if broadcast query, we expect more devices reponses */
+		if (caniot_is_broadcast(pq->did) == false) {
+			get_device_entry(controller, pq->did)->flags.pending = 0U;
+			pendq_remove(controller, pq);
+			pendq_free(controller, pq);
+		}
 	}
 
 	return ret;
@@ -324,12 +326,12 @@ static inline int prepare_request_telemetry(struct caniot_frame *frame,
 					    uint8_t ep)
 {
 	// Can we request telemetry broadcast ? would say no
-	if (ep > endpoint_board_control) {
+	if (ep > CANIOT_ENDPOINT_BOARD_CONTROL) {
 		return -CANIOT_EEP;
 	}
 
 	frame->id.endpoint = ep;
-	frame->id.type = telemetry;
+	frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
 	frame->len = 0;
 
 	return 0;
@@ -364,7 +366,7 @@ static inline int prepare_command(struct caniot_frame *frame,
 	len = len > sizeof(frame->buf) ? sizeof(frame->buf) : len;
 
 	frame->id.endpoint = ep;
-	frame->id.type = command;
+	frame->id.type = CANIOT_FRAME_TYPE_COMMAND;
 	frame->len = len;
 	memcpy(frame->buf, buf, len);
 
@@ -393,7 +395,7 @@ int caniot_command(struct caniot_controller *ctrl,
 static inline int prepare_read_attribute(struct caniot_frame *frame,
 					 uint16_t key)
 {
-	frame->id.type = read_attribute;
+	frame->id.type = CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
 	frame->len = 2u;
 	frame->attr.key = key;
 
@@ -421,7 +423,7 @@ static inline int prepare_write_attribute(struct caniot_frame *frame,
 					  uint16_t key,
 					  uint32_t value)
 {
-	frame->id.type = write_attribute;
+	frame->id.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
 	frame->len = 6u;
 	frame->attr.key = key;
 	frame->attr.val = value;
@@ -453,7 +455,7 @@ int caniot_discover(struct caniot_controller *ctrl,
 {
 	struct caniot_frame frame;
 
-	prepare_request_telemetry(&frame, endpoint_app);
+	prepare_request_telemetry(&frame, CANIOT_ENDPOINT_APP);
 
 	return caniot_controller_query(ctrl, CANIOT_DEVICE_BROADCAST,
 				       &frame, cb, timeout);
@@ -463,7 +465,7 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 				      struct caniot_frame *frame)
 {
 	// Assert that frame is not NULL and is a response
-	if (!frame || frame->id.query != response) {
+	if (!frame || frame->id.query != CANIOT_RESPONSE) {
 		return -CANIOT_EMLFRM;
 	}
 
@@ -524,5 +526,5 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 
 bool caniot_controller_is_target(struct caniot_frame *frame)
 {
-	return frame->id.query == response;
+	return frame->id.query == CANIOT_RESPONSE;
 }

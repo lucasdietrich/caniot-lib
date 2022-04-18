@@ -314,7 +314,7 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 
 	read_rom_identification(&id, dev->identification);
 
-	CANIOT_DBG(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
+	CANIOT_INF(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
 	       id.name, id.did.cls, id.did.sid, id.version);
 }
 

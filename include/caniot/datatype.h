@@ -120,7 +120,10 @@ struct caniot_board_control_command
 	/* Enable/disable the watchdog */
 	caniot_twostate_cmd_t watchdog : 2;
 
-	uint8_t _unused10 : 3;
+	/* Reset the device configuration */
+	caniot_onestate_cmd_t config_reset : 1;
+
+	uint8_t _unused10 : 2;
 };
 
 #pragma pack(push, 1)

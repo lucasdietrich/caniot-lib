@@ -15,10 +15,10 @@ struct caniot_identification
 
 struct caniot_system
 {
+        uint32_t uptime_synced;
+        uint32_t time;
         uint32_t uptime;
-        uint32_t abstime;
-        uint32_t calculated_abstime;
-        uint32_t uptime_shift;
+        uint32_t start_time;
         uint32_t last_telemetry;
         struct {
                 uint32_t total;
@@ -26,21 +26,18 @@ struct caniot_system
                 uint32_t write_attribute;
                 uint32_t command;
                 uint32_t request_telemetry;
-                uint32_t processed;
-                uint32_t query_failed;
+                uint32_t _unused2;
+                uint32_t _unused3;
         } received;
         struct {
                 uint32_t total;
                 uint32_t telemetry;
         } sent;
-        struct {
-                uint32_t total;
-
-        } events;
-        int32_t last_query_error;
-        int32_t last_telemetry_error;
-        int32_t last_event_error;
-        int32_t battery;
+        uint32_t _unused4;
+        int16_t last_command_error;
+        int16_t last_telemetry_error;
+        int16_t _unused5;
+        uint8_t battery;
 };
 
 struct caniot_config
@@ -59,14 +56,69 @@ struct caniot_config
 		uint8_t telemetry_delay_rdm: 1;
 		uint8_t telemetry_endpoint: 2;
 	} flags;
+
+	int32_t timezone;
+
+	struct {
+		char region[2];
+		char country[2];
+	} location;
+
+	struct {
+		struct {
+			union {
+				uint32_t array[4];
+				struct {
+					uint32_t oc1;
+					uint32_t oc2;
+					uint32_t rl1;
+					uint32_t rl2;
+				};
+			} pulse_duration;
+			struct {
+				union {
+					uint32_t mask;
+					struct {
+						uint8_t open_collectors: 2;
+						uint8_t relays: 2;
+					};
+					struct {
+						uint8_t oc1: 1;
+						uint8_t oc2: 1;
+						uint8_t rl1: 1;
+						uint8_t rl2: 1;
+					};
+				} outputs_default;
+
+				union {
+					uint32_t mask;
+					struct {
+						uint8_t relays: 2;
+						uint8_t open_collectors: 2;
+						uint8_t inputs: 4;
+					};
+					struct {
+						uint8_t rl1: 1;
+						uint8_t rl2: 1;
+						uint8_t oc1: 1;
+						uint8_t oc2: 1;
+						uint8_t in1: 1;
+						uint8_t in2: 1;
+						uint8_t in3: 1;
+						uint8_t in4: 1;
+					};
+				} telemetry_on_change;
+			} mask;
+		} gpio;
+	} custompcb;
 };
 
-struct caniot_scheduled
-{
-        uint8_t days;
-        uint8_t time;
-        uint32_t command;
-};
+// struct caniot_scheduled
+// {
+//         uint8_t days;
+//         uint8_t time;
+//         uint32_t command;
+// };
 
 struct caniot_device
 {
@@ -86,19 +138,23 @@ struct caniot_device
 	} flags;
 };
 
+typedef int (caniot_telemetry_handler_t)(struct caniot_device *dev,
+					  uint8_t ep, char *buf,
+					  uint8_t *len);
+
+typedef int (caniot_command_handler_t)(struct caniot_device *dev,
+					uint8_t ep, char *buf,
+					uint8_t len);
+
 struct caniot_api
 {
-	/* called when time is updated with new time */
-	int (*update_time)(struct caniot_device *dev,
-			   uint32_t ts);
-
 	struct {
 		/* called before configuration will be read */
 		int (*on_read)(struct caniot_device *dev,
 			       struct caniot_config *config);
 
 		/* called after configuration is updated */
-		int (*written)(struct caniot_device *dev,
+		int (*on_write)(struct caniot_device *dev,
 			       struct caniot_config *config);
 	} config;
 
@@ -114,14 +170,11 @@ struct caniot_api
 	} custom_attr;
 
 	/* Handle command */
-	int (*command_handler)(struct caniot_device *dev,
-			       uint8_t ep, char *buf,
-			       uint8_t len);
+	caniot_command_handler_t *command_handler;
 
 	/* Build telemetry */
-	int (*telemetry)(struct caniot_device *dev,
-			 uint8_t ep, char *buf,
-			 uint8_t *len);
+	caniot_telemetry_handler_t *telemetry_handler;
+
 };
 
 void caniot_print_device_identification(const struct caniot_device *dev);
@@ -136,50 +189,38 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev);
 
 static inline uint16_t caniot_device_get_mask(void)
 {
-	const union caniot_id mask = {
-		{
-			.type = 0,
-			.query = 1,
-			.cls = 0b111,
-			.sid = 0b111,
-			.endpoint = 0
-		}
-	};
-
-	return mask.raw;
+	return 0b00111111100U;
 }
 
 static inline uint16_t caniot_device_get_filter(union deviceid did)
 {
-	const union caniot_id filter = {
-		{
-			.type = 0,
-			.query = query,
-			.cls = did.cls,
-			.sid = did.sid,
-			.endpoint = 0
-		}
-	};
+	caniot_id_t filter;
 
-	return filter.raw;
+	filter.type = (caniot_frame_type_t) 0U;
+	filter.query = CANIOT_QUERY;
+	filter.cls = did.cls;
+	filter.sid = did.sid;
+	filter.endpoint = (caniot_endpoint_t) 0U;
+
+	return caniot_id_to_canid(filter);
 }
 
 static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
 {
-	const union caniot_id filter = {
-		{
-			.type = 0,
-			.query = query,
-			.cls = did.cls,
-			.sid = 0b111,
-			.endpoint = 0
-		}
-	};
+	caniot_id_t filter;
 
-	return filter.raw;
+	filter.type = (caniot_frame_type_t) 0U;
+	filter.query = CANIOT_QUERY;
+	filter.cls = (caniot_device_class_t) 0b111; /* broadcast is over all classes */
+	filter.sid = (caniot_device_subid_t) 0b111;
+	filter.endpoint = (caniot_endpoint_t) 0U;
+
+	return caniot_id_to_canid(filter);
 }
 
 /*___________________________________________________________________________*/
+
+void caniot_app_init(struct caniot_device *dev);
 
 /**
  * @brief Receive incoming CANIOT message if any and handle it
@@ -194,6 +235,8 @@ bool caniot_device_is_target(union deviceid did,
 
 int caniot_device_scales_rdmdelay(struct caniot_device *dev,
 				  uint32_t *rdmdelay);
+
+bool caniot_device_time_synced(struct caniot_device *dev);
 
 /*___________________________________________________________________________*/
 
@@ -218,31 +261,51 @@ int caniot_device_verify(struct caniot_device *dev);
 		.error_response = 1u,  \
 		.telemetry_delay_rdm = 1u,  \
 		.telemetry_endpoint = CANIOT_TELEMETRY_ENDPOINT_DEFAULT  \
-	}  \
+	},  \
+	.timezone = CANIOT_TIMEZONE_DEFAULT,  \
+	.location = { \
+		.region = CANIOT_LOCATION_REGION_DEFAULT,  \
+		.country = CANIOT_LOCATION_COUNTRY_DEFAULT,  \
+	},  \
+	.custompcb = { \
+		.gpio = { \
+			.pulse_duration = { \
+				.rl1 = 0U, \
+				.rl2 = 0U, \
+				.oc1 = 0U, \
+				.oc2 = 0U, \
+			}, \
+			mask = { \
+				.outputs_default = 0U, \
+				.telemetry_on_change = 0xFFFFFFFFLU, \
+			} \
+		} \
+	}\
 }
 
-#define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, ut, attr, attw) \
+#define CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, attr, attw) \
 { \
-	.update_time = ut,  \
 	.config = { \
 		.on_read = cfgr,  \
-		.written = cfgw  \
+		.on_write = cfgw  \
 	},  \
 	.custom_attr = { \
 		.read = attr,  \
 		.write = attw  \
 	},  \
 	.command_handler = cmd,  \
-	.telemetry = tlm  \
+	.telemetry_handler = tlm  \
 }
 
-#define CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw, ut) \
-	CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, ut, NULL, NULL)
+#define CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw) \
+	CANIOT_API_FULL_INIT(cmd, tlm, cfgr, cfgw, NULL, NULL)
 
 #define CANIOT_API_CFG_INIT(cmd, tlm, cfgr, cfgw) \
-	CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw, NULL)
+	CANIOT_API_STD_INIT(cmd, tlm, cfgr, cfgw)
 
 #define CANIOT_API_MIN_INIT(cmd, tlm) \
 	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)
+
+#define TELEMTRY_MASK
 
 #endif /* _CANIOT_DEVICE_H */

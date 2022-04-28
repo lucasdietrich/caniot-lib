@@ -179,7 +179,7 @@ static inline void arch_rom_cpy_ptr(void **d, const void **p)
 #ifdef __AVR__
 	*d = pgm_read_ptr(p);
 #else
-	*d = *p;
+	*d = (void*) *p;
 #endif
 }
 
@@ -492,7 +492,7 @@ static int handle_command_req(struct caniot_device *dev,
 		return -CANIOT_EHANDLERC;
 	}
 
-	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
+	CANIOT_DBG(F("Executing command handler (0x%p) for endpoint %d\n"),
 		   dev->api->command_handler, req->id.endpoint);
 
 	return dev->api->command_handler(dev, req->id.endpoint, req->buf, req->len);
@@ -519,7 +519,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 
 	prepare_response(dev, resp, telemetry);
 
-	CANIOT_DBG(F("Executing telemetry handler (0x%x) for endpoint %d\n"),
+	CANIOT_DBG(F("Executing telemetry handler (0x%p) for endpoint %d\n"),
 		   dev->api->telemetry, ep);
 
 	/* buffer */

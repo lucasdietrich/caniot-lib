@@ -23,9 +23,16 @@
 #	define F(x) PSTR(x) 
 #	define memcpy_P memcpy_P
 #	define ROM	PROGMEM
+#elif __ZEPHYR__
+#	include <stdio.h>
+#	define printf  printfk
+#	define snprintf snprintf
+#	define F(x) (x)
+#	define memcpy_P memcpy
+#	define ROM
 #else
 #	include <stdio.h>
-#	define printf  printk
+#	define printf  printf
 #	define snprintf snprintf
 #	define F(x) (x)
 #	define memcpy_P memcpy

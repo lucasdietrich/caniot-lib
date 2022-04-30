@@ -17,7 +17,7 @@
 
 #define ATTR_KEY(section, attr, part) ((section & 0xF) << 12 | (attr & 0xFF) << 4 | (part & 0xF))
 
-typedef uint16_t key_t;
+typedef uint16_t attr_key_t;
 
 enum section {
 	section_identification = 0,
@@ -247,7 +247,7 @@ static inline enum attr_option attr_get_option(const struct attribute *attr)
 	return option;
 }
 
-static const struct attr_section *attr_get_section(key_t key)
+static const struct attr_section *attr_get_section(attr_key_t key)
 {
 	uint8_t index = ATTR_KEY_SECTION(key);
 	if (index < ARRAY_SIZE(attr_sections)) {
@@ -256,7 +256,7 @@ static const struct attr_section *attr_get_section(key_t key)
 	return NULL;
 }
 
-static const struct attribute *attr_get(key_t key, const struct attr_section *section)
+static const struct attribute *attr_get(attr_key_t key, const struct attr_section *section)
 {
 	uint8_t index = ATTR_KEY_ATTR(key);
 	if (index < attr_get_section_size(section)) {
@@ -265,7 +265,7 @@ static const struct attribute *attr_get(key_t key, const struct attr_section *se
 	return NULL;
 }
 
-static int attr_resolve(key_t key, struct attr_ref *ref)
+static int attr_resolve(attr_key_t key, struct attr_ref *ref)
 {
 	const struct attr_section *section = attr_get_section(key);
 	if (!section) {

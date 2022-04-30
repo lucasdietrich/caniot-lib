@@ -137,17 +137,20 @@ void caniot_explain_id(caniot_id_t id)
 		CANIOT_INF(F("Error frame "));
 		return;
 	} else {
-		CANIOT_INF(get_type_str(id.type));
-		CANIOT_INF(F(" "));
-		CANIOT_INF(get_query_str(id.query));
-		CANIOT_INF(F(" "));
+#if defined(__AVR__)
+		CANIOT_INF(F("%d %d "), id.type, id.query);
+#else
+		CANIOT_INF("%s %s ", get_type_str(id.type), get_query_str(id.query));
+#endif
 	}
 
 	caniot_show_deviceid(CANIOT_DEVICE(id.cls, id.sid));
 
-	CANIOT_INF(F(" : "));
-	CANIOT_INF(get_endpoint_str(id.endpoint));
-	CANIOT_INF(F(" / "));
+#if defined(__AVR__)
+		CANIOT_INF(F(" : %d / "), id.endpoint);
+#else
+		CANIOT_INF(" : %s / ", get_endpoint_str(id.endpoint));
+#endif
 }
 
 void caniot_explain_frame(const struct caniot_frame *frame)
@@ -342,4 +345,9 @@ int caniot_deviceid_cmp(union deviceid a, union deviceid b)
 bool caniot_deviceid_equal(union deviceid a, union deviceid b)
 {
 	return caniot_deviceid_cmp(a, b) == 0;
+}
+
+int caniot_init(void)
+{
+	printf("CANIOT");
 }

@@ -10,29 +10,27 @@
  * - AVR : printf_P(PSTR("Hello %d\n"), 42);
  * - ARM/x86/any : printf("Hello %d\n", 42);
  */
-#include <stdio.h>
-
 #if !defined(CONFIG_CANIOT_ARCH_AGNOSTIC)
 #	define CONFIG_CANIOT_ARCH_AGNOSTIC 1
 #endif
 
-#ifdef __AVR__
+#if defined(__AVR__)
 #	include <avr/pgmspace.h>
 #	define printf	printf_P
 #	define snprintf snprintf_P
 #	define F(x) PSTR(x) 
 #	define memcpy_P memcpy_P
 #	define ROM	PROGMEM
-#elif __ZEPHYR__
+#elif defined(__ZEPHYR__)
 #	include <stdio.h>
-#	define printf  printfk
+// #	define printf  printk
 #	define snprintf snprintf
 #	define F(x) (x)
 #	define memcpy_P memcpy
 #	define ROM
-#else
+#else /* stdlib */
 #	include <stdio.h>
-#	define printf  printf
+// #	define printf  printf
 #	define snprintf snprintf
 #	define F(x) (x)
 #	define memcpy_P memcpy

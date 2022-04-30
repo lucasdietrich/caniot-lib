@@ -16,3 +16,10 @@ file(GLOB CANIOT_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/**.h")
 add_library(caniotlib STATIC ${CANIOT_SOURCES} ${CANIOT_HEADERS})
 
 target_include_directories(caniotlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
+
+# zephyr_library_named(caniotlib)
+
+# file(GLOB CANIOT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/**.c")
+# zephyr_library_sources(${CANIOT_SOURCES})
+
+# zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)

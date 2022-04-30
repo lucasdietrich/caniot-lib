@@ -346,8 +346,3 @@ bool caniot_deviceid_equal(union deviceid a, union deviceid b)
 {
 	return caniot_deviceid_cmp(a, b) == 0;
 }
-
-int caniot_init(void)
-{
-	printf("CANIOT");
-}

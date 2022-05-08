@@ -56,34 +56,6 @@ static const char *get_query_str(caniot_frame_dir_t q)
 	}
 }
 
-static const char *get_class_str(caniot_device_class_t class)
-{
-	if (class >= ARRAY_SIZE(cls_str)) {
-		class = ARRAY_SIZE(cls_str) - 1;
-	}
-
-	return cls_str[class];
-}
-
-static void cpy_class_str(caniot_device_class_t class, char buf[2])
-{
-	memcpy_P(buf, get_class_str(class), 2);
-}
-
-static const char *get_sid_str(caniot_device_subid_t sid)
-{
-	if (sid >= ARRAY_SIZE(sid_str)) {
-		sid = ARRAY_SIZE(sid_str) - 1;
-	}
-
-	return sid_str[sid];
-}
-
-static void cpy_sid_str(caniot_device_subid_t sid, char buf[2])
-{
-	memcpy_P(buf, get_sid_str(sid), 2);
-}
-
 static const char *get_endpoint_str(caniot_endpoint_t endpoint)
 {
 	switch (endpoint) {
@@ -100,21 +72,77 @@ static const char *get_endpoint_str(caniot_endpoint_t endpoint)
 	}
 }
 
+static const char *get_class_str(caniot_device_class_t class)
+{
+	if (class >= ARRAY_SIZE(cls_str)) {
+		class = ARRAY_SIZE(cls_str) - 1;
+	}
+
+	return cls_str[class];
+}
+
+static const char *get_sid_str(caniot_device_subid_t sid)
+{
+	if (sid >= ARRAY_SIZE(sid_str)) {
+		sid = ARRAY_SIZE(sid_str) - 1;
+	}
+
+	return sid_str[sid];
+}
+
+static void cpy_str(char *dst,
+		    const char *flash_str,
+		    size_t len)
+{
+	strncpy_P(dst, flash_str, MIN(strlen_P(flash_str), len - 1));
+	dst[len - 1] = '\0';
+}
+
+static inline void cpy_class_str(caniot_device_class_t class,
+				 char *buf,
+				 size_t len)
+{
+	cpy_str(buf, get_class_str(class), len);
+}
+
+static inline void cpy_sid_str(caniot_device_subid_t sid, char *buf, size_t len)
+{
+	cpy_str(buf, get_sid_str(sid), len);
+}
+
+static inline void cpy_type_str(caniot_frame_type_t type, char *buf, size_t len)
+{
+	cpy_str(buf, get_type_str(type), len);
+}
+
+static inline void cpy_query_str(caniot_frame_dir_t q, char *buf, size_t len)
+{
+	cpy_str(buf, get_query_str(q), len);
+}
+
+static inline void cpy_endpoint_str(caniot_endpoint_t endpoint, char *buf, size_t len)
+{
+	cpy_str(buf, get_endpoint_str(endpoint), len);
+}
+
 void caniot_show_deviceid(union deviceid did)
 {
 	if (caniot_valid_deviceid(did)) {
 		if (CANIOT_DEVICE_IS_BROADCAST(did)) {
 			CANIOT_INF(F("BROADCAST"));
 		} else {
-			char cls[3], sid[3];
-			cpy_class_str(did.cls, cls);
-			cpy_sid_str(did.sid, sid);
-
-			cls[2] = '\0';
-			sid[2] = '\0';
+#if defined(__AVR__)
+			char cls_str[3], sid_str[3];
+			cpy_class_str(did.cls, cls_str, sizeof(cls_str));
+			cpy_sid_str(did.sid, sid_str, sizeof(sid_str));
 
 			CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			       did.val, did.val, cls, sid);
+				   did.val, did.val, cls_str, sid_str);
+#else
+			CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+				   did.val, did.val, get_class_str(did.cls),
+				   get_sid_str(did.sid));
+#endif
 		}
 	} else {
 		CANIOT_INF(F("invalid did"));
@@ -138,7 +166,10 @@ void caniot_explain_id(caniot_id_t id)
 		return;
 	} else {
 #if defined(__AVR__)
-		CANIOT_INF(F("%d %d "), id.type, id.query);
+		char type_str[11], query_str[9];
+		cpy_type_str(id.type, type_str, sizeof(type_str));
+		cpy_query_str(id.query, query_str, sizeof(query_str));
+		CANIOT_INF(F("%s %s "), type_str, query_str);
 #else
 		CANIOT_INF("%s %s ", get_type_str(id.type), get_query_str(id.query));
 #endif
@@ -147,7 +178,9 @@ void caniot_explain_id(caniot_id_t id)
 	caniot_show_deviceid(CANIOT_DEVICE(id.cls, id.sid));
 
 #if defined(__AVR__)
-		CANIOT_INF(F(" : %d / "), id.endpoint);
+		char ep_str[5];
+		cpy_endpoint_str(id.endpoint, ep_str, sizeof(ep_str));
+		CANIOT_INF(F(" : %s / "), ep_str);
 #else
 		CANIOT_INF(" : %s / ", get_endpoint_str(id.endpoint));
 #endif

@@ -15,6 +15,7 @@
 #endif
 
 #if defined(__AVR__)
+#	include <stdio.h>
 #	include <avr/pgmspace.h>
 #	define printf	printf_P
 #	define snprintf snprintf_P

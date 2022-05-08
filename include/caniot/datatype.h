@@ -88,6 +88,7 @@ struct caniot_board_control_telemetry
 
 	uint16_t int_temperature : 10;
 	uint16_t ext_temperature : 10;
+	uint16_t ext_temperature2 : 10;
 };
 
 #pragma pack(push, 1)

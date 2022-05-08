@@ -213,7 +213,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	size_t total = 0U;
 
 	ret = caniot_explain_id_str(frame->id, buf, len);
-	if (ret < 0) {
+	if (ret > len || ret < 0) {
 		return ret;
 	}
 
@@ -230,13 +230,16 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 		   (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
 		ret = snprintf(buf, len, "ep : %s", 
 			       get_endpoint_str(frame->id.endpoint));
+		if (ret > len || ret < 0) {
+			return ret;
+		}
 		total += ret;
 		buf += ret;
 		len -= ret;
 
 		for (int i = 0; i < frame->len; i++) {
 			ret = snprintf(buf, len, " %02hhx", (uint8_t)frame->buf[i]);
-			if (ret < 0) {
+			if (ret > len || ret < 0) {
 				return ret;
 			}
 			total += ret;
@@ -246,7 +249,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	} else {
 		ret = snprintf(buf, len, "LEN = %d, key = %02x val = %04x",
 			       frame->len, frame->attr.key, frame->attr.val);
-		if (ret < 0) {
+		if (ret > len || ret < 0) {
 			return ret;
 		}
 		total += ret;
@@ -258,7 +261,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 		buf[0] = '\0';
 		total++;
 	} else {
-		return -1;
+		return -CANIOT_EINVAL;
 	}
 
 	return total;

@@ -94,8 +94,9 @@ static void cpy_str(char *dst,
 		    const char *flash_str,
 		    size_t len)
 {
-	strncpy_P(dst, flash_str, MIN(strlen_P(flash_str), len - 1));
-	dst[len - 1] = '\0';
+	const size_t copy_len = MIN(strlen_P(flash_str), len - 1);
+	strncpy_P(dst, flash_str, copy_len);
+	dst[copy_len] = '\0';
 }
 
 static inline void cpy_class_str(caniot_device_class_t class,

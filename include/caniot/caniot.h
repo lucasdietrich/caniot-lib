@@ -315,4 +315,6 @@ static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
 
 #endif
 
+void caniot_test(void);
+
 #endif

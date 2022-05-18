@@ -29,6 +29,8 @@
 #define CANIOT_DEVICE(class_id, sub_id)	((union deviceid) { { .cls = (caniot_device_class_t) class_id, .sid = (caniot_device_subid_t) sub_id} })
 #define CANIOT_DEVICE_FROM_RAW(raw)	((union deviceid) { .raw = raw })
 
+#define CANIOT_DEVICE_TO_UINT8(did)	((uint8_t) did.val)
+
 #define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
 
 #define CANIOT_DEVICE_EQUAL(did1, did2) ((did1).val == (did2).val)
@@ -314,5 +316,7 @@ static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
 }
 
 #endif
+
+void caniot_test(void);
 
 #endif

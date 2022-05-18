@@ -611,7 +611,7 @@ static int handle_command_req(struct caniot_device *dev,
 	int ret;
 	const uint8_t ep = req->id.endpoint;
 
-	CANIOT_DBG(F("Executing command handler (0x%x) for endpoint %d\n"),
+	CANIOT_DBG(F("Executing command handler (0x%p) for endpoint %d\n"),
 		   dev->api->command_handler, ep);
 
 	if (dev->api->command_handler != NULL) {
@@ -739,7 +739,7 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 		uint32_t now;
 		dev->driv->get_time(&now, NULL);
 
-		CANIOT_DBG(F("now = %lu last_telemetry = %lu\n"), now, dev->system.last_telemetry);
+		CANIOT_DBG(F("now = %u last_telemetry = %u\n"), now, dev->system.last_telemetry);
 		
 		uint32_t diff = now - dev->system.last_telemetry;
 		if (dev->config->telemetry.period <= diff) {

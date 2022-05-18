@@ -153,7 +153,7 @@ void caniot_show_deviceid(union deviceid did)
 void caniot_show_frame(const struct caniot_frame *frame)
 {
 	CANIOT_DBG(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
-	       frame->id.raw, (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
+	       caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
 	       (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
 	       (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
 	       (uint8_t)frame->len);
@@ -161,7 +161,7 @@ void caniot_show_frame(const struct caniot_frame *frame)
 
 void caniot_explain_id(caniot_id_t id)
 {
-	CANIOT_INF(F("[ %x ] "), id.raw);
+	CANIOT_INF(F("[ %x ] "), caniot_id_to_canid(id));
 	if (caniot_is_error_frame(id) == true) {
 		CANIOT_INF(F("Error frame "));
 		return;
@@ -202,7 +202,7 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 			CANIOT_INF(F("%02hhx "), (uint8_t) frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("LEN = %d, key = %02x val = %04lx"), frame->len,
+		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"), frame->len,
 		       frame->attr.key, frame->attr.val);
 	}
 }
@@ -382,4 +382,9 @@ int caniot_deviceid_cmp(union deviceid a, union deviceid b)
 bool caniot_deviceid_equal(union deviceid a, union deviceid b)
 {
 	return caniot_deviceid_cmp(a, b) == 0;
+}
+
+void caniot_test(void)
+{
+	printf("caniot test\n");
 }

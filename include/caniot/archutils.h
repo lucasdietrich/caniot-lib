@@ -24,16 +24,18 @@
 #	define ROM	PROGMEM
 #elif defined(__ZEPHYR__)
 #	include <stdio.h>
-// #	define printf  printk
 #	define snprintf snprintf
+#	define strlen_P strlen
+#	define strncpy_P strncpy
 #	define F(x) (x)
 #	define memcpy_P memcpy
 #	define ROM
 #else /* stdlib */
 #	include <stdio.h>
-// #	define printf  printf
 #	define snprintf snprintf
-#	define F(x) (x)
+#	define strlen_P strlen
+#	define strncpy_P strncpy
+#	define F(x) x
 #	define memcpy_P memcpy
 #	define ROM
 #endif

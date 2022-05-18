@@ -4,12 +4,14 @@
 
 all: build run
 
-build:
+build-dir:
 	mkdir -p build
 	cmake -B build
+
+build: build-dir
 	make -C build --no-print-directory
 
-run: build
+run:
 	./build/samples/sim/sim
 
 clean:

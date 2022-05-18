@@ -35,7 +35,7 @@
 #	define snprintf snprintf
 #	define strlen_P strlen
 #	define strncpy_P strncpy
-#	define F(x) (x)
+#	define F(x) x
 #	define memcpy_P memcpy
 #	define ROM
 #endif

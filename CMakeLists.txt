@@ -10,6 +10,9 @@ project(caniotlib VERSION 1.0.0 DESCRIPTION "CANIOT lib")
 
 set(CMAKE_BUILD_TYPE Debug)
 
+# add debug symbols
+set(CMAKE_CXX_FLAGS "-Wall -g -O2")
+
 file(GLOB CANIOT_SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/**.c")
 file(GLOB CANIOT_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/**.h")
 

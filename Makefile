@@ -2,13 +2,13 @@
 
 .PHONY: all no_test programs lib tests install uninstall clean test check covtest lcov apidoc apidoc_clean
 
-all: build run
+all: build-all run
 
-build-dir:
+./build:
 	mkdir -p build
 	cmake -B build
 
-build: build-dir
+build-all: ./build
 	make -C build --no-print-directory
 
 run:

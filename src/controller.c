@@ -192,6 +192,8 @@ int caniot_controller_init(struct caniot_controller *ctrl)
 
 int caniot_controller_deinit(struct caniot_controller *ctrl)
 {
+	(void) ctrl;
+	
 	return 0;
 }
 

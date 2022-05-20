@@ -189,7 +189,7 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev);
 
 static inline uint16_t caniot_device_get_mask(void)
 {
-	return 0b00111111100U;
+	return 0x1fc; // 0b00111111100U;
 }
 
 static inline uint16_t caniot_device_get_filter(union deviceid did)
@@ -207,12 +207,14 @@ static inline uint16_t caniot_device_get_filter(union deviceid did)
 
 static inline uint16_t caniot_device_get_filter_broadcast(union deviceid did)
 {
+	(void) did;
+	
 	caniot_id_t filter;
 
 	filter.type = (caniot_frame_type_t) 0U;
 	filter.query = CANIOT_QUERY;
-	filter.cls = (caniot_device_class_t) 0b111; /* broadcast is over all classes */
-	filter.sid = (caniot_device_subid_t) 0b111;
+	filter.cls = (caniot_device_class_t) 0x7; /* 0b111: broadcast is over all classes */
+	filter.sid = (caniot_device_subid_t) 0x7; /* 0b111 */
 	filter.endpoint = (caniot_endpoint_t) 0U;
 
 	return caniot_id_to_canid(filter);

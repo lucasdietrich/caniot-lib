@@ -113,7 +113,7 @@ static const struct attribute system_attr[] ROM = {
 	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused4),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_command_error", last_command_error),
 	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry_error", last_telemetry_error),
-	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused5), 
+	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused5),
 	ATTRIBUTE(struct caniot_system, READABLE, "battery", battery),
 };
 
@@ -125,15 +125,15 @@ static const struct attribute config_attr[] ROM = {
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "flags", flags),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "timezone", timezone),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "location", location),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.oc1", 
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.oc1",
 		custompcb.gpio.pulse_duration.oc1),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.oc2", 
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.oc2",
 		custompcb.gpio.pulse_duration.oc2),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.rl1", 
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.rl1",
 		custompcb.gpio.pulse_duration.rl1),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.rl2", 
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.pulse_duration.rl2",
 		custompcb.gpio.pulse_duration.rl2),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.mask.outputs_default", 
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.mask.outputs_default",
 		custompcb.gpio.mask.outputs_default.mask),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "custompcb.gpio.mask.telemetry_on_change",
 		custompcb.gpio.mask.telemetry_on_change.mask),
@@ -177,7 +177,7 @@ static inline void arch_rom_cpy_ptr(void **d, const void **p)
 #ifdef __AVR__
 	*d = pgm_read_ptr(p);
 #else
-	*d = (void*) *p;
+	*d = (void *)*p;
 #endif
 }
 
@@ -194,13 +194,17 @@ static inline void arch_rom_cpy(void *d, const void *p, uint16_t size)
 {
 	switch (size) {
 	case 1u:
-		return arch_rom_cpy_byte(d, p);
+		arch_rom_cpy_byte(d, p);
+		break;
 	case 2u:
-		return arch_rom_cpy_word(d, p);
+		arch_rom_cpy_word(d, p);
+		break;
 	case 4u:
-		return arch_rom_cpy_dword(d, p);
+		arch_rom_cpy_dword(d, p);
+		break;
 	default:
-		return arch_rom_cpy_mem(d, p, size);
+		arch_rom_cpy_mem(d, p, size);
+		break;
 	}
 }
 
@@ -315,7 +319,7 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 	read_rom_identification(&id, dev->identification);
 
 	CANIOT_INF(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
-	       id.name, id.did.cls, id.did.sid, id.version);
+		   id.name, id.did.cls, id.did.sid, id.version);
 }
 
 static inline void read_identification_nodeid(struct caniot_device *dev,
@@ -359,9 +363,9 @@ static int config_written(struct caniot_device *dev)
 
 		/* call application callback to apply the new configuration */
 		ret = dev->api->config.on_write(dev, dev->config);
-		
+
 #if CANIOT_DRIVERS_API
-		/* do adjustement if needed */	
+		/* do adjustement if needed */
 		dev->driv->get_time(&new, NULL);
 		if (new != prev) {
 			const int32_t diff = new - prev;
@@ -409,7 +413,7 @@ static int attribute_read(struct caniot_device *dev,
 
 	/* print debug attr_ref */
 	CANIOT_DBG(F("attr_ref: section = %hhu, offset = %hhu, option = %hhu\n"),
-	       ref->section, ref->offset, ref->option);
+		   ref->section, ref->offset, ref->option);
 
 	switch (ref->section) {
 	case section_identification:
@@ -531,7 +535,7 @@ static int write_system_attr(struct caniot_device *dev,
 		 * send the value acknowledgement.
 		 */
 		dev->system.time = attr->u32;
-	
+
 		/* last uptime when the UNIX time was set */
 		dev->system.uptime_synced = attr->u32 - dev->system.start_time;
 
@@ -546,8 +550,8 @@ static int write_system_attr(struct caniot_device *dev,
 }
 
 static int attribute_write(struct caniot_device *dev,
-		       const struct attr_ref *ref,
-		       const struct caniot_attribute *attr)
+			   const struct attr_ref *ref,
+			   const struct caniot_attribute *attr)
 {
 	if ((ref->option & WRITABLE) == 0U) {
 		return -CANIOT_EROATTR;
@@ -557,7 +561,7 @@ static int attribute_write(struct caniot_device *dev,
 
 	/* print debug attr_ref */
 	CANIOT_DBG(F("attr_ref: section = %hhu, offset = %hhu, option = %hhu\n"),
-	       ref->section, ref->offset, ref->option);
+		   ref->section, ref->offset, ref->option);
 
 	switch (ref->section) {
 	case section_system:
@@ -612,7 +616,7 @@ static int handle_command_req(struct caniot_device *dev,
 	const uint8_t ep = req->id.endpoint;
 
 	CANIOT_DBG(F("Executing command handler (0x%p) for endpoint %d\n"),
-		   dev->api->command_handler, ep);
+		   (void *) &dev->api->command_handler, ep);
 
 	if (dev->api->command_handler != NULL) {
 		ret = dev->api->command_handler(dev, ep, req->buf, req->len);
@@ -640,7 +644,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	prepare_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%p) for endpoint %d\n"),
-		   dev->api->telemetry_handler, ep);
+		   (void *) &dev->api->telemetry_handler, ep);
 
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
@@ -652,7 +656,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 		dev->system.sent.telemetry++;
 	}
 
-	
+
 	dev->system.last_telemetry_error = ret;
 
 	/* TODO check and force response length */
@@ -722,6 +726,8 @@ bool caniot_device_is_target(union deviceid did,
 
 int caniot_device_verify(struct caniot_device *dev)
 {
+	(void) dev;
+
 	return -CANIOT_ENIMPL;
 }
 
@@ -740,7 +746,7 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 		dev->driv->get_time(&now, NULL);
 
 		CANIOT_DBG(F("now = %u last_telemetry = %u\n"), now, dev->system.last_telemetry);
-		
+
 		uint32_t diff = now - dev->system.last_telemetry;
 		if (dev->config->telemetry.period <= diff) {
 			return 0;
@@ -763,7 +769,7 @@ static uint32_t get_response_delay(struct caniot_device *dev,
 		if (ret == 0) {
 			if (dev->config->flags.telemetry_delay_rdm == 1u) {
 				dev->driv->entropy((uint8_t *)&delay_ms, sizeof(delay_ms));
-				
+
 				uint32_t amplitude = 100U;
 				if (dev->config->telemetry.delay_max > dev->config->telemetry.delay_min) {
 					amplitude = dev->config->telemetry.delay_max

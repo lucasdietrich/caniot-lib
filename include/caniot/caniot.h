@@ -121,6 +121,8 @@ union deviceid {
 	uint8_t val;
 };
 
+typedef union deviceid caniot_did_t;
+
 #pragma pack(push, 1)
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
@@ -172,6 +174,8 @@ struct caniot_frame {
         };
         uint8_t len;
 };
+
+typedef struct caniot_frame caniot_frame_t;
 
 typedef int (*caniot_query_callback_t)(union deviceid did,
 				       struct caniot_frame *resp);

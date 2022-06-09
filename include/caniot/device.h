@@ -202,6 +202,29 @@ uint16_t caniot_device_get_filter(caniot_did_t did);
 
 uint16_t caniot_device_get_filter_broadcast(caniot_did_t did);
 
+/**
+ * @brief static-inline version of caniot_device_get_filter
+ * 
+ * @param did 
+ * @return uint16_t 
+ */
+static inline uint16_t _si_caniot_device_get_filter(caniot_did_t did)
+{
+	return CANIOT_ID(0U, CANIOT_QUERY, CANIOT_DID_CLS(did), CANIOT_DID_SID(did), 0U);
+}
+
+/**
+ * @brief static-inline version of caniot_device_get_filter_broadcast
+ * 
+ * @param did 
+ * @return uint16_t 
+ */
+static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
+{
+	return CANIOT_ID(0U, CANIOT_QUERY, CANIOT_DID_CLS(CANIOT_DID_BROADCAST), 
+			 CANIOT_DID_SID(CANIOT_DID_BROADCAST), 0U);
+}
+
 /*___________________________________________________________________________*/
 
 void caniot_app_init(struct caniot_device *dev);

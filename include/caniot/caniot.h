@@ -256,7 +256,7 @@ int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b);
  */
 static inline uint16_t caniot_id_to_canid(caniot_id_t id)
 {
-	return CANIOT_ID(id.type, id.query, id.cls, id.cls, id.endpoint);
+	return CANIOT_ID(id.type, id.query, id.cls, id.sid, id.endpoint);
 }
 
 /**

@@ -21,24 +21,23 @@
 
 #define CANIOT_MAX_PENDING_QUERIES	2
 
-
-#define CANIOT_ID(t, q, c, d, e) ((t) | (q << 2) | (c << 3) | (d << 6) | (e << 9))
+#define CANIOT_ID(t, q, c, d, e) ((t & 2U) | ((q & 1U) << 2) | ((c & 7U) << 3) | ((d & 7U) << 6) | ((e & 2U) << 9))
 
 #define CANIOT_CLASS_BROADCAST	(0x7)
 
-#define CANIOT_DID_MAX_VALUE (0x3FU)
+#define CANIOT_DID_MAX_VALUE CANIOT_DID_BROADCAST
 #define CANIOT_DID_MIN_VALUE (0x00U)
 
-#define CANIOT_DEVICE(class_id, sub_id)	((union deviceid) { { .cls = (caniot_device_class_t) class_id, .sid = (caniot_device_subid_t) sub_id} })
-#define CANIOT_DEVICE_FROM_RAW(raw)	((union deviceid) { .raw = raw })
+#define CANIOT_DID(class_id, sub_id)	((caniot_did_t) (class_id & 0x7U) | ((sub_id & 0x7U) << 3U))
+#define CANIOT_DID_FROM_RAW(raw) (raw & CANIOT_DID_BROADCAST)
+#define CANIOT_DID_CLS(did) (did & 0x7U)
+#define CANIOT_DID_SID(did) ((did >> 3U) & 0x7U)
 
-#define CANIOT_DEVICE_TO_UINT8(did)	((uint8_t) did.val)
+#define CANIOT_DID_BROADCAST CANIOT_DID(CANIOT_CLASS_BROADCAST, 0x7U)
 
-#define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
+#define CANIOT_DID_EQ(did1, did2) ((did1 & CANIOT_DID_MAX_VALUE) == (did2 & CANIOT_DID_MAX_VALUE))
 
-#define CANIOT_DEVICE_EQUAL(did1, did2) (((did1).val & CANIOT_DID_MAX_VALUE) == ((did2).val & CANIOT_DID_MAX_VALUE))
-
-#define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DEVICE_EQUAL(did, CANIOT_DEVICE_BROADCAST)
+#define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DID_EQ(did, CANIOT_DID_BROADCAST)
 
 /* milliseconds */
 #define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	0
@@ -115,20 +114,9 @@ struct caniot_data
 	uint8_t len;
 };
 
-#pragma pack(push, 1)
-union deviceid {
-	struct {
-		caniot_device_class_t cls : 3; /* device class */
-		caniot_device_subid_t sid : 3; /* device sub-id */
-	};
-	uint8_t val;
-};
-
-typedef union deviceid caniot_did_t;
-#pragma pack(push, 1)
+typedef uint8_t caniot_did_t;
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
-#if CONFIG_CANIOT_ARCH_AGNOSTIC
 typedef struct {
 	caniot_frame_type_t type : 2U;
 	caniot_frame_dir_t query : 1U;
@@ -136,18 +124,6 @@ typedef struct {
 	caniot_device_subid_t sid : 3U;
 	caniot_endpoint_t endpoint : 2U;
 } caniot_id_t;
-#else 
-typedef union {
-	struct {
-		caniot_frame_type_t type : 2U;
-		caniot_frame_dir_t query : 1U;
-		caniot_device_class_t cls : 3U;
-		caniot_device_subid_t sid : 3U;
-		caniot_endpoint_t endpoint : 2U;
-	};
-	uint16_t raw;
-} caniot_id_t;
-#endif
 
 struct caniot_attribute
 {
@@ -169,17 +145,17 @@ struct caniot_attribute
 
 struct caniot_frame {
 	caniot_id_t id;
-        union {
+	union {
 		char buf[8];
-                struct caniot_attribute attr;
+		struct caniot_attribute attr;
 		int32_t err;
-        };
-        uint8_t len;
+	};
+	uint8_t len;
 };
 
 typedef struct caniot_frame caniot_frame_t;
 
-typedef int (*caniot_query_callback_t)(union deviceid did,
+typedef int (*caniot_query_callback_t)(caniot_did_t did,
 				       const struct caniot_frame *resp);
 
 struct caniot_drivers_api {
@@ -189,28 +165,28 @@ struct caniot_drivers_api {
 	void (*set_time)(uint32_t sec);
 	/**
 	 * @brief Send a CANIOT frame
-	 * 
+	 *
 	 * Return 0 on success, any other value on error.
 	 */
 	int (*send)(const struct caniot_frame *frame, uint32_t delay_ms);
 
 	/**
 	 * @brief Receive a CANIOT frame.
-	 * 
+	 *
 	 * Return 0 on success, -EAGAIN if no frame is available.
 	 */
 	int (*recv)(struct caniot_frame *frame);
 };
 
 // Return if deviceid is broadcast
-static inline bool caniot_is_broadcast(union deviceid id)
+static inline bool caniot_is_broadcast(caniot_did_t id)
 {
 	return CANIOT_DEVICE_IS_BROADCAST(id);
 }
 
-bool caniot_device_is_target(union deviceid did,
+bool caniot_device_is_target(caniot_did_t did,
 			     const struct caniot_frame *frame);
-			     
+
 bool caniot_controller_is_target(const struct caniot_frame *frame);
 
 static inline void caniot_clear_frame(struct caniot_frame *frame)
@@ -233,7 +209,7 @@ static inline bool is_telemetry_response(struct caniot_frame *frame)
 // Check if drivers api is valid
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api);
 
-void caniot_show_deviceid(union deviceid did);
+void caniot_show_deviceid(caniot_did_t did);
 
 void caniot_show_frame(const struct caniot_frame *frame);
 
@@ -246,11 +222,11 @@ int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len);
 int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t len);
 
 void caniot_build_query_telemetry(struct caniot_frame *frame,
-				  union deviceid did,
+				  caniot_did_t did,
 				  uint8_t endpoint);
 
 void caniot_build_query_command(struct caniot_frame *frame,
-				union deviceid did,
+				caniot_did_t did,
 				uint8_t endpoint,
 				const uint8_t *buf,
 				uint8_t size);
@@ -259,27 +235,24 @@ bool caniot_is_error(int cterr);
 
 void caniot_show_error(int cterr);
 
-int caniot_encode_deviceid(union deviceid did, uint8_t *buf, size_t len);
+int caniot_encode_deviceid(caniot_did_t did, uint8_t *buf, size_t len);
 
-bool caniot_deviceid_equal(union deviceid a, union deviceid b);
+bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b);
 
 /**
  * @brief Compare CANIOT device addresses
- * 
+ *
  * @param a First CANIOT device address to compare
  * @param b Second CANIOT device address to compare
  * @return int negative value if @a a < @a b, 0 if @a a == @a b, else positive
  */
-int caniot_deviceid_cmp(union deviceid a, union deviceid b);
+int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b);
 
-#if CONFIG_CANIOT_ARCH_AGNOSTIC == 1
 /**
- * @brief Convert CAN id to caniot ID format 
- * 
- * Note: Architecture agnostic.
- * 
- * @param id 
- * @return uint16_t 
+ * @brief Convert CAN id to caniot ID format
+ *
+ * @param id
+ * @return uint16_t
  */
 static inline uint16_t caniot_id_to_canid(caniot_id_t id)
 {
@@ -289,11 +262,11 @@ static inline uint16_t caniot_id_to_canid(caniot_id_t id)
 
 /**
  * @brief Convert CANIOT id to caniot ID format
- * 
+ *
  * Note: Architecture agnostic.
- * 
- * @param canid 
- * @return caniot_id_t 
+ *
+ * @param canid
+ * @return caniot_id_t
  */
 static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
 {
@@ -307,20 +280,6 @@ static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
 
 	return id;
 }
-
-#else
-
-static inline uint16_t caniot_id_to_canid(caniot_id_t id)
-{
-	return id.raw;
-}
-
-static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
-{
-	return (caniot_id_t) { .raw = canid };
-}
-
-#endif
 
 void caniot_test(void);
 

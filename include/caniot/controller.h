@@ -24,7 +24,7 @@ struct caniot_pqt
 
 struct caniot_pendq
 {
-	union deviceid did;
+	caniot_did_t did;
 	caniot_query_callback_t callback;
 
 	union {
@@ -59,19 +59,19 @@ int caniot_controller_init(struct caniot_controller *controller);
 int caniot_controller_deinit(struct caniot_controller *ctrl);
 
 int caniot_controller_query(struct caniot_controller *controller,
-			    union deviceid did,
+			    caniot_did_t did,
 			    struct caniot_frame *frame,
 			    caniot_query_callback_t cb,
 			    uint32_t timeout);
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
-			     union deviceid did,
+			     caniot_did_t did,
 			     uint8_t ep,
 			     caniot_query_callback_t cb,
 			     uint32_t timeout);
 
 int caniot_command(struct caniot_controller *ctrl,
-		   union deviceid did,
+		   caniot_did_t did,
 		   uint8_t ep,
 		   uint8_t *buf,
 		   uint8_t len,
@@ -79,13 +79,13 @@ int caniot_command(struct caniot_controller *ctrl,
 		   uint32_t timeout);
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
-			  union deviceid did,
+			  caniot_did_t did,
 			  uint16_t key,
 			  caniot_query_callback_t cb,
 			  uint32_t timeout);
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
-			   union deviceid did,
+			   caniot_did_t did,
 			   uint16_t key,
 			   uint32_t value,
 			   caniot_query_callback_t cb,
@@ -100,11 +100,11 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 
 /**
  * @brief Check timeouts and receive incoming CANIOT message if any and handle it
- * 
+ *
  * Note: Should be called on query timeout or when an incoming can message
- * 
- * @param ctrl 
- * @return int 
+ *
+ * @param ctrl
+ * @return int
  */
 int caniot_controller_process(struct caniot_controller *ctrl);
 

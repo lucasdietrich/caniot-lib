@@ -319,18 +319,18 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 	read_rom_identification(&id, dev->identification);
 
 	CANIOT_INF(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
-		   id.name, id.did.cls, id.did.sid, id.version);
+		   id.name, CANIOT_DID_CLS(id.did), CANIOT_DID_SID(id.did), id.version);
 }
 
 static inline void read_identification_nodeid(struct caniot_device *dev,
-					      union deviceid *did)
+					      caniot_did_t *did)
 {
-	arch_rom_cpy_byte(&did->val, (const uint8_t *)&dev->identification->did);
+	arch_rom_cpy_byte(did, (const uint8_t *)&dev->identification->did);
 }
 
-union deviceid caniot_device_get_id(struct caniot_device *dev)
+caniot_did_t caniot_device_get_id(struct caniot_device *dev)
 {
-	union deviceid did;
+	caniot_did_t did;
 	read_identification_nodeid(dev, &did);
 	return did;
 }
@@ -451,7 +451,7 @@ static void prepare_response(struct caniot_device *dev,
 			     struct caniot_frame *resp,
 			     uint8_t type)
 {
-	union deviceid did;
+	caniot_did_t did;
 
 	caniot_clear_frame(resp);
 
@@ -462,8 +462,8 @@ static void prepare_response(struct caniot_device *dev,
 	resp->id.type = type;
 	resp->id.query = CANIOT_RESPONSE;
 
-	resp->id.cls = did.cls;
-	resp->id.sid = did.sid;
+	resp->id.cls = CANIOT_DID_CLS(did);
+	resp->id.sid = CANIOT_DID_SID(did);
 	resp->id.endpoint = 0;
 }
 
@@ -616,7 +616,7 @@ static int handle_command_req(struct caniot_device *dev,
 	const uint8_t ep = req->id.endpoint;
 
 	CANIOT_DBG(F("Executing command handler (0x%p) for endpoint %d\n"),
-		   (void *) &dev->api->command_handler, ep);
+		   (void *)&dev->api->command_handler, ep);
 
 	if (dev->api->command_handler != NULL) {
 		ret = dev->api->command_handler(dev, ep, req->buf, req->len);
@@ -644,7 +644,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	prepare_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%p) for endpoint %d\n"),
-		   (void *) &dev->api->telemetry_handler, ep);
+		   (void *)&dev->api->telemetry_handler, ep);
 
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
@@ -719,7 +719,7 @@ exit:
 
 int caniot_device_verify(struct caniot_device *dev)
 {
-	(void) dev;
+	(void)dev;
 
 	return -CANIOT_ENIMPL;
 }

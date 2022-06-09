@@ -13,7 +13,7 @@ typedef enum
 	CANIOT_STATE_ON
 } caniot_state_t;
 
-typedef enum 
+typedef enum
 {
 	CANIOT_SS_CMD_RESET = 0,
 	CANIOT_SS_CMD_SET
@@ -21,7 +21,7 @@ typedef enum
 
 /**
  * @brief Commands for controlling a two state output:
- * 
+ *
  * Note: TS stands for "TwoState"
  */
 typedef enum
@@ -47,8 +47,8 @@ typedef enum {
 } caniot_phys_hysteresis_state_t;
 
 /**
- * @brief 
- * 
+ * @brief
+ *
  * Note: Is compatible with caniot_twostate_cmd_t or caniot_light_cmd_t for example
  */
 typedef enum {
@@ -101,7 +101,7 @@ struct caniot_board_control_command
 	caniot_complex_digital_cmd_t crl2 : 3;
 
 	uint8_t _unused : 4;
-	
+
 	uint8_t _unused9[5];
 
 	/* in the case of the AVR, proper software reset should use the watchdog :

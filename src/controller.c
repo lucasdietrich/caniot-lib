@@ -5,9 +5,9 @@
 #define pqt caniot_pqt
 
 // Get deviceid from frame
-static inline union deviceid get_deviceid(const struct caniot_frame *frame)
+static inline caniot_did_t get_deviceid(const struct caniot_frame *frame)
 {
-	return CANIOT_DEVICE(frame->id.cls, frame->id.sid);
+	return CANIOT_DID(frame->id.cls, frame->id.sid);
 }
 
 static bool is_query_pending(struct caniot_device_entry *device)
@@ -16,28 +16,28 @@ static bool is_query_pending(struct caniot_device_entry *device)
 }
 
 // Finalize frame with device id
-static void finalize_query_frame(struct caniot_frame *frame, union deviceid did)
+static void finalize_query_frame(struct caniot_frame *frame, caniot_did_t did)
 {
 	frame->id.query = CANIOT_QUERY;
 
-	frame->id.cls = did.cls;
-	frame->id.sid = did.sid;
+	frame->id.cls = CANIOT_DID_CLS(did);
+	frame->id.sid = CANIOT_DID_SID(did);
 }
 
 // Return device entry corresponding to device id or last entry if broadcast
 static struct caniot_device_entry *get_device_entry(struct caniot_controller *ctrl,
-						    union deviceid did)
+						    caniot_did_t did)
 {
-	return ctrl->devices + (did.val & 0x3f);
+	return ctrl->devices + did;
 
 	return NULL;
 }
 
 // Get device id from device entry
-static inline union deviceid get_device_id(struct caniot_controller *ctrl,
-					   struct caniot_device_entry *entry)
+static inline caniot_did_t get_device_id(struct caniot_controller *ctrl,
+					 struct caniot_device_entry *entry)
 {
-	return (union deviceid) { .val = entry - ctrl->devices };
+	return CANIOT_DID_FROM_RAW(entry - ctrl->devices);
 }
 
 static inline bool device_is_broadcast(struct caniot_controller *ctrl,
@@ -155,12 +155,12 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 	}
 }
 
-static struct pendq *pendq_find(struct caniot_controller *ctrl, union deviceid did)
+static struct pendq *pendq_find(struct caniot_controller *ctrl, caniot_did_t did)
 {
 	struct pqt *tie;
 	for (tie = ctrl->pendingq.timeout_queue; tie != NULL; tie = tie->next) {
 		struct pendq *const pq = CONTAINER_OF(tie, struct pendq, tie);
-		if (pq->did.val == did.val) {
+		if (CANIOT_DID_EQ(pq->did, did)) {
 			return pq;
 		}
 	}
@@ -190,8 +190,8 @@ int caniot_controller_init(struct caniot_controller *ctrl)
 
 int caniot_controller_deinit(struct caniot_controller *ctrl)
 {
-	(void) ctrl;
-	
+	(void)ctrl;
+
 	return 0;
 }
 
@@ -284,7 +284,7 @@ static uint32_t process_get_diff_ms(struct caniot_controller *controller)
 
 // Send query to device and prepare response callback
 int caniot_controller_query(struct caniot_controller *controller,
-			    union deviceid did,
+			    caniot_did_t did,
 			    struct caniot_frame *frame,
 			    caniot_query_callback_t cb,
 			    uint32_t timeout)
@@ -338,7 +338,7 @@ static inline int prepare_request_telemetry(struct caniot_frame *frame,
 }
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
-			     union deviceid did,
+			     caniot_did_t did,
 			     uint8_t ep,
 			     caniot_query_callback_t cb,
 			     uint32_t timeout)
@@ -374,7 +374,7 @@ static inline int prepare_command(struct caniot_frame *frame,
 }
 
 int caniot_command(struct caniot_controller *ctrl,
-		   union deviceid did,
+		   caniot_did_t did,
 		   uint8_t ep,
 		   uint8_t *buf,
 		   uint8_t len,
@@ -403,7 +403,7 @@ static inline int prepare_read_attribute(struct caniot_frame *frame,
 }
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
-			  union deviceid did,
+			  caniot_did_t did,
 			  uint16_t key,
 			  caniot_query_callback_t cb,
 			  uint32_t timeout)
@@ -432,7 +432,7 @@ static inline int prepare_write_attribute(struct caniot_frame *frame,
 }
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
-			   union deviceid did,
+			   caniot_did_t did,
 			   uint16_t key,
 			   uint32_t value,
 			   caniot_query_callback_t cb,
@@ -457,7 +457,7 @@ int caniot_discover(struct caniot_controller *ctrl,
 
 	prepare_request_telemetry(&frame, CANIOT_ENDPOINT_APP);
 
-	return caniot_controller_query(ctrl, CANIOT_DEVICE_BROADCAST,
+	return caniot_controller_query(ctrl, CANIOT_DID_BROADCAST,
 				       &frame, cb, timeout);
 }
 
@@ -498,13 +498,13 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 		ret = ctrl->driv->recv(&frame);
 		if (ret == 0) {
 			ret = caniot_controller_handle_rx_frame(ctrl, &frame);
-			
+
 			if (ret < 0) {
 				CANIOT_ERR(F("Process failed: -%04x\n"), -ret);
 
 				return ret;
 			}
-			
+
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {

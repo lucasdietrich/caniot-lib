@@ -10,9 +10,6 @@
  * - AVR : printf_P(PSTR("Hello %d\n"), 42);
  * - ARM/x86/any : printf("Hello %d\n", 42);
  */
-#if !defined(CONFIG_CANIOT_ARCH_AGNOSTIC)
-#	define CONFIG_CANIOT_ARCH_AGNOSTIC 1
-#endif
 
 #if defined(__AVR__)
 #	include <stdio.h>

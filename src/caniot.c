@@ -126,22 +126,22 @@ static inline void cpy_endpoint_str(caniot_endpoint_t endpoint, char *buf, size_
 	cpy_str(buf, get_endpoint_str(endpoint), len);
 }
 
-void caniot_show_deviceid(union deviceid did)
+void caniot_show_deviceid(caniot_did_t did)
 {
 	if (CANIOT_DEVICE_IS_BROADCAST(did)) {
 		CANIOT_INF(F("BROADCAST"));
 	} else {
 #if defined(__AVR__)
 		char cls_str[3], sid_str[3];
-		cpy_class_str(did.cls, cls_str, sizeof(cls_str));
-		cpy_sid_str(did.sid, sid_str, sizeof(sid_str));
+		cpy_class_str(CANIOT_DID_CLS(did), cls_str, sizeof(cls_str));
+		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
 		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did.val, did.val, cls_str, sid_str);
+			   did, did, cls_str, sid_str);
 #else
 		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did.val, did.val, get_class_str(did.cls),
-			   get_sid_str(did.sid));
+			   did, did, get_class_str(CANIOT_DID_CLS(did)),
+			   get_sid_str(CANIOT_DID_SID(did)));
 #endif
 	}
 }
@@ -149,10 +149,10 @@ void caniot_show_deviceid(union deviceid did)
 void caniot_show_frame(const struct caniot_frame *frame)
 {
 	CANIOT_DBG(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
-	       caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
-	       (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
-	       (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
-	       (uint8_t)frame->len);
+		   caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
+		   (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
+		   (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
+		   (uint8_t)frame->len);
 }
 
 void caniot_explain_id(caniot_id_t id)
@@ -172,14 +172,14 @@ void caniot_explain_id(caniot_id_t id)
 #endif
 	}
 
-	caniot_show_deviceid(CANIOT_DEVICE(id.cls, id.sid));
+	caniot_show_deviceid(CANIOT_DID(id.cls, id.sid));
 
 #if defined(__AVR__)
-		char ep_str[5];
-		cpy_endpoint_str(id.endpoint, ep_str, sizeof(ep_str));
-		CANIOT_INF(F(" : %s / "), ep_str);
+	char ep_str[5];
+	cpy_endpoint_str(id.endpoint, ep_str, sizeof(ep_str));
+	CANIOT_INF(F(" : %s / "), ep_str);
 #else
-		CANIOT_INF(" : %s / ", get_endpoint_str(id.endpoint));
+	CANIOT_INF(" : %s / ", get_endpoint_str(id.endpoint));
 #endif
 }
 
@@ -188,18 +188,18 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		CANIOT_INF(F(": -%04x \n"), (uint32_t) -frame->err);
+		CANIOT_INF(F(": -%04x \n"), (uint32_t)-frame->err);
 		return;
 	}
 
 	if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
 	    (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
 		for (int i = 0; i < frame->len; i++) {
-			CANIOT_INF(F("%02hhx "), (uint8_t) frame->buf[i]);
+			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
 		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"), frame->len,
-		       frame->attr.key, frame->attr.val);
+			   frame->attr.key, frame->attr.val);
 	}
 }
 
@@ -243,7 +243,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	size_t total = 0U;
 
 	ret = caniot_explain_id_str(frame->id, buf, len);
-	if (ret > (int) len || ret < 0) {
+	if (ret > (int)len || ret < 0) {
 		return ret;
 	}
 
@@ -258,9 +258,9 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 		len -= ret;
 	} else if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
 		   (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
-		ret = snprintf(buf, len, "ep : %s", 
+		ret = snprintf(buf, len, "ep : %s",
 			       get_endpoint_str(frame->id.endpoint));
-		if (ret > (int) len || ret < 0) {
+		if (ret > (int)len || ret < 0) {
 			return ret;
 		}
 		total += ret;
@@ -299,13 +299,13 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 #endif
 
 void caniot_build_query_telemetry(struct caniot_frame *frame,
-				 union deviceid did,
-				 uint8_t endpoint)
+				  caniot_did_t did,
+				  uint8_t endpoint)
 {
 	struct caniot_frame tmp = {
 		.id = {
-			.cls = did.cls,
-			.sid = did.sid,
+			.cls = CANIOT_DID_CLS(did),
+			.sid = CANIOT_DID_SID(did),
 			.type = CANIOT_FRAME_TYPE_TELEMETRY,
 			.query = CANIOT_QUERY,
 			.endpoint = endpoint
@@ -318,15 +318,15 @@ void caniot_build_query_telemetry(struct caniot_frame *frame,
 }
 
 void caniot_build_query_command(struct caniot_frame *frame,
-				union deviceid did,
+				caniot_did_t did,
 				uint8_t endpoint,
 				const uint8_t *buf,
 				uint8_t size)
 {
 	struct caniot_frame tmp = {
 		.id = {
-			.cls = did.cls,
-			.sid = did.sid,
+			.cls = CANIOT_DID_CLS(did),
+			.sid = CANIOT_DID_SID(did),
 			.type = CANIOT_FRAME_TYPE_COMMAND,
 			.query = CANIOT_QUERY,
 			.endpoint = endpoint
@@ -341,7 +341,7 @@ void caniot_build_query_command(struct caniot_frame *frame,
 
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 {
-	return api->entropy && api->get_time && 
+	return api->entropy && api->get_time &&
 		api->send && api->recv;
 }
 
@@ -350,11 +350,12 @@ bool caniot_is_error(int cterr)
 	return (-cterr >= CANIOT_ERROR_BASE && -cterr <= (CANIOT_ERROR_BASE + 0xFF));
 }
 
-bool caniot_device_is_target(union deviceid did,
+bool caniot_device_is_target(caniot_did_t did,
 			     const struct caniot_frame *frame)
 {
-	return (frame->id.query == CANIOT_QUERY) && (frame->id.cls == did.cls) &&
-		(frame->id.sid == did.sid || frame->id.sid == CANIOT_CLASS_BROADCAST);
+	return (frame->id.query == CANIOT_QUERY) &&
+		(frame->id.cls == CANIOT_DID_CLS(did)) &&
+		(frame->id.sid == CANIOT_DID_SID(did) || frame->id.sid == CANIOT_CLASS_BROADCAST);
 }
 
 bool caniot_controller_is_target(const struct caniot_frame *frame)
@@ -367,7 +368,7 @@ void caniot_show_error(int cterr)
 	if (cterr == 0) {
 		return;
 	}
-	
+
 	if (caniot_is_error(cterr) == false) {
 		CANIOT_DBG(F("Error -%04x (%d)\n"), -cterr, cterr);
 	} else {
@@ -377,17 +378,17 @@ void caniot_show_error(int cterr)
 	}
 }
 
-int caniot_encode_deviceid(union deviceid did, uint8_t *buf, size_t len)
+int caniot_encode_deviceid(caniot_did_t did, uint8_t *buf, size_t len)
 {
-	return snprintf((char *)buf, len, F("0x%02hhx"), did.val);
+	return snprintf((char *)buf, len, F("0x%02hhx"), did);
 }
 
-int caniot_deviceid_cmp(union deviceid a, union deviceid b)
+int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b)
 {
-	return a.val - b.val;
+	return a - b;
 }
 
-bool caniot_deviceid_equal(union deviceid a, union deviceid b)
+bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b)
 {
 	return caniot_deviceid_cmp(a, b) == 0;
 }

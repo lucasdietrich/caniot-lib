@@ -39,7 +39,7 @@ bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint)
 	ret = caniot_dt_endpoints_count(cls);
 	if (ret < 0)
 		return false;
-	
+
 	return endpoint < ret;
 }
 

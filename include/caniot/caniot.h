@@ -28,14 +28,14 @@
 #define CANIOT_DID_MAX_VALUE CANIOT_DID_BROADCAST
 #define CANIOT_DID_MIN_VALUE (0x00U)
 
-#define CANIOT_DID(class_id, sub_id)	((caniot_did_t) (class_id & 0x7U) | ((sub_id & 0x7U) << 3U))
-#define CANIOT_DID_FROM_RAW(raw) (raw & CANIOT_DID_BROADCAST)
-#define CANIOT_DID_CLS(did) (did & 0x7U)
-#define CANIOT_DID_SID(did) ((did >> 3U) & 0x7U)
+#define CANIOT_DID(class_id, sub_id)	((caniot_did_t) ((class_id) & 0x7U) | (((sub_id) & 0x7U) << 3U))
+#define CANIOT_DID_FROM_RAW(raw) ((raw) & CANIOT_DID_BROADCAST)
+#define CANIOT_DID_CLS(did) ((caniot_device_class_t) ((did) & 0x7U))
+#define CANIOT_DID_SID(did) ((caniot_device_subid_t) (((did) >> 3U) & 0x7U))
 
 #define CANIOT_DID_BROADCAST CANIOT_DID(CANIOT_CLASS_BROADCAST, 0x7U)
 
-#define CANIOT_DID_EQ(did1, did2) ((did1 & CANIOT_DID_MAX_VALUE) == (did2 & CANIOT_DID_MAX_VALUE))
+#define CANIOT_DID_EQ(did1, did2) (((did1) & CANIOT_DID_MAX_VALUE) == ((did2) & CANIOT_DID_MAX_VALUE))
 
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DID_EQ(did, CANIOT_DID_BROADCAST)
 
@@ -256,8 +256,7 @@ int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b);
  */
 static inline uint16_t caniot_id_to_canid(caniot_id_t id)
 {
-	return (id.type) | (id.query << 2U) | (id.cls << 3U) |
-		(id.sid << 6U) | (id.endpoint << 9U);
+	return CANIOT_ID(id.type, id.query, id.cls, id.cls, id.endpoint);
 }
 
 /**

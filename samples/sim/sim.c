@@ -31,7 +31,7 @@ int main(void)
 
 	caniot_frame_t frame = {
 		.id = {
-			.cls = CANIOT_DEVICE_CLASS0,
+			.cls = CANIOT_DEVICE_CLASS1,
 			.sid = CANIOT_DEVICE_SID1,
 			.type = CANIOT_FRAME_TYPE_TELEMETRY,
 			.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
@@ -42,6 +42,8 @@ int main(void)
 
 	ret = can_send(&frame, 0U);
 	printf("can_send(%p, 0) = -0x%X\n", &frame, -ret);
+
+	caniot_clear_frame(&frame);
 
 	while (1) {
 		ret = can_recv(&frame);

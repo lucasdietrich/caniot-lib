@@ -139,11 +139,13 @@ struct caniot_device
 };
 
 typedef int (caniot_telemetry_handler_t)(struct caniot_device *dev,
-					 uint8_t ep, char *buf,
+					 caniot_endpoint_t ep, 
+					 char *buf,
 					 uint8_t *len);
 
 typedef int (caniot_command_handler_t)(struct caniot_device *dev,
-				       uint8_t ep, char *buf,
+				       caniot_endpoint_t ep, 
+				       const char *buf,
 				       uint8_t len);
 
 struct caniot_api
@@ -180,7 +182,7 @@ struct caniot_api
 void caniot_print_device_identification(const struct caniot_device *dev);
 
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
-				  struct caniot_frame *req,
+				  const struct caniot_frame *req,
 				  struct caniot_frame *resp);
 
 caniot_did_t caniot_device_get_id(struct caniot_device *dev);

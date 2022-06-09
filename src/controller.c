@@ -29,8 +29,6 @@ static struct caniot_device_entry *get_device_entry(struct caniot_controller *ct
 						    caniot_did_t did)
 {
 	return ctrl->devices + did;
-
-	return NULL;
 }
 
 // Get device id from device entry
@@ -323,7 +321,7 @@ error:
 }
 
 static inline int prepare_request_telemetry(struct caniot_frame *frame,
-					    uint8_t ep)
+					    caniot_endpoint_t ep)
 {
 	// Can we request telemetry broadcast ? would say no
 	if (ep > CANIOT_ENDPOINT_BOARD_CONTROL) {
@@ -339,7 +337,7 @@ static inline int prepare_request_telemetry(struct caniot_frame *frame,
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     caniot_did_t did,
-			     uint8_t ep,
+			     caniot_endpoint_t ep,
 			     caniot_query_callback_t cb,
 			     uint32_t timeout)
 {
@@ -355,7 +353,7 @@ int caniot_request_telemetry(struct caniot_controller *ctrl,
 }
 
 static inline int prepare_command(struct caniot_frame *frame,
-				  uint8_t ep,
+				  caniot_endpoint_t ep,
 				  uint8_t *buf,
 				  uint8_t len)
 {
@@ -375,7 +373,7 @@ static inline int prepare_command(struct caniot_frame *frame,
 
 int caniot_command(struct caniot_controller *ctrl,
 		   caniot_did_t did,
-		   uint8_t ep,
+		   caniot_endpoint_t ep,
 		   uint8_t *buf,
 		   uint8_t len,
 		   caniot_query_callback_t cb,

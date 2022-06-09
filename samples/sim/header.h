@@ -2,7 +2,7 @@
 #define _HEADER_H
 
 #define CONTROLLERS_COUNT 1U
-#define DEVICES_COUNT 1U
+#define DEVICES_COUNT 8U
 
 #include <caniot/caniot.h>
 

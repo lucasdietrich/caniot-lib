@@ -355,7 +355,9 @@ bool caniot_device_is_target(caniot_did_t did,
 {
 	return (frame->id.query == CANIOT_QUERY) &&
 		(frame->id.cls == CANIOT_DID_CLS(did)) &&
-		(frame->id.sid == CANIOT_DID_SID(did) || frame->id.sid == CANIOT_CLASS_BROADCAST);
+		(frame->id.sid == CANIOT_DID_SID(did)) ||
+		((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
+		 (frame->id.sid == CANIOT_SUBID_BROADCAST));
 }
 
 bool caniot_controller_is_target(const struct caniot_frame *frame)

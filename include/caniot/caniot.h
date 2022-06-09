@@ -23,7 +23,8 @@
 #define CANIOT_ID(t, q, c, d, e) ((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) | ((e & 0x3U) << 9U))
 
 
-#define CANIOT_CLASS_BROADCAST	(0x7)
+#define CANIOT_CLASS_BROADCAST (0x7U)
+#define CANIOT_SUBID_BROADCAST (0x7U)
 
 #define CANIOT_DID_MAX_VALUE CANIOT_DID_BROADCAST
 #define CANIOT_DID_MIN_VALUE (0x00U)
@@ -107,13 +108,6 @@ typedef enum {
 	CANIOT_ENDPOINT_BOARD_CONTROL = 3,
 } caniot_endpoint_t;
 
-struct caniot_data
-{
-	uint8_t ep;
-	uint8_t buf[8];
-	uint8_t len;
-};
-
 typedef uint8_t caniot_did_t;
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
@@ -191,7 +185,13 @@ bool caniot_controller_is_target(const struct caniot_frame *frame);
 
 static inline void caniot_clear_frame(struct caniot_frame *frame)
 {
-	memset(frame, 0x00, sizeof(struct caniot_frame));
+	memset(frame, 0x00U, sizeof(struct caniot_frame));
+}
+
+static inline void caniot_copy_frame(struct caniot_frame *dst,
+				     const struct caniot_frame *src)
+{
+	memcpy(dst, src, sizeof(struct caniot_frame));
 }
 
 static inline bool caniot_is_error_frame(caniot_id_t id)

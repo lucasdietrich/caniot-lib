@@ -479,7 +479,7 @@ static void prepare_error(struct caniot_device *dev,
 
 static int handle_read_attribute(struct caniot_device *dev,
 				 struct caniot_frame *resp,
-				 struct caniot_attribute *attr)
+				 const struct caniot_attribute *attr)
 {
 	int ret;
 	struct attr_ref ref;
@@ -583,8 +583,8 @@ static int attribute_write(struct caniot_device *dev,
 }
 
 static int handle_write_attribute(struct caniot_device *dev,
-				  struct caniot_frame *req,
-				  struct caniot_attribute *attr)
+				  const struct caniot_frame *req,
+				  const struct caniot_attribute *attr)
 {
 	int ret;
 	struct attr_ref ref;
@@ -610,10 +610,10 @@ exit:
 }
 
 static int handle_command_req(struct caniot_device *dev,
-			      struct caniot_frame *req)
+			      const struct caniot_frame *req)
 {
 	int ret;
-	const uint8_t ep = req->id.endpoint;
+	const caniot_endpoint_t ep = req->id.endpoint;
 
 	CANIOT_DBG(F("Executing command handler (0x%p) for endpoint %d\n"),
 		   (void *)&dev->api->command_handler, ep);
@@ -631,7 +631,7 @@ static int handle_command_req(struct caniot_device *dev,
 
 static int build_telemetry_resp(struct caniot_device *dev,
 				struct caniot_frame *resp,
-				uint8_t ep)
+				caniot_endpoint_t ep)
 {
 	int ret;
 
@@ -665,7 +665,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 }
 
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
-				  struct caniot_frame *req,
+				  const struct caniot_frame *req,
 				  struct caniot_frame *resp)
 {
 	int ret;

@@ -66,13 +66,13 @@ int caniot_controller_query(struct caniot_controller *controller,
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     caniot_did_t did,
-			     uint8_t ep,
+			     caniot_endpoint_t ep,
 			     caniot_query_callback_t cb,
 			     uint32_t timeout);
 
 int caniot_command(struct caniot_controller *ctrl,
 		   caniot_did_t did,
-		   uint8_t ep,
+		   caniot_endpoint_t ep,
 		   uint8_t *buf,
 		   uint8_t len,
 		   caniot_query_callback_t cb,

@@ -3,6 +3,14 @@
 
 #include <caniot/device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 uint16_t caniot_fake_get_temp(struct caniot_device *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CANIOT_FAKE_H_ */

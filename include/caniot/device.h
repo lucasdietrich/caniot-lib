@@ -1,9 +1,13 @@
 #ifndef _CANIOT_DEVICE_H
 #define _CANIOT_DEVICE_H
 
-#include "caniot.h"
+#include <caniot/caniot.h>
 
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct caniot_identification
 {
@@ -194,33 +198,9 @@ static inline uint16_t caniot_device_get_mask(void)
 	return 0x1fc; // 0b00111111100U;
 }
 
-static inline uint16_t caniot_device_get_filter(caniot_did_t did)
-{
-	caniot_id_t filter;
+uint16_t caniot_device_get_filter(caniot_did_t did);
 
-	filter.type = (caniot_frame_type_t)0U;
-	filter.query = CANIOT_QUERY;
-	filter.cls = CANIOT_DID_CLS(did);
-	filter.sid = CANIOT_DID_SID(did);
-	filter.endpoint = (caniot_endpoint_t)0U;
-
-	return caniot_id_to_canid(filter);
-}
-
-static inline uint16_t caniot_device_get_filter_broadcast(caniot_did_t did)
-{
-	(void)did;
-
-	caniot_id_t filter;
-
-	filter.type = (caniot_frame_type_t)0U;
-	filter.query = CANIOT_QUERY;
-	filter.cls = (caniot_device_class_t)0x7; /* 0b111: broadcast is over all classes */
-	filter.sid = (caniot_device_subid_t)0x7; /* 0b111 */
-	filter.endpoint = (caniot_endpoint_t)0U;
-
-	return caniot_id_to_canid(filter);
-}
+uint16_t caniot_device_get_filter_broadcast(caniot_did_t did);
 
 /*___________________________________________________________________________*/
 
@@ -308,5 +288,9 @@ int caniot_device_verify(struct caniot_device *dev);
 	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)
 
 #define TELEMTRY_MASK
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CANIOT_DEVICE_H */

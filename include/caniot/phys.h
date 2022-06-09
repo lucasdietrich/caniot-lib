@@ -5,6 +5,10 @@
 
 #include "datatype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef  struct {
 	caniot_phys_hysteresis_state_t state;
 	int low;
@@ -30,5 +34,9 @@ caniot_phys_hysteresis_state_t caniot_phys_hysteresis_update(
 void caniot_show_temperature(uint8_t t);
 
 void caniot_show_Temperature(uint16_t T);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

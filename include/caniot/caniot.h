@@ -8,6 +8,10 @@
 
 #include <caniot/errors.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef CONFIG_CANIOT_DRIVERS_API
 #define CANIOT_DRIVERS_API CONFIG_CANIOT_DRIVERS_API
 #else
@@ -269,4 +273,8 @@ caniot_id_t caniot_canid_to_id(uint16_t canid);
 
 void caniot_test(void);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* CANIOT_H */

@@ -3,6 +3,10 @@
 
 #include "caniot.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct caniot_device_entry
 {
 	uint32_t last_seen;	/* timestamp this device was last seen */
@@ -109,5 +113,9 @@ int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 int caniot_controller_process(struct caniot_controller *ctrl);
 
 // int caniot_debug_pendq(struct caniot_controller *ctrl);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CANIOT_CONTROLLER_H */

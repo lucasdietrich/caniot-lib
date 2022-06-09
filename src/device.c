@@ -335,6 +335,30 @@ caniot_did_t caniot_device_get_id(struct caniot_device *dev)
 	return did;
 }
 
+uint16_t caniot_device_get_filter(caniot_did_t did)
+{
+	const caniot_id_t filter = {
+		.query = CANIOT_QUERY,
+		.sid = CANIOT_DID_SID(did),
+		.cls = CANIOT_DID_CLS(did),
+	};
+
+	return caniot_id_to_canid(filter);
+}
+
+uint16_t caniot_device_get_filter_broadcast(caniot_did_t did)
+{
+	(void)did;
+
+	const caniot_id_t filter = {
+		.query = CANIOT_QUERY,
+		.sid = CANIOT_DID_SID(CANIOT_DID_BROADCAST),
+		.cls = CANIOT_DID_CLS(CANIOT_DID_BROADCAST),
+	};
+
+	return caniot_id_to_canid(filter);
+}
+
 static int prepare_config_read(struct caniot_device *dev)
 {
 	/* local configuration in RAM should be updated */
@@ -851,5 +875,6 @@ void caniot_app_init(struct caniot_device *dev)
 
 	dev->driv->get_time(&dev->system.start_time, NULL);
 }
+
 
 #endif /* CANIOT_DRIVERS_API */

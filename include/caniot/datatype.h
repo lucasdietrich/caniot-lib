@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Data types */
 
 typedef enum
@@ -209,5 +213,8 @@ int16_t caniot_dt_T10_to_T16(uint16_t T);
 #define CANIOT_DT_VALID_T16_TEMP(temp) ((temp) != CANIOT_DT_T16_INVALID)
 #define CANIOT_DT_VALID_T10_TEMP(temp) ((temp) != CANIOT_DT_T10_INVALID)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CANIOT_DATATYPE_H */

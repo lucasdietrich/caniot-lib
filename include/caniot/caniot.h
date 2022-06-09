@@ -20,8 +20,8 @@
 #define CANIOT_VERSION 	CANIOT_VERSION2
 
 #define CANIOT_MAX_PENDING_QUERIES	2
+#define CANIOT_ID(t, q, c, d, e) ((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) | ((e & 0x3U) << 9U))
 
-#define CANIOT_ID(t, q, c, d, e) ((t & 2U) | ((q & 1U) << 2) | ((c & 7U) << 3) | ((d & 7U) << 6) | ((e & 2U) << 9))
 
 #define CANIOT_CLASS_BROADCAST	(0x7)
 

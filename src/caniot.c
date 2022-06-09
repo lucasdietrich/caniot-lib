@@ -395,6 +395,24 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b)
 	return caniot_deviceid_cmp(a, b) == 0;
 }
 
+uint16_t caniot_id_to_canid(caniot_id_t id)
+{
+	return CANIOT_ID(id.type, id.query, id.cls, id.sid, id.endpoint);
+}
+
+caniot_id_t caniot_canid_to_id(uint16_t canid)
+{
+	caniot_id_t id = {
+		.type = CANIOT_ID_GET_TYPE(canid),
+		.query = CANIOT_ID_GET_QUERY(canid),
+		.cls = CANIOT_ID_GET_CLASS(canid),
+		.sid = CANIOT_ID_GET_SUBID(canid),
+		.endpoint = CANIOT_ID_GET_ENDPOINT(canid),
+	};
+
+	return id;
+}
+
 void caniot_test(void)
 {
 	printf("caniot test\n");

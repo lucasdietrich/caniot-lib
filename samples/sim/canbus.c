@@ -1,3 +1,14 @@
+/**
+ * @file canbus.c
+ * @author Dietrich Lucas (ld.adecy@gmail.com)
+ * @brief Canbus emulation
+ * @version 0.1
+ * @date 2022-06-09
+ *
+ * @copyright Copyright (c) 2022
+ *
+ */
+
 #include <caniot/caniot.h>
 
 #include <malloc.h>
@@ -10,6 +21,11 @@ struct item {
 	struct caniot_frame frame;
 };
 
+/**
+ * @brief doubly linked queue
+ * Note: Keeping track of the head and the tail allows 
+ * to queue and dequeue with O(1) complexity
+ */
 struct {
 	struct item *head;
 	struct item *tail;
@@ -18,6 +34,15 @@ struct {
 	.tail = NULL,
 };
 
+/**
+ * @brief Send a can message on the emulated CAN bus
+ *
+ * Frame pointed by the pointer can be deallocated after the function terminates.
+ *
+ * @param frame
+ * @param delay_ms ignored, frame is always without delay
+ * @return int 0 on success
+ */
 int can_send(const struct caniot_frame *frame, uint32_t delay_ms)
 {
 	int ret = -CANIOT_EINVAL;
@@ -43,6 +68,12 @@ int can_send(const struct caniot_frame *frame, uint32_t delay_ms)
 	return ret;
 }
 
+/**
+ * @brief Receive a CAN message from the emulated CAN bus
+ *
+ * @param frame Should point to a valid memory space
+ * @return int 0 on success
+ */
 int can_recv(struct caniot_frame *frame)
 {
 	int ret = -CANIOT_EINVAL;
@@ -58,7 +89,7 @@ int can_recv(struct caniot_frame *frame)
 			}
 
 			memcpy(frame, &item->frame, sizeof(struct caniot_frame));
-			
+
 			ret = 0;
 		} else {
 			ret = -CANIOT_EAGAIN;

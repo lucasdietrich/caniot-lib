@@ -41,24 +41,24 @@
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DID_EQ(did, CANIOT_DID_BROADCAST)
 
 /* milliseconds */
-#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	0
-#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	100
-#define CANIOT_TELEMETRY_DELAY_DEFAULT		5
+#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	0U
+#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	100U
+#define CANIOT_TELEMETRY_DELAY_DEFAULT		5U
 
 /* seconds */
-#define CANIOT_TELEMETRY_PERIOD_DEFAULT		60
+#define CANIOT_TELEMETRY_PERIOD_DEFAULT		60U
 
 #define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	CANIOT_ENDPOINT_BOARD_CONTROL
 
-#define CANIOT_TIMEZONE_DEFAULT			3600
+#define CANIOT_TIMEZONE_DEFAULT			3600U
 #define CANIOT_LOCATION_REGION_DEFAULT		{'E', 'U'}
 #define CANIOT_LOCATION_COUNTRY_DEFAULT		{'F', 'R'}
 
-#define CANIOT_ID_GET_TYPE(id) ((caniot_frame_type_t) (id & 0x3))
-#define CANIOT_ID_GET_QUERY(id) ((caniot_frame_dir_t) ((id >> 2) & 0x1))
-#define CANIOT_ID_GET_CLASS(id) ((caniot_device_class_t) ((id >> 3) & 0x7))
-#define CANIOT_ID_GET_SUBID(id) ((caniot_device_subid_t) ((id >> 6) & 0x7))
-#define CANIOT_ID_GET_ENDPOINT(id) ((caniot_endpoint_t) ((id >> 9) & 0x3))
+#define CANIOT_ID_GET_TYPE(id) ((caniot_frame_type_t) (id & 0x3U))
+#define CANIOT_ID_GET_QUERY(id) ((caniot_frame_dir_t) ((id >> 2U) & 0x1U))
+#define CANIOT_ID_GET_CLASS(id) ((caniot_device_class_t) ((id >> 3U) & 0x7U))
+#define CANIOT_ID_GET_SUBID(id) ((caniot_device_subid_t) ((id >> 6U) & 0x7U))
+#define CANIOT_ID_GET_ENDPOINT(id) ((caniot_endpoint_t) ((id >> 9U) & 0x3U))
 
 #define CANIOT_ADDR_LEN sizeof("0x3f")
 
@@ -157,6 +157,7 @@ struct caniot_drivers_api {
 	void (*entropy)(uint8_t *buf, size_t len);
 	void (*get_time)(uint32_t *sec, uint16_t *ms);
 	void (*set_time)(uint32_t sec);
+
 	/**
 	 * @brief Send a CANIOT frame
 	 *
@@ -254,10 +255,7 @@ int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b);
  * @param id
  * @return uint16_t
  */
-static inline uint16_t caniot_id_to_canid(caniot_id_t id)
-{
-	return CANIOT_ID(id.type, id.query, id.cls, id.sid, id.endpoint);
-}
+uint16_t caniot_id_to_canid(caniot_id_t id);
 
 /**
  * @brief Convert CANIOT id to caniot ID format
@@ -267,18 +265,7 @@ static inline uint16_t caniot_id_to_canid(caniot_id_t id)
  * @param canid
  * @return caniot_id_t
  */
-static inline caniot_id_t caniot_canid_to_id(uint16_t canid)
-{
-	caniot_id_t id = {
-		.type = CANIOT_ID_GET_TYPE(canid),
-		.query = CANIOT_ID_GET_QUERY(canid),
-		.cls = CANIOT_ID_GET_CLASS(canid),
-		.sid = CANIOT_ID_GET_SUBID(canid),
-		.endpoint = CANIOT_ID_GET_ENDPOINT(canid),
-	};
-
-	return id;
-}
+caniot_id_t caniot_canid_to_id(uint16_t canid);
 
 void caniot_test(void);
 

@@ -232,9 +232,6 @@ void caniot_app_init(struct caniot_device *dev);
  */
 int caniot_device_process(struct caniot_device *dev);
 
-bool caniot_device_is_target(union deviceid did,
-			     struct caniot_frame *frame);
-
 int caniot_device_scales_rdmdelay(struct caniot_device *dev,
 				  uint32_t *rdmdelay);
 
@@ -277,9 +274,9 @@ int caniot_device_verify(struct caniot_device *dev);
 				.oc1 = 0U, \
 				.oc2 = 0U, \
 			}, \
-			mask = { \
-				.outputs_default = 0U, \
-				.telemetry_on_change = 0xFFFFFFFFLU, \
+			.mask = { \
+				.outputs_default.mask = 0U, \
+				.telemetry_on_change.mask = 0xFFFFFFFFLU, \
 			} \
 		} \
 	}\

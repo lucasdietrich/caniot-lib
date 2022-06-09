@@ -11,7 +11,7 @@ all: build-all run
 build-all: ./build
 	make -C build --no-print-directory
 
-run:
+run: build-all
 	./build/samples/sim/sim
 
 clean:

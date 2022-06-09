@@ -26,6 +26,9 @@
 
 #define CANIOT_CLASS_BROADCAST	(0x7)
 
+#define CANIOT_DID_MAX_VALUE (0x3FU)
+#define CANIOT_DID_MIN_VALUE (0x00U)
+
 #define CANIOT_DEVICE(class_id, sub_id)	((union deviceid) { { .cls = (caniot_device_class_t) class_id, .sid = (caniot_device_subid_t) sub_id} })
 #define CANIOT_DEVICE_FROM_RAW(raw)	((union deviceid) { .raw = raw })
 
@@ -33,7 +36,7 @@
 
 #define CANIOT_DEVICE_BROADCAST CANIOT_DEVICE(0x7, 0x7)
 
-#define CANIOT_DEVICE_EQUAL(did1, did2) ((did1).val == (did2).val)
+#define CANIOT_DEVICE_EQUAL(did1, did2) (((did1).val & CANIOT_DID_MAX_VALUE) == ((did2).val & CANIOT_DID_MAX_VALUE))
 
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DEVICE_EQUAL(did, CANIOT_DEVICE_BROADCAST)
 
@@ -122,7 +125,6 @@ union deviceid {
 };
 
 typedef union deviceid caniot_did_t;
-
 #pragma pack(push, 1)
 
 /* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
@@ -178,7 +180,7 @@ struct caniot_frame {
 typedef struct caniot_frame caniot_frame_t;
 
 typedef int (*caniot_query_callback_t)(union deviceid did,
-				       struct caniot_frame *resp);
+				       const struct caniot_frame *resp);
 
 struct caniot_drivers_api {
 	/* util */
@@ -200,17 +202,16 @@ struct caniot_drivers_api {
 	int (*recv)(struct caniot_frame *frame);
 };
 
-// Return if deviceid is valid
-static inline bool caniot_valid_deviceid(union deviceid id)
-{
-	return id.val <= CANIOT_DEVICE_BROADCAST.val;
-}
-
 // Return if deviceid is broadcast
 static inline bool caniot_is_broadcast(union deviceid id)
 {
 	return CANIOT_DEVICE_IS_BROADCAST(id);
 }
+
+bool caniot_device_is_target(union deviceid did,
+			     const struct caniot_frame *frame);
+			     
+bool caniot_controller_is_target(const struct caniot_frame *frame);
 
 static inline void caniot_clear_frame(struct caniot_frame *frame)
 {

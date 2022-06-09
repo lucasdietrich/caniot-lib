@@ -717,13 +717,6 @@ exit:
 	return ret;
 }
 
-bool caniot_device_is_target(union deviceid did,
-			     struct caniot_frame *frame)
-{
-	return (frame->id.query == CANIOT_QUERY) && (frame->id.cls == did.cls) &&
-		(frame->id.sid == did.sid || frame->id.sid == CANIOT_CLASS_BROADCAST);
-}
-
 int caniot_device_verify(struct caniot_device *dev)
 {
 	(void) dev;

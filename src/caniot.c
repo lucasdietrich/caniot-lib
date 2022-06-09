@@ -1,7 +1,7 @@
 #include <caniot/caniot.h>
 #include <caniot/archutils.h>
 
-static const char cls_str[][2] ROM = {
+static const char cls_str[][3U] ROM = {
 	"C0",
 	"C1",
 	"C2",
@@ -12,7 +12,7 @@ static const char cls_str[][2] ROM = {
 	"C7",
 };
 
-static const char sid_str[][2] ROM = {
+static const char sid_str[][3U] ROM = {
 	"D0",
 	"D1",
 	"D2",
@@ -128,25 +128,21 @@ static inline void cpy_endpoint_str(caniot_endpoint_t endpoint, char *buf, size_
 
 void caniot_show_deviceid(union deviceid did)
 {
-	if (caniot_valid_deviceid(did)) {
-		if (CANIOT_DEVICE_IS_BROADCAST(did)) {
-			CANIOT_INF(F("BROADCAST"));
-		} else {
-#if defined(__AVR__)
-			char cls_str[3], sid_str[3];
-			cpy_class_str(did.cls, cls_str, sizeof(cls_str));
-			cpy_sid_str(did.sid, sid_str, sizeof(sid_str));
-
-			CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-				   did.val, did.val, cls_str, sid_str);
-#else
-			CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-				   did.val, did.val, get_class_str(did.cls),
-				   get_sid_str(did.sid));
-#endif
-		}
+	if (CANIOT_DEVICE_IS_BROADCAST(did)) {
+		CANIOT_INF(F("BROADCAST"));
 	} else {
-		CANIOT_INF(F("invalid did"));
+#if defined(__AVR__)
+		char cls_str[3], sid_str[3];
+		cpy_class_str(did.cls, cls_str, sizeof(cls_str));
+		cpy_sid_str(did.sid, sid_str, sizeof(sid_str));
+
+		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+			   did.val, did.val, cls_str, sid_str);
+#else
+		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+			   did.val, did.val, get_class_str(did.cls),
+			   get_sid_str(did.sid));
+#endif
 	}
 }
 
@@ -352,6 +348,18 @@ bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 bool caniot_is_error(int cterr)
 {
 	return (-cterr >= CANIOT_ERROR_BASE && -cterr <= (CANIOT_ERROR_BASE + 0xFF));
+}
+
+bool caniot_device_is_target(union deviceid did,
+			     const struct caniot_frame *frame)
+{
+	return (frame->id.query == CANIOT_QUERY) && (frame->id.cls == did.cls) &&
+		(frame->id.sid == did.sid || frame->id.sid == CANIOT_CLASS_BROADCAST);
+}
+
+bool caniot_controller_is_target(const struct caniot_frame *frame)
+{
+	return frame->id.query == CANIOT_RESPONSE;
 }
 
 void caniot_show_error(int cterr)

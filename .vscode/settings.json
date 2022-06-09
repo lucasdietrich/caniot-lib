@@ -9,6 +9,8 @@
         "controller.h": "c",
         "stdbool.h": "c",
         "caniot_common.h": "c",
-        "helper.h": "c"
+        "helper.h": "c",
+        "archutils.h": "c",
+        "memory.h": "c"
     }
 }

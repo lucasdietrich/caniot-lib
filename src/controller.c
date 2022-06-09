@@ -28,9 +28,7 @@ static void finalize_query_frame(struct caniot_frame *frame, union deviceid did)
 static struct caniot_device_entry *get_device_entry(struct caniot_controller *ctrl,
 						    union deviceid did)
 {
-	if (caniot_valid_deviceid(did)) {
-		return ctrl->devices + did.val;
-	}
+	return ctrl->devices + (did.val & 0x3f);
 
 	return NULL;
 }
@@ -237,7 +235,7 @@ static int pendq_register(struct caniot_controller *controller,
 
 static int pendq_call_and_unregister(struct caniot_controller *controller,
 				     struct pendq *pq,
-				     struct caniot_frame *frame)
+				     const struct caniot_frame *frame)
 {
 	int ret = -CANIOT_ENOPQ;
 
@@ -464,7 +462,7 @@ int caniot_discover(struct caniot_controller *ctrl,
 }
 
 int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
-				      struct caniot_frame *frame)
+				      const struct caniot_frame *frame)
 {
 	// Assert that frame is not NULL and is a response
 	if (!frame || frame->id.query != CANIOT_RESPONSE) {
@@ -524,9 +522,4 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 	pendq_call_expired(ctrl);
 
 	return 0;
-}
-
-bool caniot_controller_is_target(struct caniot_frame *frame)
-{
-	return frame->id.query == CANIOT_RESPONSE;
 }

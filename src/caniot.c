@@ -354,10 +354,10 @@ bool caniot_device_is_target(caniot_did_t did,
 			     const struct caniot_frame *frame)
 {
 	return (frame->id.query == CANIOT_QUERY) &&
-		((frame->id.cls == CANIOT_DID_CLS(did)) &&
-		 (frame->id.sid == CANIOT_DID_SID(did)) ||
-		((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
-		 (frame->id.sid == CANIOT_SUBID_BROADCAST)));
+		(((frame->id.cls == CANIOT_DID_CLS(did)) &&
+		  (frame->id.sid == CANIOT_DID_SID(did))) ||
+		 ((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
+		  (frame->id.sid == CANIOT_SUBID_BROADCAST)));
 }
 
 bool caniot_controller_is_target(const struct caniot_frame *frame)
@@ -454,7 +454,7 @@ bool caniot_type_is_response_of(caniot_frame_type_t resp,
 				caniot_frame_type_t query,
 				bool *iserror)
 {
-	/* VARIANT 1 *
+	/* VARIANT 1 */
 
 	/*
 	bool error = false;

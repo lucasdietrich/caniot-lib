@@ -334,7 +334,6 @@ static void resp_query_event(struct caniot_controller *ctrl,
 
 static void pendq_call_expired(struct caniot_controller *ctrl)
 {
-	int ret;
 	struct pendq *pq;
 	struct pqt **const q = &ctrl->pendingq.timeout_queue;
 

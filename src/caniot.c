@@ -353,11 +353,11 @@ bool caniot_is_error(int cterr)
 bool caniot_device_is_target(caniot_did_t did,
 			     const struct caniot_frame *frame)
 {
-	return ((frame->id.query == CANIOT_QUERY) &&
-		(frame->id.cls == CANIOT_DID_CLS(did)) &&
-		(frame->id.sid == CANIOT_DID_SID(did))) ||
+	return (frame->id.query == CANIOT_QUERY) &&
+		((frame->id.cls == CANIOT_DID_CLS(did)) &&
+		 (frame->id.sid == CANIOT_DID_SID(did)) ||
 		((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
-		 (frame->id.sid == CANIOT_SUBID_BROADCAST));
+		 (frame->id.sid == CANIOT_SUBID_BROADCAST)));
 }
 
 bool caniot_controller_is_target(const struct caniot_frame *frame)

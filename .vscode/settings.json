@@ -14,6 +14,7 @@
         "memory.h": "c",
         "stddef.h": "c",
         "type_traits": "c",
-        "header.h": "c"
+        "header.h": "c",
+        "cstdlib": "c"
     }
 }

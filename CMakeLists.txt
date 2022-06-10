@@ -27,3 +27,4 @@ target_include_directories(caniotlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 
 # foreach directory in "samples" include CMakeLists.txt
 add_subdirectory(samples/sim)
+add_subdirectory(tests)

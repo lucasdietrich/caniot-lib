@@ -1,21 +1,34 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "GDB",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/samples/sim/sim",
-            "args": [],
-	    "cwd": "${workspaceFolder}",
-            "stopAtEntry": true,
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "miDebuggerPath": "/usr/bin/gdb"
-        }
-    ]
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "GDB Sim",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/samples/sim/sim",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"stopAtEntry": true,
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb"
+		},
+		{
+			"name": "GDB Test",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/tests/test",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"stopAtEntry": true,
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb"
+		}
+	]
 }

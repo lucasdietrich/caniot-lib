@@ -66,7 +66,6 @@ typedef enum {
 	CANIOT_XPS_PULSE_CANCEL,
 } caniot_complex_digital_cmd_t;
 
-#pragma pack(push, 1)
 struct caniot_board_control_telemetry
 {
 	union {
@@ -94,9 +93,8 @@ struct caniot_board_control_telemetry
 	uint16_t ext_temperature : 10;
 	uint16_t ext_temperature2 : 10;
 	uint16_t ext_temperature3 : 10;
-};
+} __attribute__((packed));
 
-#pragma pack(push, 1)
 struct caniot_board_control_command
 {
 	caniot_complex_digital_cmd_t coc1 : 3;
@@ -130,9 +128,8 @@ struct caniot_board_control_command
 	caniot_onestate_cmd_t config_reset : 1;
 
 	uint8_t _unused10 : 2;
-};
+} __attribute__((packed));
 
-#pragma pack(push, 1)
 struct caniot_CRTHPT {
 	union {
 		struct {
@@ -180,7 +177,7 @@ struct caniot_CRTHPT {
 		uint16_t pressure : 10;
 		uint16_t ext_temperature : 10;
 	};
-};
+} __attribute__((packed));
 
 #define CANIOT_INTERPRET(buf, s) \
 	((struct s *)buf)

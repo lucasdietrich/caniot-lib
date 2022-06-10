@@ -473,7 +473,7 @@ static int attribute_read(struct caniot_device *dev,
 
 static void prepare_response(struct caniot_device *dev,
 			     struct caniot_frame *resp,
-			     uint8_t type)
+			     caniot_frame_type_t resp_type)
 {
 	caniot_did_t did;
 
@@ -483,7 +483,7 @@ static void prepare_response(struct caniot_device *dev,
 	read_identification_nodeid(dev, &did);
 
 	/* id */
-	resp->id.type = type;
+	resp->id.type = resp_type;
 	resp->id.query = CANIOT_RESPONSE;
 
 	resp->id.cls = CANIOT_DID_CLS(did);
@@ -493,9 +493,15 @@ static void prepare_response(struct caniot_device *dev,
 
 static void prepare_error(struct caniot_device *dev,
 			  struct caniot_frame *resp,
+			  caniot_frame_type_t query_type,
 			  int error)
 {
-	prepare_response(dev, resp, CANIOT_FRAME_TYPE_COMMAND);
+	/* if the error occured during a command or query telemetry, 
+	 * then the error frame is a RESPONSE/COMMAND
+
+	 * otherwise (if it's an attribute error), error frame is RESPONSE/WRITE_ATTR
+	 */
+	prepare_response(dev, resp, caniot_resp_error_for(query_type));
 
 	resp->err = (int32_t)error;
 	resp->len = 4U;
@@ -522,7 +528,12 @@ static int handle_read_attribute(struct caniot_device *dev,
 		ret = attribute_read(dev, &ref, &resp->attr);
 	} else if (ret == -EINVAL) { /* if custom attribute */
 		if (dev->api->custom_attr.read != NULL) {
-			ret = dev->api->custom_attr.read(dev, attr->key, &resp->attr.val);
+			/* temp variable to avoid `-Waddress-of-packed-member` warning */
+			uint32_t tval = (uint32_t) -1; 
+			ret = dev->api->custom_attr.read(dev, attr->key, &tval);
+			if (ret == 0) {
+				resp->attr.val = tval;
+			}
 		} else {
 			ret = -CANIOT_ENOTSUP; /* not supported attribute */
 		}
@@ -736,7 +747,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 
 exit:
 	if (ret != 0) {
-		prepare_error(dev, resp, ret);
+		prepare_error(dev, resp, ret, req->id.type);
 	}
 	return ret;
 }

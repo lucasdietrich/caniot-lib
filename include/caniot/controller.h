@@ -9,9 +9,8 @@ extern "C" {
 
 struct caniot_device_entry
 {
-	uint32_t last_seen;	/* timestamp this device was last seen */
+	// uint32_t last_seen;	/* timestamp this device was last seen */
 	struct {
-		uint8_t active : 1;	/* valid entry if set */
 		uint8_t pending : 1;	/* query pending */
 	} flags;
 };
@@ -23,13 +22,17 @@ struct caniot_pqt
 		uint32_t timeout;
 		uint32_t delay;
 	}; /* in ms */
+
 	struct caniot_pqt *next;
 };
 
 struct caniot_pendq
 {
 	caniot_did_t did;
-	caniot_query_callback_t callback;
+
+	uint8_t handle: 5U;
+
+	caniot_frame_type_t query_type;
 
 	union {
 		struct caniot_pqt tie; /* for timeout queue */
@@ -37,16 +40,56 @@ struct caniot_pendq
 	};
 };
 
+struct caniot_controller;
+
+typedef enum {
+	CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN = 0U, 	/* pq not set */
+	CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY, 		/* pq is set */
+} caniot_controller_event_context_t;
+
+typedef enum {
+	CANIOT_CONTROLLER_EVENT_STATUS_OK = 0U, 	/* is not part of a query (frame is set) */
+	CANIOT_CONTROLLER_EVENT_STATUS_ERROR, 		/* is part of a query (frame is set) */
+	CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT, 	/* a query timed out (frame not set) */	
+	CANIOT_CONTROLLER_EVENT_STATUS_IGNORED,		/* a query was ignored (frame not set) */
+} caniot_controller_event_status_t;
+
+typedef enum {
+	CANIOT_CONTROLLER_QUERY_PENDING = 0U,
+	CANIOT_CONTROLLER_QUERY_TERMINATED = 1U
+} caniot_controller_query_terminated_t;
+
+typedef struct {
+	struct caniot_controller *controller;
+
+	caniot_controller_event_context_t context : 2U;
+	caniot_controller_event_status_t status : 2U;
+
+	/* terminated only valid if context is CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN */
+	caniot_controller_query_terminated_t terminated : 1U; 
+
+	caniot_did_t did;
+
+	uint8_t is_broadcast_query: 1U;
+
+	uint8_t handle;
+
+	const struct caniot_frame *response;
+} caniot_controller_event_t;
+
+typedef bool (*caniot_controller_event_cb_t)(const caniot_controller_event_t *ev,
+					     void *user_data);
+
 struct caniot_controller {
-	char name[32];
-	uint32_t uid;
-
-	struct caniot_device_entry devices[32];
-
 	struct {
 		struct caniot_pendq pool[CANIOT_MAX_PENDING_QUERIES];
 		struct caniot_pendq *free_list;
 		struct caniot_pqt *timeout_queue;
+
+		/**
+		 * @brief Pending queries bitmap
+		 */
+		uint64_t pending_devices_bf;
 	} pendingq;
 
 	struct {
@@ -55,23 +98,29 @@ struct caniot_controller {
 	} last_process;
 
 	const struct caniot_drivers_api *driv;
+
+	caniot_controller_event_cb_t event_cb;
+	void *user_data;
 };
 
+typedef struct caniot_controller caniot_controller_t;
+
 // intitalize controller structure
-int caniot_controller_init(struct caniot_controller *controller);
+int caniot_controller_init(struct caniot_controller *ctrl,
+			   const struct caniot_drivers_api *driv,
+			   caniot_controller_event_cb_t cb,
+			   void *user_data);
 
 int caniot_controller_deinit(struct caniot_controller *ctrl);
 
 int caniot_controller_query(struct caniot_controller *controller,
 			    caniot_did_t did,
 			    struct caniot_frame *frame,
-			    caniot_query_callback_t cb,
 			    uint32_t timeout);
 
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     caniot_did_t did,
 			     caniot_endpoint_t ep,
-			     caniot_query_callback_t cb,
 			     uint32_t timeout);
 
 int caniot_command(struct caniot_controller *ctrl,
@@ -79,28 +128,27 @@ int caniot_command(struct caniot_controller *ctrl,
 		   caniot_endpoint_t ep,
 		   uint8_t *buf,
 		   uint8_t len,
-		   caniot_query_callback_t cb,
 		   uint32_t timeout);
 
 int caniot_read_attribute(struct caniot_controller *ctrl,
 			  caniot_did_t did,
 			  uint16_t key,
-			  caniot_query_callback_t cb,
 			  uint32_t timeout);
 
 int caniot_write_attribute(struct caniot_controller *ctrl,
 			   caniot_did_t did,
 			   uint16_t key,
 			   uint32_t value,
-			   caniot_query_callback_t cb,
 			   uint32_t timeout);
 
 int caniot_discover(struct caniot_controller *ctrl,
-		    caniot_query_callback_t cb,
 		    uint32_t timeout);
 
 int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 				      const struct caniot_frame *frame);
+
+int caniot_controller_process_frame(struct caniot_controller *ctrl,
+				    const struct caniot_frame *frame);
 
 /**
  * @brief Check timeouts and receive incoming CANIOT message if any and handle it

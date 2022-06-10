@@ -10,9 +10,21 @@ static inline caniot_did_t get_deviceid(const struct caniot_frame *frame)
 	return CANIOT_DID(frame->id.cls, frame->id.sid);
 }
 
-static bool is_query_pending(struct caniot_device_entry *device)
+static bool is_query_pending_for(struct caniot_controller *ctrl,
+				 caniot_did_t did)
 {
-	return device->flags.pending == 1U;
+	return ctrl->pendingq.pending_devices_bf & (1LLU << did);
+}
+
+static void mark_query_pending_for(struct caniot_controller *ctrl,
+				   caniot_did_t did,
+				   bool status)
+{
+	if (status == true) {
+		ctrl->pendingq.pending_devices_bf |= (1LLU << did);
+	} else {
+		ctrl->pendingq.pending_devices_bf &= ~(1LLU << did);
+	}
 }
 
 // Finalize frame with device id
@@ -22,26 +34,6 @@ static void finalize_query_frame(struct caniot_frame *frame, caniot_did_t did)
 
 	frame->id.cls = CANIOT_DID_CLS(did);
 	frame->id.sid = CANIOT_DID_SID(did);
-}
-
-// Return device entry corresponding to device id or last entry if broadcast
-static struct caniot_device_entry *get_device_entry(struct caniot_controller *ctrl,
-						    caniot_did_t did)
-{
-	return ctrl->devices + did;
-}
-
-// Get device id from device entry
-static inline caniot_did_t get_device_id(struct caniot_controller *ctrl,
-					 struct caniot_device_entry *entry)
-{
-	return CANIOT_DID_FROM_RAW(entry - ctrl->devices);
-}
-
-static inline bool device_is_broadcast(struct caniot_controller *ctrl,
-				       struct caniot_device_entry *entry)
-{
-	return CANIOT_DEVICE_IS_BROADCAST(get_device_id(ctrl, entry));
 }
 
 static void _pendq_queue(struct pqt **root, struct pqt *item)
@@ -127,10 +119,10 @@ static void pendq_init_queue(struct caniot_controller *ctrl)
 {
 	/* init free list */
 	for (struct pendq *cur = ctrl->pendingq.pool;
-	     cur < ctrl->pendingq.pool + (CANIOT_MAX_PENDING_QUERIES - 1); cur++) {
+	     cur < ctrl->pendingq.pool + (CANIOT_MAX_PENDING_QUERIES - 1U); cur++) {
 		cur->next = cur + 1;
 	}
-	ctrl->pendingq.pool[CANIOT_MAX_PENDING_QUERIES - 1].next = NULL;
+	ctrl->pendingq.pool[CANIOT_MAX_PENDING_QUERIES - 1U].next = NULL;
 
 	ctrl->pendingq.free_list = ctrl->pendingq.pool;
 	ctrl->pendingq.timeout_queue = NULL;
@@ -153,7 +145,8 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 	}
 }
 
-static struct pendq *pendq_find(struct caniot_controller *ctrl, caniot_did_t did)
+static struct pendq *pendq_find(struct caniot_controller *ctrl,
+				caniot_did_t did)
 {
 	struct pqt *tie;
 	for (tie = ctrl->pendingq.timeout_queue; tie != NULL; tie = tie->next) {
@@ -166,41 +159,232 @@ static struct pendq *pendq_find(struct caniot_controller *ctrl, caniot_did_t did
 }
 
 static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
-					struct caniot_device_entry *entry)
+					caniot_did_t did)
 {
 	struct pendq *pq = NULL;
-	if (is_query_pending(entry)) {
-		pq = pendq_find(ctrl, get_device_id(ctrl, entry));
+	if (is_query_pending_for(ctrl, did)) {
+		pq = pendq_find(ctrl, did);
 	}
 	return pq;
 }
 
-// Initialize controller structure
-int caniot_controller_init(struct caniot_controller *ctrl)
+// Initialize ctrl structure
+int caniot_controller_init(struct caniot_controller *ctrl,
+			   const struct caniot_drivers_api *driv,
+			   caniot_controller_event_cb_t cb,
+			   void *user_data)
 {
-	// initialize devices array
-	memset(ctrl->devices, 0, sizeof(ctrl->devices));
+	int ret = 0;
+
+	if (ctrl == NULL) {
+		ret = -CANIOT_ENULLCTRL;
+		goto exit;
+	}
+
+	if (cb == NULL) {
+		ret = -CANIOT_ENULLCTRLCB;
+		goto exit;
+	}
+
+	if (driv == NULL) {
+		ret = -CANIOT_EDRIVER;
+		goto exit;
+	}
+
+	ctrl->event_cb = cb;
+	ctrl->user_data = user_data;
+
+	ctrl->driv = driv;
 
 	pendq_init_queue(ctrl);
 
-	return 0;
+exit:
+	return ret;
 }
 
 int caniot_controller_deinit(struct caniot_controller *ctrl)
 {
 	(void)ctrl;
 
-	return 0;
+	return -CANIOT_ENIMPL;
 }
 
-static int pendq_register(struct caniot_controller *controller,
-			  struct caniot_device_entry *device,
-			  caniot_query_callback_t cb,
-			  uint32_t timeout)
+static void user_event(struct caniot_controller *ctrl,
+		       const caniot_controller_event_t *ev,
+		       struct pendq *pq)
 {
-	/* nothing to do */
-	if (cb == NULL) {
-		return 0;
+	ASSERT(ctrl != NULL);
+	ASSERT(ev != NULL);
+	ASSERT(ctrl->event_cb != NULL);
+	
+	/* already mark as terminated, so we can query the same device 
+	 * immediately in the following controller callback
+	 */
+	if (ev->terminated == CANIOT_CONTROLLER_QUERY_TERMINATED) {
+		mark_query_pending_for(ctrl, ev->did, false);
+	}
+
+	/* if callback returns false, the query should be aborted if not terminated */
+	if (ctrl->event_cb(ev, ctrl->user_data) == false) {
+		mark_query_pending_for(ctrl, ev->did, false);
+	}
+
+	/* unregister the pending query */
+	if ((pq != NULL) && !is_query_pending_for(ctrl, pq->did)) {
+		ASSERT(pq != NULL);
+		
+		pendq_remove(ctrl, pq);
+		pendq_free(ctrl, pq);
+	}
+}
+
+static void orphan_resp_event(struct caniot_controller *ctrl,
+			      const struct caniot_frame *response)
+{
+	ASSERT(ctrl != NULL);
+	ASSERT(response != NULL);
+
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN,
+		.status = CANIOT_CONTROLLER_EVENT_STATUS_OK,
+
+		.did = CANIOT_DID(response->id.cls, response->id.sid),
+
+		.terminated = 1U, /* meaningless in this context */
+		.handle = 0U, /* meaningless in this context */
+		.is_broadcast_query = 0U, /* meaningless in this context */
+
+		.response = response,
+	};
+
+	user_event(ctrl, &ev, NULL);
+}
+
+static void ignored_query_event(struct caniot_controller *ctrl,
+				struct pendq *pq)
+{
+	ASSERT(pq != NULL);
+
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		.status = CANIOT_CONTROLLER_EVENT_STATUS_IGNORED,
+
+		.did = pq->did,
+
+		.terminated = 1U,
+		.handle = pq->handle,
+
+		.is_broadcast_query = caniot_is_broadcast(pq->did),
+		.response = NULL,
+	};
+
+	user_event(ctrl, &ev, pq);
+}
+
+static void expired_query_event(struct caniot_controller *ctrl,
+				struct pendq *pq)
+{
+	ASSERT(pq != NULL);
+
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		.status = CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT,
+		
+		.did = pq->did,
+
+		.terminated = 1U,
+		.handle = pq->handle,
+
+		.is_broadcast_query = caniot_is_broadcast(pq->did),
+		.response = NULL,
+	};
+
+	user_event(ctrl, &ev, pq);
+}
+
+static void resp_query_event(struct caniot_controller *ctrl,
+			     const struct caniot_frame *response,
+			     struct pendq *pq)
+{
+	ASSERT(pq != NULL);
+
+	const bool is_broadcast = caniot_is_broadcast(pq->did);
+
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		.status = caniot_is_error_frame(response->id) ?
+				CANIOT_CONTROLLER_EVENT_STATUS_ERROR :
+				CANIOT_CONTROLLER_EVENT_STATUS_OK,
+
+		.did = CANIOT_DID(response->id.cls, response->id.sid),
+
+		.terminated = is_broadcast == false,
+		.handle = pq->handle,
+
+		.is_broadcast_query = is_broadcast,
+		.response = response,
+	};
+
+	user_event(ctrl, &ev, pq);
+}
+
+static void pendq_call_expired(struct caniot_controller *ctrl)
+{
+	int ret;
+	struct pendq *pq;
+	struct pqt **const q = &ctrl->pendingq.timeout_queue;
+
+	while ((pq = pendq_get_expired(q)) != NULL) {
+		expired_query_event(ctrl, pq);
+	}
+}
+
+static uint32_t process_get_diff_ms(struct caniot_controller *ctrl)
+{
+	const uint32_t last_sec = ctrl->last_process.sec;
+	const uint16_t last_ms = ctrl->last_process.ms;
+
+	ctrl->driv->get_time(&ctrl->last_process.sec,
+			     &ctrl->last_process.ms);
+
+	return (ctrl->last_process.sec - last_sec) * 1000 +
+		ctrl->last_process.ms - last_ms;
+}
+
+static struct pendq *pendq_prepare(struct caniot_controller *ctrl,
+				   caniot_did_t did,
+				   caniot_frame_type_t query_type,
+				   uint32_t timeout)
+{
+	/* allocate */
+	struct pendq *pq = pendq_alloc(ctrl);
+
+	if (pq != NULL) {
+		/* prepare data */
+		pq->did = did;
+		pq->handle = INDEX_OF(pq, ctrl->pendingq.pool, struct pendq);
+		pq->query_type = query_type;
+	}
+
+	return pq;
+}
+
+// Send query to device and prepare response callback
+int caniot_controller_query(struct caniot_controller *ctrl,
+			    caniot_did_t did,
+			    struct caniot_frame *frame,
+			    uint32_t timeout)
+{
+	int ret;
+
+	/* validate arguments */
+	if (ctrl == NULL || frame == NULL) {
+		ret = -CANIOT_EINVAL;
+		goto exit;
 	}
 
 	/* invalid timeout value */
@@ -208,115 +392,41 @@ static int pendq_register(struct caniot_controller *controller,
 		return -CANIOT_EINVAL;
 	}
 
+	if (caniot_deviceid_valid(did) == false) {
+		ret = -CANIOT_EDEVICE;
+		goto exit;
+	}
+
 	/* another query is already pending for the device */
-	if (is_query_pending(device)) {
-		return -CANIOT_EAGAIN;
+	if (is_query_pending_for(ctrl, did) == true) {
+		ret = -CANIOT_EAGAIN;
+		goto exit;
 	}
 
-	struct pendq *pq = pendq_alloc(controller);
+	struct pendq *pq = pendq_prepare(ctrl, did, frame->id.type, timeout);
 	if (pq == NULL) {
-		return -CANIOT_EPQALLOC;
-	}
-
-	/* prepare data */
-	pq->callback = cb;
-	pq->did = get_device_id(controller, device);
-
-	/* add query to pending query */
-	pendq_queue(controller, pq, timeout);
-
-	/* tells that a query is pending */
-	device->flags.pending = 1U;
-
-	return 0;
-}
-
-static int pendq_call_and_unregister(struct caniot_controller *controller,
-				     struct pendq *pq,
-				     const struct caniot_frame *frame)
-{
-	int ret = -CANIOT_ENOPQ;
-
-	if (pq != NULL) {
-		/* void should we discard the callback ? */
-		ret = pq->callback(pq->did, frame);
-
-		/* if broadcast query, we expect more devices reponses */
-		if (caniot_is_broadcast(pq->did) == false) {
-			get_device_entry(controller, pq->did)->flags.pending = 0U;
-			pendq_remove(controller, pq);
-			pendq_free(controller, pq);
-		}
-	}
-
-	return ret;
-}
-
-static int pendq_call_expired(struct caniot_controller *controller)
-{
-	int ret;
-	struct pendq *pq;
-	struct pqt **const q = &controller->pendingq.timeout_queue;
-
-	while ((pq = pendq_get_expired(q)) != NULL) {
-		ret = pendq_call_and_unregister(controller, pq, NULL);
-		if (ret != 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
-static uint32_t process_get_diff_ms(struct caniot_controller *controller)
-{
-	const uint32_t last_sec = controller->last_process.sec;
-	const uint16_t last_ms = controller->last_process.ms;
-
-	controller->driv->get_time(&controller->last_process.sec,
-				   &controller->last_process.ms);
-
-	return (controller->last_process.sec - last_sec) * 1000 +
-		controller->last_process.ms - last_ms;
-}
-
-// Send query to device and prepare response callback
-int caniot_controller_query(struct caniot_controller *controller,
-			    caniot_did_t did,
-			    struct caniot_frame *frame,
-			    caniot_query_callback_t cb,
-			    uint32_t timeout)
-{
-	int ret;
-	struct caniot_device_entry *device;
-
-	/* validate arguments */
-	if (controller == NULL || frame == NULL) {
-		return -CANIOT_EINVAL;
-	}
-
-	device = get_device_entry(controller, did);
-	if (device == NULL) {
-		return -CANIOT_EDEVICE;
-	}
-
-	ret = pendq_register(controller, device, cb, timeout);
-	if (ret < 0) {
-		goto error;
+		ret = -CANIOT_EPQALLOC;
+		goto exit;
 	}
 
 	/* finalize and send the query frame */
 	finalize_query_frame(frame, did);
-	const uint32_t deffered = 0U;
-	ret = controller->driv->send(frame, deffered);
+
+	/* send frame */
+	ret = ctrl->driv->send(frame, 0U);
 	if (ret < 0) {
-		goto error;
+		goto exit;
 	}
 
-	return 0;
+	/* add query to pending query */
+	pendq_queue(ctrl, pq, timeout);
 
-error:
-	device->flags.pending = 0U;
+	/* tells that a query is pending for the device */
+	mark_query_pending_for(ctrl, did, true);
+
+	ret = 0;
+
+exit:
 	return ret;
 }
 
@@ -338,7 +448,6 @@ static inline int prepare_request_telemetry(struct caniot_frame *frame,
 int caniot_request_telemetry(struct caniot_controller *ctrl,
 			     caniot_did_t did,
 			     caniot_endpoint_t ep,
-			     caniot_query_callback_t cb,
 			     uint32_t timeout)
 {
 	int ret;
@@ -349,7 +458,7 @@ int caniot_request_telemetry(struct caniot_controller *ctrl,
 		return ret;
 	}
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return caniot_controller_query(ctrl, did, &frame, timeout);
 }
 
 static inline int prepare_command(struct caniot_frame *frame,
@@ -376,7 +485,6 @@ int caniot_command(struct caniot_controller *ctrl,
 		   caniot_endpoint_t ep,
 		   uint8_t *buf,
 		   uint8_t len,
-		   caniot_query_callback_t cb,
 		   uint32_t timeout)
 {
 	int ret;
@@ -387,7 +495,7 @@ int caniot_command(struct caniot_controller *ctrl,
 		return ret;
 	}
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return caniot_controller_query(ctrl, did, &frame, timeout);
 }
 
 static inline int prepare_read_attribute(struct caniot_frame *frame,
@@ -403,7 +511,6 @@ static inline int prepare_read_attribute(struct caniot_frame *frame,
 int caniot_read_attribute(struct caniot_controller *ctrl,
 			  caniot_did_t did,
 			  uint16_t key,
-			  caniot_query_callback_t cb,
 			  uint32_t timeout)
 {
 	int ret;
@@ -414,7 +521,7 @@ int caniot_read_attribute(struct caniot_controller *ctrl,
 		return ret;
 	}
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return caniot_controller_query(ctrl, did, &frame, timeout);
 }
 
 static inline int prepare_write_attribute(struct caniot_frame *frame,
@@ -433,7 +540,6 @@ int caniot_write_attribute(struct caniot_controller *ctrl,
 			   caniot_did_t did,
 			   uint16_t key,
 			   uint32_t value,
-			   caniot_query_callback_t cb,
 			   uint32_t timeout)
 {
 	int ret;
@@ -444,11 +550,10 @@ int caniot_write_attribute(struct caniot_controller *ctrl,
 		return ret;
 	}
 
-	return caniot_controller_query(ctrl, did, &frame, cb, timeout);
+	return caniot_controller_query(ctrl, did, &frame, timeout);
 }
 
 int caniot_discover(struct caniot_controller *ctrl,
-		    caniot_query_callback_t cb,
 		    uint32_t timeout)
 {
 	struct caniot_frame frame;
@@ -456,35 +561,49 @@ int caniot_discover(struct caniot_controller *ctrl,
 	prepare_request_telemetry(&frame, CANIOT_ENDPOINT_APP);
 
 	return caniot_controller_query(ctrl, CANIOT_DID_BROADCAST,
-				       &frame, cb, timeout);
+				       &frame, timeout);
 }
 
 int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
-				      const struct caniot_frame *frame)
+				      const struct caniot_frame *response)
 {
 	// Assert that frame is not NULL and is a response
-	if (!frame || frame->id.query != CANIOT_RESPONSE) {
+	if (!response || response->id.query != CANIOT_RESPONSE) {
 		return -CANIOT_EMLFRM;
 	}
 
-	// Get device entry from frame device id
-	struct caniot_device_entry *device =
-		get_device_entry(ctrl, get_deviceid(frame));
-	if (!device) {
-		return -CANIOT_EDEVICE;
-	}
+	const caniot_did_t did = CANIOT_DID(response->id.cls, response->id.sid);
 
 	// If a query is pending and the frame is the response for it
 	// Call callback and clear pending query
-	pendq_call_and_unregister(ctrl,
-				  peek_pending_query(ctrl, device),
-				  frame);
-
-
-	// Update last seen timestamp for entry
-	ctrl->driv->get_time(&device->last_seen, NULL);
+	struct pendq *pq = peek_pending_query(ctrl, did);
+	if (pq == NULL) {
+		orphan_resp_event(ctrl, response);
+	} else if ((true == caniot_type_is_valid_response_of(response->id.type,
+							     pq->query_type)) ||
+		   (true == caniot_is_error_frame(response->id))) {
+		resp_query_event(ctrl, response, pq);
+	} else {
+		ignored_query_event(ctrl, pq);
+	}
 
 	return 0;
+}
+
+int caniot_controller_process_frame(struct caniot_controller *ctrl,
+				    const struct caniot_frame *frame)
+{
+	if (frame != NULL) {
+		caniot_controller_handle_rx_frame(ctrl, frame);
+	}
+
+	/* update timeouts */
+	pendq_shift(ctrl, process_get_diff_ms(ctrl));
+
+	/* call callbacks for expired queries */
+	pendq_call_expired(ctrl);
+
+	return 0U;
 }
 
 int caniot_controller_process(struct caniot_controller *ctrl)
@@ -495,23 +614,13 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 	while (true) {
 		ret = ctrl->driv->recv(&frame);
 		if (ret == 0) {
-			ret = caniot_controller_handle_rx_frame(ctrl, &frame);
-
-			if (ret < 0) {
-				CANIOT_ERR(F("Process failed: -%04x\n"), -ret);
-
-				return ret;
-			}
-
+			caniot_controller_handle_rx_frame(ctrl, &frame);
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {
 			return ret;
 		}
 	}
-
-	// calculate last process time, update and get difference
-
 
 	/* update timeouts */
 	pendq_shift(ctrl, process_get_diff_ms(ctrl));

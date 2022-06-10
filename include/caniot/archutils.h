@@ -50,6 +50,8 @@
 #	define CANIOT_LOG_LEVEL 1
 #endif
 
+#define ASSERT(x) 
+
 #if CANIOT_LOG_LEVEL >= 4
 #define CANIOT_DBG(...) printf(__VA_ARGS__)
 #else
@@ -80,5 +82,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
+
+#define INDEX_OF(obj, base, _struct) ((_struct *)(obj) - (_struct *)(base))
 
 #endif /* _CANIOT_ARCHUTILS_H_ */

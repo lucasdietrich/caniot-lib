@@ -18,12 +18,16 @@ extern "C" {
 #define CANIOT_DRIVERS_API 0
 #endif /* CONFIG_CANIOT_DRIVERS_API */
 
+#ifdef CONFIG_CANIOT_MAX_PENDING_QUERIES
+#define CANIOT_MAX_PENDING_QUERIES CONFIG_CANIOT_MAX_PENDING_QUERIES
+#else
+#define CANIOT_MAX_PENDING_QUERIES 4U
+#endif /* CONFIG_CANIOT_DRIVERS_API */
 
 #define CANIOT_VERSION1	1
 #define CANIOT_VERSION2 2
 #define CANIOT_VERSION 	CANIOT_VERSION2
 
-#define CANIOT_MAX_PENDING_QUERIES	2
 #define CANIOT_ID(t, q, c, d, e) ((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) | ((e & 0x3U) << 9U))
 
 
@@ -135,11 +139,11 @@ struct caniot_attribute
 	};
 	union {
 		uint32_t u32;
-		uint16_t u16;
-		uint8_t u8;
+		uint16_t u16[2];
+		uint8_t u8[4];
 		uint32_t val;
 	};
-};
+} __attribute__((packed));
 
 struct caniot_frame {
 	caniot_id_t id;
@@ -152,9 +156,6 @@ struct caniot_frame {
 };
 
 typedef struct caniot_frame caniot_frame_t;
-
-typedef int (*caniot_query_callback_t)(caniot_did_t did,
-				       const struct caniot_frame *resp);
 
 struct caniot_drivers_api {
 	/* util */
@@ -199,17 +200,9 @@ static inline void caniot_copy_frame(struct caniot_frame *dst,
 	memcpy(dst, src, sizeof(struct caniot_frame));
 }
 
-static inline bool caniot_is_error_frame(caniot_id_t id)
-{
-	return (id.query == CANIOT_RESPONSE) &&
-		(id.type == CANIOT_FRAME_TYPE_COMMAND);
-}
+bool caniot_is_error_frame(caniot_id_t id);
 
-static inline bool is_telemetry_response(struct caniot_frame *frame)
-{
-	return (frame->id.query == CANIOT_RESPONSE) &&
-		(frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
-}
+bool is_telemetry_response(struct caniot_frame *frame);
 
 // Check if drivers api is valid
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api);
@@ -243,6 +236,18 @@ void caniot_show_error(int cterr);
 int caniot_encode_deviceid(caniot_did_t did, uint8_t *buf, size_t len);
 
 bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b);
+
+bool caniot_deviceid_valid(caniot_did_t did);
+
+bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
+				      caniot_frame_type_t query);
+
+bool caniot_type_is_response_of(caniot_frame_type_t resp,
+				caniot_frame_type_t query,
+				bool *iserror);
+
+caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query);
+
 
 /**
  * @brief Compare CANIOT device addresses

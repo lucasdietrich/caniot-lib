@@ -11,6 +11,9 @@
         "caniot_common.h": "c",
         "helper.h": "c",
         "archutils.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "stddef.h": "c",
+        "type_traits": "c",
+        "header.h": "c"
     }
 }

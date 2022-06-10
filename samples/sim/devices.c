@@ -15,7 +15,9 @@ struct caniot_device devices[DEVICES_COUNT];
 static int cb_config_on_read(struct caniot_device *dev,
 		      struct caniot_config *config)
 {
-	printf("[CB] cb_config_on_read dev=%p config=%p\n", dev, config);
+	printf("[DEV CB] cb_config_on_read dev=%p config=%p\n", dev, config);
+
+	vtime_inc_const();
 
 	return 0U;
 }
@@ -23,7 +25,11 @@ static int cb_config_on_read(struct caniot_device *dev,
 static int cb_config_on_write(struct caniot_device *dev,
 		       struct caniot_config *config)
 {
-	printf("[CB] cb_config_on_write dev=%p config=%p\n", dev, config);
+	printf("[DEV CB] cb_config_on_write dev=%p config=%p\n", dev, config);
+
+	vtime_inc_const();
+
+	return 0U;
 }
 
 static int cb_attr_read(struct caniot_device *dev,
@@ -32,8 +38,10 @@ static int cb_attr_read(struct caniot_device *dev,
 {
 	*val = 0U;
 
-	printf("[CB] cb_attr_read dev=%p key=%hu *val=%p\n", 
+	printf("[DEV CB] cb_attr_read dev=%p key=%hu *val=%p\n", 
 	       dev, key, val);
+
+	vtime_inc_const();
 
 	return 0U;
 }
@@ -42,8 +50,10 @@ static int cb_attr_write(struct caniot_device *dev,
 		  uint16_t key,
 		  uint32_t val)
 {
-	printf("[CB] cb_attr_write dev=%p key=%hu val=%u\n", 
+	printf("[DEV CB] cb_attr_write dev=%p key=%hu val=%u\n", 
 	       dev, key, val);
+
+	vtime_inc_const();
 
 	return 0U;
 }
@@ -55,8 +65,10 @@ static int (cb_telemetry_handler)(struct caniot_device *dev,
 {
 	*len = 0U;
 
-	printf("[CB] cb_telemetry_handler dev=%p ep=%hhu buf=%p [*len = %p]\n",
+	printf("[DEV CB] cb_telemetry_handler dev=%p ep=%hhu buf=%p [*len = %p]\n",
 	       dev, ep, buf, len);
+
+	vtime_inc_const();
 
 	return 0U;
 }
@@ -66,8 +78,10 @@ static int (cb_command_handler)(struct caniot_device *dev,
 			 const char *buf,
 			 uint8_t len)
 {
-	printf("[CB] cb_command_handler dev=%p ep=%hhu buf=%p [len = %hhu]\n",
+	printf("[DEV CB] cb_command_handler dev=%p ep=%hhu buf=%p [len = %hhu]\n",
 	       dev, ep, buf, len);
+
+	vtime_inc_const();
 
 	return 0U;
 }
@@ -110,8 +124,6 @@ void devices_process(const struct caniot_frame *req)
 			devices[i].identification->did, req) == true) {
 				ret = caniot_device_handle_rx_frame(&devices[i], 
 								    req, &resp);
-				printf("caniot_device_handle_rx_frame(%p, req, resp) = %d\n",
-				       &devices[i], ret);
 				caniot_explain_frame(&resp);
 				printf("\n");
 

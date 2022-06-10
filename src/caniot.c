@@ -129,46 +129,46 @@ static inline void cpy_endpoint_str(caniot_endpoint_t endpoint, char *buf, size_
 void caniot_show_deviceid(caniot_did_t did)
 {
 	if (CANIOT_DEVICE_IS_BROADCAST(did)) {
-		CANIOT_INF(F("BROADCAST"));
+		printf(F("BROADCAST"));
 	} else {
 #if defined(__AVR__)
 		char cls_str[3], sid_str[3];
 		cpy_class_str(CANIOT_DID_CLS(did), cls_str, sizeof(cls_str));
 		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
-		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did, did, cls_str, sid_str);
+		printf(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+		       did, did, cls_str, sid_str);
 #else
-		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did, did, get_class_str(CANIOT_DID_CLS(did)),
-			   get_sid_str(CANIOT_DID_SID(did)));
+		printf(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+		       did, did, get_class_str(CANIOT_DID_CLS(did)),
+		       get_sid_str(CANIOT_DID_SID(did)));
 #endif
 	}
 }
 
 void caniot_show_frame(const struct caniot_frame *frame)
 {
-	CANIOT_DBG(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
-		   caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
-		   (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
-		   (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
-		   (uint8_t)frame->len);
+	printf(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
+	       caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
+	       (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
+	       (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
+	       (uint8_t)frame->len);
 }
 
 void caniot_explain_id(caniot_id_t id)
 {
-	CANIOT_INF(F("[ %x ] "), caniot_id_to_canid(id));
+	printf(F("[ %x ] "), caniot_id_to_canid(id));
 	if (caniot_is_error_frame(id) == true) {
-		CANIOT_INF(F("Error frame "));
+		printf(F("Error frame "));
 		return;
 	} else {
 #if defined(__AVR__)
 		char type_str[11], query_str[9];
 		cpy_type_str(id.type, type_str, sizeof(type_str));
 		cpy_query_str(id.query, query_str, sizeof(query_str));
-		CANIOT_INF(F("%s %s "), type_str, query_str);
+		printf(F("%s %s "), type_str, query_str);
 #else
-		CANIOT_INF("%s %s ", get_type_str(id.type), get_query_str(id.query));
+		printf("%s %s ", get_type_str(id.type), get_query_str(id.query));
 #endif
 	}
 
@@ -177,9 +177,9 @@ void caniot_explain_id(caniot_id_t id)
 #if defined(__AVR__)
 	char ep_str[5];
 	cpy_endpoint_str(id.endpoint, ep_str, sizeof(ep_str));
-	CANIOT_INF(F(" : %s / "), ep_str);
+	printf(F(" : %s / "), ep_str);
 #else
-	CANIOT_INF(" : %s / ", get_endpoint_str(id.endpoint));
+	printf(" : %s / ", get_endpoint_str(id.endpoint));
 #endif
 }
 
@@ -188,18 +188,18 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		CANIOT_INF(F(": -%04x \n"), (uint32_t)-frame->err);
+		printf(F(": -%04x \n"), (uint32_t)-frame->err);
 		return;
 	}
 
 	if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
 	    (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
 		for (int i = 0; i < frame->len; i++) {
-			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
+			printf(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"), frame->len,
-			   frame->attr.key, frame->attr.val);
+		printf(F("LEN = %d, key = %02x val = %04x"), frame->len,
+		       frame->attr.key, frame->attr.val);
 	}
 }
 
@@ -395,6 +395,11 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b)
 	return caniot_deviceid_cmp(a, b) == 0;
 }
 
+bool caniot_deviceid_valid(caniot_did_t did)
+{
+	return (did >> 6U) == 0U;
+}
+
 uint16_t caniot_id_to_canid(caniot_id_t id)
 {
 	return CANIOT_ID(id.type, id.query, id.cls, id.sid, id.endpoint);
@@ -411,6 +416,117 @@ caniot_id_t caniot_canid_to_id(uint16_t canid)
 	};
 
 	return id;
+}
+
+bool caniot_is_error_frame(caniot_id_t id)
+{
+	return id.query == CANIOT_RESPONSE && (
+		id.type == CANIOT_FRAME_TYPE_COMMAND ||
+		id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE
+		);
+}
+
+bool is_telemetry_response(struct caniot_frame *frame)
+{
+	return (frame->id.query == CANIOT_RESPONSE) &&
+		(frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
+}
+
+bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
+				      caniot_frame_type_t query)
+{
+	switch (query) {
+	case CANIOT_FRAME_TYPE_COMMAND:
+	case CANIOT_FRAME_TYPE_TELEMETRY:
+		return resp == CANIOT_FRAME_TYPE_TELEMETRY;
+		break;
+
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+		return resp == CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
+		break;
+	default:
+		return false;
+	}
+}
+
+bool caniot_type_is_response_of(caniot_frame_type_t resp,
+				caniot_frame_type_t query,
+				bool *iserror)
+{
+	/* VARIANT 1 *
+
+	/*
+	bool error = false;
+	bool match = false;
+
+	switch (resp) {
+	case CANIOT_FRAME_TYPE_COMMAND:
+		error = true;
+	case CANIOT_FRAME_TYPE_TELEMETRY:
+		match = (query == CANIOT_FRAME_TYPE_COMMAND) ||
+			(query == CANIOT_FRAME_TYPE_TELEMETRY);
+		break;
+
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
+		error = true;
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+		match = (query == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE) ||
+			(query == CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
+		break;
+	default:
+		break;
+	}
+
+	if (iserror != NULL) {
+		*iserror = error;
+	}
+
+	return match;
+
+	*/
+
+	/*___________________________________________________________________*/
+	/* VARIANT 2 */
+
+	bool match = false;
+	caniot_frame_type_t errtype;
+
+	switch (query) {
+	case CANIOT_FRAME_TYPE_COMMAND:
+	case CANIOT_FRAME_TYPE_TELEMETRY:
+		errtype = CANIOT_FRAME_TYPE_COMMAND;
+		match = resp == CANIOT_FRAME_TYPE_TELEMETRY;
+		break;
+
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+		errtype = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
+		match = resp == CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
+		break;
+	default:
+		break;
+	}
+
+	if (iserror != NULL) {
+		*iserror = errtype == resp;
+	}
+
+	return match;
+}
+
+caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query)
+{
+	switch (query) {
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+		return CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
+
+	case CANIOT_FRAME_TYPE_COMMAND:
+	case CANIOT_FRAME_TYPE_TELEMETRY:
+	default:
+		return CANIOT_FRAME_TYPE_COMMAND;
+	}
 }
 
 void caniot_test(void)

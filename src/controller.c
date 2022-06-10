@@ -216,23 +216,25 @@ static void user_event(struct caniot_controller *ctrl,
 	ASSERT(ctrl != NULL);
 	ASSERT(ev != NULL);
 	ASSERT(ctrl->event_cb != NULL);
+
+	bool unregister = false;
 	
 	/* already mark as terminated, so we can query the same device 
 	 * immediately in the following controller callback
 	 */
 	if (ev->terminated == CANIOT_CONTROLLER_QUERY_TERMINATED) {
+		unregister = true;
 		mark_query_pending_for(ctrl, ev->did, false);
 	}
 
 	/* if callback returns false, the query should be aborted if not terminated */
-	if (ctrl->event_cb(ev, ctrl->user_data) == false) {
+	if ((ctrl->event_cb(ev, ctrl->user_data) == false) && !unregister) {
+		unregister = true;
 		mark_query_pending_for(ctrl, ev->did, false);
 	}
 
 	/* unregister the pending query */
-	if ((pq != NULL) && !is_query_pending_for(ctrl, pq->did)) {
-		ASSERT(pq != NULL);
-		
+	if (unregister && (pq != NULL)) {
 		pendq_remove(ctrl, pq);
 		pendq_free(ctrl, pq);
 	}
@@ -253,7 +255,6 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 
 		.terminated = 1U, /* meaningless in this context */
 		.handle = 0U, /* meaningless in this context */
-		.is_broadcast_query = 0U, /* meaningless in this context */
 
 		.response = response,
 	};
@@ -276,7 +277,6 @@ static void ignored_query_event(struct caniot_controller *ctrl,
 		.terminated = 1U,
 		.handle = pq->handle,
 
-		.is_broadcast_query = caniot_is_broadcast(pq->did),
 		.response = NULL,
 	};
 
@@ -298,7 +298,6 @@ static void expired_query_event(struct caniot_controller *ctrl,
 		.terminated = 1U,
 		.handle = pq->handle,
 
-		.is_broadcast_query = caniot_is_broadcast(pq->did),
 		.response = NULL,
 	};
 
@@ -325,7 +324,6 @@ static void resp_query_event(struct caniot_controller *ctrl,
 		.terminated = is_broadcast == false,
 		.handle = pq->handle,
 
-		.is_broadcast_query = is_broadcast,
 		.response = response,
 	};
 

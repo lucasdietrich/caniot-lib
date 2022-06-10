@@ -65,7 +65,7 @@ int can_send(const struct caniot_frame *frame, uint32_t delay_ms)
 		ret = 0U;
 	}
 
-	printf("\tcan_send(%p, %u) = -0x%X\n", &frame, delay_ms, -ret);
+	// printf("\tcan_send(%p, %u) = -0x%X\n", &frame, delay_ms, -ret);
 
 	return ret;
 }
@@ -98,7 +98,7 @@ int can_recv(struct caniot_frame *frame)
 		}
 	}
 
-	printf("\tcan_recv(%p, 0) = -0x%X\n", &frame, -ret);
+	// printf("\tcan_recv(%p, 0) = -0x%X\n", &frame, -ret);
 
 	return ret;
 }

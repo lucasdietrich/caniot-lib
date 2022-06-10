@@ -23,13 +23,17 @@ extern caniot_frame_t qtelemetry;
 bool ctrl_event_cb(const caniot_controller_event_t *ev,
 		   void *user_data)
 {
-	printf("[CTRL EV from %u] ctx=%u [h = %u] ctrl=%p, status=%u term=%u broadcast=%u resp=%p\n",
+	printf("[CTRL EV from %u] ctx=%u [h = %u] ctrl=%p, status=%u term=%u resp=%p\n",
 	       ev->did, ev->context, ev->handle, ev->controller, ev->status, ev->terminated,
-	       ev->is_broadcast_query, ev->response);
+	       ev->response);
 
 	vtime_inc_const();
 
+	if (ev->status == CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT) {
+		printf("!!!!!! TIMEOUT !!!!! : %u\n", ev->did);
+	}
 
+	/*
 	if (ev->status == CANIOT_CONTROLLER_EVENT_STATUS_OK) {
 		if (counter++ > 10) {
 			goto exit;
@@ -37,6 +41,7 @@ bool ctrl_event_cb(const caniot_controller_event_t *ev,
 		ctrl_Q(0U, CANIOT_DID(ev->response->id.cls, ev->response->id.sid),
 		       &qtelemetry, 350U);
 	}
+	*/
 
 exit:
 	return true;

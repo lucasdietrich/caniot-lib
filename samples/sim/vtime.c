@@ -14,13 +14,13 @@ void vtime_get(uint32_t *sec, uint16_t *ms)
 		*ms = time_ms % 1000U;
 	}
 
-	printf("[ vtime_get %lu ms ]\n", time_ms);
+	// printf("[ vtime_get %lu ms ]\n", time_ms);
 }
 
 void vtime_inc(uint32_t inc_ms)
 {
-	printf("[ vtime_inc %lu + %u ms = %lu ms]\n",
-	       time_ms, inc_ms, time_ms + inc_ms);
+	// printf("[ vtime_inc %lu + %u ms = %lu ms]\n",
+	//        time_ms, inc_ms, time_ms + inc_ms);
 
 	time_ms += inc_ms;
 }

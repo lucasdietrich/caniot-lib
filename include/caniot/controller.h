@@ -70,8 +70,6 @@ typedef struct {
 
 	caniot_did_t did;
 
-	uint8_t is_broadcast_query: 1U;
-
 	uint8_t handle;
 
 	const struct caniot_frame *response;

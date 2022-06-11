@@ -50,8 +50,6 @@
 #	define CANIOT_LOG_LEVEL 1
 #endif
 
-#define ASSERT(x) 
-
 #if CANIOT_LOG_LEVEL >= 4
 #define CANIOT_DBG(...) printf(__VA_ARGS__)
 #else
@@ -84,5 +82,17 @@
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 
 #define INDEX_OF(obj, base, _struct) ((_struct *)(obj) - (_struct *)(base))
+
+#if !defined(CONFIG_CANIOT_ASSERT)
+#define CONFIG_CANIOT_ASSERT 0
+#endif
+
+#if CONFIG_CANIOT_ASSERT
+#include <stdbool.h>
+extern void __assert(bool statement);
+#define ASSERT(x) __assert(x)
+#else
+#define ASSERT(x) 
+#endif
 
 #endif /* _CANIOT_ARCHUTILS_H_ */

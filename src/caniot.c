@@ -129,17 +129,17 @@ static inline void cpy_endpoint_str(caniot_endpoint_t endpoint, char *buf, size_
 void caniot_show_deviceid(caniot_did_t did)
 {
 	if (CANIOT_DEVICE_IS_BROADCAST(did)) {
-		printf(F("BROADCAST"));
+		CANIOT_INF(F("BROADCAST"));
 	} else {
 #if defined(__AVR__)
 		char cls_str[3], sid_str[3];
 		cpy_class_str(CANIOT_DID_CLS(did), cls_str, sizeof(cls_str));
 		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
-		printf(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
 		       did, did, cls_str, sid_str);
 #else
-		printf(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
 		       did, did, get_class_str(CANIOT_DID_CLS(did)),
 		       get_sid_str(CANIOT_DID_SID(did)));
 #endif
@@ -148,7 +148,7 @@ void caniot_show_deviceid(caniot_did_t did)
 
 void caniot_show_frame(const struct caniot_frame *frame)
 {
-	printf(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
+	CANIOT_INF(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
 	       caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
 	       (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
 	       (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
@@ -157,18 +157,18 @@ void caniot_show_frame(const struct caniot_frame *frame)
 
 void caniot_explain_id(caniot_id_t id)
 {
-	printf(F("[ %x ] "), caniot_id_to_canid(id));
+	CANIOT_INF(F("[ %x ] "), caniot_id_to_canid(id));
 	if (caniot_is_error_frame(id) == true) {
-		printf(F("Error frame "));
+		CANIOT_INF(F("Error frame "));
 		return;
 	} else {
 #if defined(__AVR__)
 		char type_str[11], query_str[9];
 		cpy_type_str(id.type, type_str, sizeof(type_str));
 		cpy_query_str(id.query, query_str, sizeof(query_str));
-		printf(F("%s %s "), type_str, query_str);
+		CANIOT_INF(F("%s %s "), type_str, query_str);
 #else
-		printf("%s %s ", get_type_str(id.type), get_query_str(id.query));
+		CANIOT_INF("%s %s ", get_type_str(id.type), get_query_str(id.query));
 #endif
 	}
 
@@ -177,9 +177,9 @@ void caniot_explain_id(caniot_id_t id)
 #if defined(__AVR__)
 	char ep_str[5];
 	cpy_endpoint_str(id.endpoint, ep_str, sizeof(ep_str));
-	printf(F(" : %s / "), ep_str);
+	CANIOT_INF(F(" : %s / "), ep_str);
 #else
-	printf(" : %s / ", get_endpoint_str(id.endpoint));
+	CANIOT_INF(" : %s / ", get_endpoint_str(id.endpoint));
 #endif
 }
 
@@ -188,17 +188,17 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		printf(F(": -%04x \n"), (uint32_t)-frame->err);
+		CANIOT_INF(F(": -%04x \n"), (uint32_t)-frame->err);
 		return;
 	}
 
 	if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
 	    (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
 		for (int i = 0; i < frame->len; i++) {
-			printf(F("%02hhx "), (uint8_t)frame->buf[i]);
+			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		printf(F("LEN = %d, key = %02x val = %04x"), frame->len,
+		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"), frame->len,
 		       frame->attr.key, frame->attr.val);
 	}
 }

@@ -4,15 +4,11 @@
 #define pendq caniot_pendq
 #define pqt caniot_pqt
 
-// Get deviceid from frame
-static inline caniot_did_t get_deviceid(const struct caniot_frame *frame)
-{
-	return CANIOT_DID(frame->id.cls, frame->id.sid);
-}
-
 static bool is_query_pending_for(struct caniot_controller *ctrl,
 				 caniot_did_t did)
 {
+	ASSERT(ctrl != NULL);
+
 	return ctrl->pendingq.pending_devices_bf & (1LLU << did);
 }
 
@@ -20,6 +16,8 @@ static void mark_query_pending_for(struct caniot_controller *ctrl,
 				   caniot_did_t did,
 				   bool status)
 {
+	ASSERT(ctrl != NULL);
+
 	if (status == true) {
 		ctrl->pendingq.pending_devices_bf |= (1LLU << did);
 	} else {
@@ -30,6 +28,8 @@ static void mark_query_pending_for(struct caniot_controller *ctrl,
 // Finalize frame with device id
 static void finalize_query_frame(struct caniot_frame *frame, caniot_did_t did)
 {
+	ASSERT(frame != NULL);
+
 	frame->id.query = CANIOT_QUERY;
 
 	frame->id.cls = CANIOT_DID_CLS(did);
@@ -38,6 +38,9 @@ static void finalize_query_frame(struct caniot_frame *frame, caniot_did_t did)
 
 static void _pendq_queue(struct pqt **root, struct pqt *item)
 {
+	ASSERT(root != NULL);
+	ASSERT(item != NULL);
+
 	struct pqt **prev_next_p = root;
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
@@ -57,6 +60,8 @@ static void _pendq_queue(struct pqt **root, struct pqt *item)
 static void pendq_queue(struct caniot_controller *ctrl,
 			struct pendq *pq, uint32_t timeout)
 {
+	ASSERT(ctrl != NULL);
+
 	if (pq == NULL)
 		return;
 
@@ -69,6 +74,8 @@ static void pendq_queue(struct caniot_controller *ctrl,
 
 static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
 {
+	ASSERT(ctrl != NULL);
+
 	struct pqt **prev_next_p = &ctrl->pendingq.timeout_queue;
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
@@ -88,6 +95,8 @@ static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
 
 static struct pendq *pendq_get_expired(struct pqt **root)
 {
+	ASSERT(root != NULL);
+
 	if ((*root != NULL) && ((*root)->delay == 0)) {
 		struct pqt *item = *root;
 		*root = (*root)->next;
@@ -99,6 +108,9 @@ static struct pendq *pendq_get_expired(struct pqt **root)
 
 static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 {
+	ASSERT(ctrl != NULL);
+	ASSERT(pq != NULL);
+
 	struct pqt **prev_next_p = &ctrl->pendingq.timeout_queue;
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
@@ -117,6 +129,8 @@ static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 
 static void pendq_init_queue(struct caniot_controller *ctrl)
 {
+	ASSERT(ctrl != NULL);
+
 	/* init free list */
 	for (struct pendq *cur = ctrl->pendingq.pool;
 	     cur < ctrl->pendingq.pool + (CANIOT_MAX_PENDING_QUERIES - 1U); cur++) {
@@ -130,6 +144,8 @@ static void pendq_init_queue(struct caniot_controller *ctrl)
 
 static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
 {
+	ASSERT(ctrl != NULL);
+
 	struct pendq *p = ctrl->pendingq.free_list;
 	if (p != NULL) {
 		ctrl->pendingq.free_list = p->next;
@@ -139,6 +155,8 @@ static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
 
 static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 {
+	ASSERT(ctrl != NULL);
+
 	if (p != NULL) {
 		p->next = ctrl->pendingq.free_list;
 		ctrl->pendingq.free_list = p;
@@ -148,6 +166,8 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 static struct pendq *pendq_find(struct caniot_controller *ctrl,
 				caniot_did_t did)
 {
+	ASSERT(ctrl != NULL);
+	
 	struct pqt *tie;
 	for (tie = ctrl->pendingq.timeout_queue; tie != NULL; tie = tie->next) {
 		struct pendq *const pq = CONTAINER_OF(tie, struct pendq, tie);
@@ -161,6 +181,8 @@ static struct pendq *pendq_find(struct caniot_controller *ctrl,
 static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
 					caniot_did_t did)
 {
+	ASSERT(ctrl != NULL);
+
 	struct pendq *pq = NULL;
 	if (is_query_pending_for(ctrl, did)) {
 		pq = pendq_find(ctrl, did);
@@ -561,25 +583,25 @@ int caniot_discover(struct caniot_controller *ctrl,
 				       &frame, timeout);
 }
 
-int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
-				      const struct caniot_frame *response)
+static int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
+					     const struct caniot_frame *frame)
 {
 	// Assert that frame is not NULL and is a response
-	if (!response || response->id.query != CANIOT_RESPONSE) {
+	if (!frame || frame->id.query != CANIOT_RESPONSE) {
 		return -CANIOT_EMLFRM;
 	}
 
-	const caniot_did_t did = CANIOT_DID(response->id.cls, response->id.sid);
+	const caniot_did_t did = CANIOT_DID(frame->id.cls, frame->id.sid);
 
 	// If a query is pending and the frame is the response for it
 	// Call callback and clear pending query
 	struct pendq *pq = peek_pending_query(ctrl, did);
 	if (pq == NULL) {
-		orphan_resp_event(ctrl, response);
-	} else if ((true == caniot_type_is_valid_response_of(response->id.type,
+		orphan_resp_event(ctrl, frame);
+	} else if ((true == caniot_type_is_valid_response_of(frame->id.type,
 							     pq->query_type)) ||
-		   (true == caniot_is_error_frame(response->id))) {
-		resp_query_event(ctrl, response, pq);
+		   (true == caniot_is_error_frame(frame->id))) {
+		resp_query_event(ctrl, frame, pq);
 	} else {
 		ignored_query_event(ctrl, pq);
 	}

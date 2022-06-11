@@ -142,9 +142,6 @@ int caniot_write_attribute(struct caniot_controller *ctrl,
 int caniot_discover(struct caniot_controller *ctrl,
 		    uint32_t timeout);
 
-int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
-				      const struct caniot_frame *frame);
-
 int caniot_controller_process_frame(struct caniot_controller *ctrl,
 				    const struct caniot_frame *frame);
 

@@ -18,8 +18,9 @@ file(GLOB CANIOT_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/**.h")
 
 add_library(caniotlib STATIC ${CANIOT_SOURCES} ${CANIOT_HEADERS})
 
-target_compile_definitions(caniotlib PRIVATE CONFIG_CANIOT_DRIVERS_API=0)
-target_compile_definitions(caniotlib PRIVATE CONFIG_CANIOT_LOG_LEVEL=4)
+target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_DRIVERS_API=0)
+target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_LOG_LEVEL=4)
+target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_ASSERT=1)
 
 target_include_directories(caniotlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 

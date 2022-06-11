@@ -361,6 +361,8 @@ uint16_t caniot_device_get_filter_broadcast(caniot_did_t did)
 
 static int prepare_config_read(struct caniot_device *dev)
 {
+	ASSERT(dev != NULL);
+
 	/* local configuration in RAM should be updated */
 	if (dev->api->config.on_read != NULL) {
 		return dev->api->config.on_read(dev, dev->config);
@@ -371,9 +373,9 @@ static int prepare_config_read(struct caniot_device *dev)
 
 static int config_written(struct caniot_device *dev)
 {
-	int ret = 0;
+	ASSERT(dev != NULL);
 
-	// useless 
+	int ret = 0;
 
 	/* local configuration in RAM should be updated */
 	if (dev->api->config.on_write != NULL) {
@@ -410,6 +412,10 @@ static int read_config_attr(struct caniot_device *dev,
 			    const struct attr_ref *ref,
 			    struct caniot_attribute *attr)
 {
+	ASSERT(dev != NULL);
+	ASSERT(ref != NULL);
+	ASSERT(attr != NULL);
+
 	/* local configuration in RAM should be updated */
 	int ret = prepare_config_read(dev);
 
@@ -433,6 +439,10 @@ static int attribute_read(struct caniot_device *dev,
 			  const struct attr_ref *ref,
 			  struct caniot_attribute *attr)
 {
+	ASSERT(dev != NULL);
+	ASSERT(ref != NULL);
+	ASSERT(attr != NULL);
+	
 	int ret = 0;
 
 	/* print debug attr_ref */
@@ -475,6 +485,9 @@ static void prepare_response(struct caniot_device *dev,
 			     struct caniot_frame *resp,
 			     caniot_frame_type_t resp_type)
 {
+	ASSERT(dev != NULL);
+	ASSERT(resp != NULL);
+
 	caniot_did_t did;
 
 	caniot_clear_frame(resp);
@@ -488,7 +501,6 @@ static void prepare_response(struct caniot_device *dev,
 
 	resp->id.cls = CANIOT_DID_CLS(did);
 	resp->id.sid = CANIOT_DID_SID(did);
-	resp->id.endpoint = 0;
 }
 
 static void prepare_error(struct caniot_device *dev,
@@ -496,6 +508,8 @@ static void prepare_error(struct caniot_device *dev,
 			  caniot_frame_type_t query_type,
 			  int error)
 {
+	ASSERT(resp != NULL);
+
 	/* if the error occured during a command or query telemetry, 
 	 * then the error frame is a RESPONSE/COMMAND
 
@@ -511,6 +525,10 @@ static int handle_read_attribute(struct caniot_device *dev,
 				 struct caniot_frame *resp,
 				 const struct caniot_attribute *attr)
 {
+	ASSERT(dev != NULL);
+	ASSERT(resp != NULL);
+	ASSERT(attr != NULL);
+
 	int ret;
 	struct attr_ref ref;
 
@@ -553,6 +571,10 @@ static int write_system_attr(struct caniot_device *dev,
 			     const struct attr_ref *ref,
 			     const struct caniot_attribute *attr)
 {
+	ASSERT(dev != NULL);
+	ASSERT(ref != NULL);
+	ASSERT(attr != NULL);
+
 #if CANIOT_DRIVERS_API
 	if (attr->key == 0x1010U) {
 		uint32_t prev;
@@ -588,6 +610,10 @@ static int attribute_write(struct caniot_device *dev,
 			   const struct attr_ref *ref,
 			   const struct caniot_attribute *attr)
 {
+	ASSERT(dev != NULL);
+	ASSERT(ref != NULL);
+	ASSERT(attr != NULL);
+
 	if ((ref->option & WRITABLE) == 0U) {
 		return -CANIOT_EROATTR;
 	}
@@ -621,6 +647,10 @@ static int handle_write_attribute(struct caniot_device *dev,
 				  const struct caniot_frame *req,
 				  const struct caniot_attribute *attr)
 {
+	ASSERT(dev != NULL);
+	ASSERT(req != NULL);
+	ASSERT(attr != NULL);
+
 	int ret;
 	struct attr_ref ref;
 
@@ -647,6 +677,9 @@ exit:
 static int handle_command_req(struct caniot_device *dev,
 			      const struct caniot_frame *req)
 {
+	ASSERT(dev != NULL);
+	ASSERT(req != NULL);
+
 	int ret;
 	const caniot_endpoint_t ep = req->id.endpoint;
 
@@ -668,6 +701,9 @@ static int build_telemetry_resp(struct caniot_device *dev,
 				struct caniot_frame *resp,
 				caniot_endpoint_t ep)
 {
+	ASSERT(dev != NULL);
+	ASSERT(resp != NULL);
+
 	int ret;
 
 	/* TODO check endpoint relative to class*/
@@ -703,6 +739,10 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 				  const struct caniot_frame *req,
 				  struct caniot_frame *resp)
 {
+	ASSERT(dev != NULL);
+	ASSERT(req != NULL);
+	ASSERT(resp != NULL);
+
 	int ret;
 
 	/* no response in this case */
@@ -754,13 +794,15 @@ exit:
 
 int caniot_device_verify(struct caniot_device *dev)
 {
-	(void)dev;
+	(void) dev;
 
 	return -CANIOT_ENIMPL;
 }
 
 bool caniot_device_time_synced(struct caniot_device *dev)
 {
+	ASSERT(dev != NULL);
+
 	return dev->system.uptime_synced != 0;
 }
 
@@ -769,6 +811,8 @@ bool caniot_device_time_synced(struct caniot_device *dev)
 #if CANIOT_DRIVERS_API
 uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 {
+	ASSERT(dev != NULL);
+
 	if (prepare_config_read(dev) == 0) {
 		uint32_t now;
 		dev->driv->get_time(&now, NULL);
@@ -790,6 +834,9 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 static uint32_t get_response_delay(struct caniot_device *dev,
 				   struct caniot_frame *frame)
 {
+	ASSERT(dev != NULL);
+	ASSERT(frame != NULL);
+
 	uint32_t delay_ms = 0;
 
 	if (is_telemetry_response(frame)) {
@@ -818,11 +865,15 @@ static uint32_t get_response_delay(struct caniot_device *dev,
 
 static inline bool telemetry_requested(struct caniot_device *dev)
 {
+	ASSERT(dev != NULL);
+
 	return dev->flags.request_telemetry == 1u;
 }
 
 int caniot_device_process(struct caniot_device *dev)
 {
+	ASSERT(dev != NULL);
+
 	int ret;
 	struct caniot_frame req, resp;
 
@@ -882,6 +933,10 @@ exit:
 
 void caniot_app_init(struct caniot_device *dev)
 {
+	ASSERT(dev != NULL);
+	ASSERT(dev->driv != NULL);
+	ASSERT(dev->driv->get_time != NULL);
+
 	memset(&dev->system, 0x00U, sizeof(dev->system));
 
 	dev->driv->get_time(&dev->system.start_time, NULL);

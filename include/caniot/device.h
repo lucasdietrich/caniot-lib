@@ -15,7 +15,7 @@ struct caniot_identification
 	uint16_t version;
 	char name[32];
 	uint32_t magic_number;
-};
+} __attribute__((packed));
 
 struct caniot_system
 {
@@ -42,7 +42,7 @@ struct caniot_system
 	int16_t last_telemetry_error;
 	int16_t _unused5;
 	uint8_t battery;
-};
+} __attribute__((packed));
 
 struct caniot_config
 {
@@ -115,21 +115,13 @@ struct caniot_config
 			} mask;
 		} gpio;
 	} custompcb;
-};
-
-// struct caniot_scheduled
-// {
-//         uint8_t days;
-//         uint8_t time;
-//         uint32_t command;
-// };
+} __attribute__((packed));
 
 struct caniot_device
 {
 	const struct caniot_identification *identification;
 	struct caniot_system system;
 	struct caniot_config *config;
-	// struct caniot_scheduled scheduled[32];
 
 	const struct caniot_api *api;
 
@@ -143,12 +135,12 @@ struct caniot_device
 };
 
 typedef int (caniot_telemetry_handler_t)(struct caniot_device *dev,
-					 caniot_endpoint_t ep, 
+					 caniot_endpoint_t ep,
 					 char *buf,
 					 uint8_t *len);
 
 typedef int (caniot_command_handler_t)(struct caniot_device *dev,
-				       caniot_endpoint_t ep, 
+				       caniot_endpoint_t ep,
 				       const char *buf,
 				       uint8_t len);
 
@@ -164,8 +156,6 @@ struct caniot_api
 				struct caniot_config *config);
 	} config;
 
-	// int (*scheduled_handler)(struct caniot_device *dev, struct caniot_scheduled *sch);
-
 	struct {
 		int (*read)(struct caniot_device *dev,
 			    uint16_t key,
@@ -180,7 +170,6 @@ struct caniot_api
 
 	/* Build telemetry */
 	caniot_telemetry_handler_t *telemetry_handler;
-
 };
 
 void caniot_print_device_identification(const struct caniot_device *dev);

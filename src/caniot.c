@@ -490,12 +490,11 @@ bool caniot_type_is_response_of(caniot_frame_type_t resp,
 	/* VARIANT 2 */
 
 	bool match = false;
-	caniot_frame_type_t errtype;
+	caniot_frame_type_t errtype = CANIOT_FRAME_TYPE_COMMAND;
 
 	switch (query) {
 	case CANIOT_FRAME_TYPE_COMMAND:
 	case CANIOT_FRAME_TYPE_TELEMETRY:
-		errtype = CANIOT_FRAME_TYPE_COMMAND;
 		match = resp == CANIOT_FRAME_TYPE_TELEMETRY;
 		break;
 

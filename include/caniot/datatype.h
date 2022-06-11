@@ -128,7 +128,7 @@ struct caniot_board_control_command
 	caniot_onestate_cmd_t config_reset : 1;
 
 	uint8_t _unused10 : 2;
-} __attribute__((packed));
+};
 
 struct caniot_CRTHPT {
 	union {

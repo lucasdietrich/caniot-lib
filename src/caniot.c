@@ -298,46 +298,68 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 }
 #endif
 
+/*___________________________________________________________________________*/
+
+void caniot_frame_set_did(struct caniot_frame *frame,
+				 caniot_did_t did)
+{
+	ASSERT(frame != NULL);
+	ASSERT(caniot_deviceid_valid(did) == true);
+
+	frame->id.cls = CANIOT_DID_CLS(did);
+	frame->id.sid = CANIOT_DID_SID(did);
+}
+
 void caniot_build_query_telemetry(struct caniot_frame *frame,
-				  caniot_did_t did,
 				  uint8_t endpoint)
 {
-	struct caniot_frame tmp = {
-		.id = {
-			.cls = CANIOT_DID_CLS(did),
-			.sid = CANIOT_DID_SID(did),
-			.type = CANIOT_FRAME_TYPE_TELEMETRY,
-			.query = CANIOT_QUERY,
-			.endpoint = endpoint
-		},
-		.buf = {0, 0, 0, 0, 0, 0, 0, 0},
-		.len = 0
-	};
+	ASSERT(frame);
 
-	memcpy(frame, &tmp, sizeof(struct caniot_frame));
+	frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
+	frame->id.query = CANIOT_QUERY;
+	frame->id.endpoint = endpoint;
+	frame->len = 0U;
 }
 
 void caniot_build_query_command(struct caniot_frame *frame,
-				caniot_did_t did,
 				uint8_t endpoint,
 				const uint8_t *buf,
 				uint8_t size)
 {
-	struct caniot_frame tmp = {
-		.id = {
-			.cls = CANIOT_DID_CLS(did),
-			.sid = CANIOT_DID_SID(did),
-			.type = CANIOT_FRAME_TYPE_COMMAND,
-			.query = CANIOT_QUERY,
-			.endpoint = endpoint
-		},
-		.len = size
-	};
+	ASSERT(frame);
+	ASSERT(buf);
 
-	memcpy(frame, &tmp, sizeof(struct caniot_frame));
-
-	memcpy(frame->buf, buf, MIN(size, 8));
+	frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
+	frame->id.query = CANIOT_QUERY;
+	frame->id.endpoint = endpoint;
+	frame->len = MIN(size, sizeof(frame->buf));
+	memcpy(frame->buf, buf, frame->len);
 }
+
+void caniot_build_query_read_attribute(struct caniot_frame *frame,
+				       uint16_t key)
+{
+	ASSERT(frame);
+
+	frame->id.type = CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
+	frame->id.query = CANIOT_QUERY;
+	frame->len = 2u;
+	frame->attr.key = key;
+}
+
+void caniot_build_query_write_attribute(struct caniot_frame *frame,
+					uint16_t key,
+					uint32_t value)
+{
+	ASSERT(frame);
+
+	frame->id.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
+	frame->len = 6u;
+	frame->attr.key = key;
+	frame->attr.val = value;
+}
+
+/*___________________________________________________________________________*/
 
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 {

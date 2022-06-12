@@ -18,11 +18,18 @@ extern "C" {
 #define CANIOT_DRIVERS_API 0
 #endif /* CONFIG_CANIOT_DRIVERS_API */
 
+#ifdef CONFIG_CANIOT_CTRL_DRIVERS_API
+#define CANIOT_CTRL_DRIVERS_API CONFIG_CANIOT_CTRL_DRIVERS_API
+#else
+#define CANIOT_CTRL_DRIVERS_API 0
+#endif /* CONFIG_CANIOT_CTRL_DRIVERS_API */
+
+
 #ifdef CONFIG_CANIOT_MAX_PENDING_QUERIES
 #define CANIOT_MAX_PENDING_QUERIES CONFIG_CANIOT_MAX_PENDING_QUERIES
 #else
 #define CANIOT_MAX_PENDING_QUERIES 4U
-#endif /* CONFIG_CANIOT_DRIVERS_API */
+#endif /* CONFIG_CANIOT_MAX_PENDING_QUERIES */
 
 #define CANIOT_VERSION1	1
 #define CANIOT_VERSION2 2
@@ -174,6 +181,8 @@ struct caniot_drivers_api {
 
 	/**
 	 * @brief Send a CANIOT frame
+	 * 
+	 * Note: Should not block.
 	 *
 	 * Return 0 on success, any other value on error.
 	 */
@@ -181,6 +190,8 @@ struct caniot_drivers_api {
 
 	/**
 	 * @brief Receive a CANIOT frame.
+	 * 
+	 * Note: Should not block.
 	 *
 	 * Return 0 on success, -EAGAIN if no frame is available.
 	 */
@@ -228,15 +239,27 @@ int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len);
 
 int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t len);
 
+/*___________________________________________________________________________*/
+
 void caniot_build_query_telemetry(struct caniot_frame *frame,
-				  caniot_did_t did,
 				  uint8_t endpoint);
 
 void caniot_build_query_command(struct caniot_frame *frame,
-				caniot_did_t did,
 				uint8_t endpoint,
 				const uint8_t *buf,
 				uint8_t size);
+
+void caniot_build_query_read_attribute(struct caniot_frame *frame,
+				       uint16_t key);
+
+void caniot_build_query_write_attribute(struct caniot_frame *frame,
+					uint16_t key,
+					uint32_t value);
+
+void caniot_frame_set_did(struct caniot_frame *frame,
+			  caniot_did_t did);
+
+/*___________________________________________________________________________*/
 
 bool caniot_is_error(int cterr);
 

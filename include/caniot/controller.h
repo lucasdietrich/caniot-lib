@@ -33,7 +33,6 @@ struct caniot_pendq
 	uint8_t handle: 5U;
 
 	caniot_frame_type_t query_type;
-
 	union {
 		struct caniot_pqt tie; /* for timeout queue */
 		struct caniot_pendq *next; /* for memory allocation */
@@ -51,7 +50,7 @@ typedef enum {
 	CANIOT_CONTROLLER_EVENT_STATUS_OK = 0U, 	/* is not part of a query (frame is set) */
 	CANIOT_CONTROLLER_EVENT_STATUS_ERROR, 		/* is part of a query (frame is set) */
 	CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT, 	/* a query timed out (frame not set) */	
-	// CANIOT_CONTROLLER_EVENT_STATUS_IGNORED,		/* a query was ignored (frame not set) */
+	// CANIOT_CONTROLLER_EVENT_STATUS_IGNORED,	/* a query was ignored (frame not set) */
 	CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED,	/* a query was cancelled (frame not set) */
 } caniot_controller_event_status_t;
 
@@ -96,59 +95,59 @@ struct caniot_controller {
 		uint16_t ms;
 	} last_process;
 
-	const struct caniot_drivers_api *driv;
-
 	caniot_controller_event_cb_t event_cb;
 	void *user_data;
+
+#if CANIOT_CTRL_DRIVERS_API
+	const struct caniot_drivers_api *driv;
+#endif
 };
 
 typedef struct caniot_controller caniot_controller_t;
 
 // intitalize controller structure
 int caniot_controller_init(struct caniot_controller *ctrl,
-			   const struct caniot_drivers_api *driv,
 			   caniot_controller_event_cb_t cb,
 			   void *user_data);
 
+int caniot_controller_driv_init(struct caniot_controller *ctrl,
+				const struct caniot_drivers_api *driv,
+				caniot_controller_event_cb_t cb,
+				void *user_data);
+
 int caniot_controller_deinit(struct caniot_controller *ctrl);
 
-int caniot_controller_query(struct caniot_controller *controller,
-			    caniot_did_t did,
-			    struct caniot_frame *frame,
-			    uint32_t timeout);
+/**
+ * @brief Build a query frame to be sent to a device
+ * 
+ * Note: That if the frame send fails, the query should be cancelled
+ *  using function caniot_controller_cancel_query() with the returned handle
+ * 
+ * @param controller 
+ * @param did 
+ * @param frame 
+ * @param timeout 
+ * @return int handle on success (>= 0), negative value on error
+ */
+int caniot_controller_query_register(struct caniot_controller *ctrl,
+				     caniot_did_t did,
+				     struct caniot_frame *frame,
+				     uint32_t timeout);
 
-int caniot_controller_cancel(struct caniot_controller *ctrl,
-			     uint8_t handle,
-			     bool suppress);
+int caniot_controller_cancel_query(struct caniot_controller *ctrl,
+				   uint8_t handle,
+				   bool suppress);
 
-int caniot_request_telemetry(struct caniot_controller *ctrl,
-			     caniot_did_t did,
-			     caniot_endpoint_t ep,
-			     uint32_t timeout);
+int caniot_controller_process_single(struct caniot_controller *ctrl,
+				     uint32_t time_passed,
+				     const struct caniot_frame *frame);
 
-int caniot_command(struct caniot_controller *ctrl,
-		   caniot_did_t did,
-		   caniot_endpoint_t ep,
-		   uint8_t *buf,
-		   uint8_t len,
-		   uint32_t timeout);
+/*___________________________________________________________________________*/
 
-int caniot_read_attribute(struct caniot_controller *ctrl,
-			  caniot_did_t did,
-			  uint16_t key,
-			  uint32_t timeout);
-
-int caniot_write_attribute(struct caniot_controller *ctrl,
-			   caniot_did_t did,
-			   uint16_t key,
-			   uint32_t value,
-			   uint32_t timeout);
-
-int caniot_discover(struct caniot_controller *ctrl,
-		    uint32_t timeout);
-
-int caniot_controller_process_frame(struct caniot_controller *ctrl,
-				    const struct caniot_frame *frame);
+int caniot_controller_query_send(struct caniot_controller *ctrl,
+				 caniot_did_t did,
+				 struct caniot_frame *frame,
+				 uint32_t timeout);
 
 /**
  * @brief Check timeouts and receive incoming CANIOT message if any and handle it
@@ -160,7 +159,9 @@ int caniot_controller_process_frame(struct caniot_controller *ctrl,
  */
 int caniot_controller_process(struct caniot_controller *ctrl);
 
-// int caniot_debug_pendq(struct caniot_controller *ctrl);
+/*___________________________________________________________________________*/
+
+int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl);
 
 #ifdef __cplusplus
 }

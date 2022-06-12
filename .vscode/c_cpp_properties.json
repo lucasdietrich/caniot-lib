@@ -10,7 +10,13 @@
 		    "./include"
 		]
 	    },
-	    "defines": [],
+	    "defines": [
+		"CONFIG_CANIOT_DRIVERS_API=0",
+		"CONFIG_CANIOT_CTRL_DRIVERS_API=1",
+		"CONFIG_CANIOT_LOG_LEVEL=4",
+		"CONFIG_CANIOT_ASSERT=1",
+		"CONFIG_CANIOT_MAX_PENDING_QUERIES=1"
+	    ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

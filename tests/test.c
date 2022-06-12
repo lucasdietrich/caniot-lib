@@ -15,7 +15,23 @@
 #define TRUE true
 #define FALSE false
 
+#define TEST_ASSERT(statement) \
+	if (!(statement)) { \
+		printf("%s:%d: %s: Assertion `%s' failed.\n", __FILE__, __LINE__, __func__, #statement); \
+		exit(EXIT_FAILURE); \
+	}
 
+#define CHECK(statement) if (statement == false) { return false; }
+#define CHECK_0(statement) if (statement != 0) { return false; }
+#define CHECK_POSITIVE(statement) if (statement < 0) { return false; }
+
+void __assert(bool statement)
+{
+	if (statement == false) {
+		printf("Assertion failed\n");
+		exit(EXIT_FAILURE);
+	}
+}
 
 size_t rand_range(size_t min, size_t max)
 {
@@ -134,15 +150,18 @@ bool z_misc_id_conversion(void)
 		(id.endpoint == id2.endpoint);
 }
 
-static const caniot_did_t gen_rdm_did(void)
+static const caniot_did_t gen_rdm_did(bool including_broadcast)
 {
-	return CANIOT_DID(r8() & CANIOT_CLASS_BROADCAST,
-			  r8() & CANIOT_SUBID_BROADCAST);
+	if (including_broadcast) {
+		return CANIOT_DID_FROM_RAW(rand_range(0, CANIOT_DID_BROADCAST - 1));
+	} else {
+		return CANIOT_DID_FROM_RAW(rand_range(0, CANIOT_DID_BROADCAST - 1));
+	}
 }
 
 bool z_func__caniot_device_is_target(void)
 {
-	const caniot_did_t did = gen_rdm_did();
+	const caniot_did_t did = gen_rdm_did(true);
 
 	const struct caniot_frame fordev = {
 		.id = {
@@ -289,7 +308,7 @@ bool z_func__caniot_validate_drivers_api(void)
 
 bool z_func__caniot_device_get_filter(void)
 {
-	const caniot_did_t did = gen_rdm_did();
+	const caniot_did_t did = gen_rdm_did(false);
 	const uint16_t filter = caniot_device_get_filter(did);
 
 	return (CANIOT_ID_GET_CLASS(filter) == CANIOT_DID_CLS(did)) &&
@@ -306,7 +325,7 @@ bool z_func__caniot_device_get_mask(void)
 
 bool z_func__caniot_device_get_filter_broadcast(void)
 {
-	const caniot_did_t did = gen_rdm_did();
+	const caniot_did_t did = gen_rdm_did(false);
 	
 	const uint16_t filter = caniot_device_get_filter_broadcast(did);
 
@@ -317,7 +336,7 @@ bool z_func__caniot_device_get_filter_broadcast(void)
 
 bool z_func___si_caniot_device_get_filter(void)
 {
-	const caniot_did_t did = gen_rdm_did();
+	const caniot_did_t did = gen_rdm_did(false);
 
 	return _si_caniot_device_get_filter(did) == 
 		caniot_device_get_filter(did);
@@ -325,7 +344,7 @@ bool z_func___si_caniot_device_get_filter(void)
 
 bool z_func___si_caniot_device_get_filter_broadcast(void)
 {
-	const caniot_did_t did = gen_rdm_did();
+	const caniot_did_t did = gen_rdm_did(false);
 
 	return _si_caniot_device_get_filter_broadcast(did) == 
 		caniot_device_get_filter_broadcast(did);
@@ -333,8 +352,171 @@ bool z_func___si_caniot_device_get_filter_broadcast(void)
 
 /*___________________________________________________________________________*/
 
+struct z_func_ctrl_test_ctx
+{
+	struct caniot_controller ctrl;
+	struct caniot_frame req;
+	struct caniot_frame resp;
+	const caniot_did_t did;
+	uint8_t handle;
+	bool success;
+
+	struct {
+		bool active; /* tells if desired sub structure is active */
+
+		bool resp_set; /* tells should be set */
+		caniot_controller_event_context_t context;
+		caniot_controller_event_status_t status;
+	} desired;
+};
+
+static bool z_func_ctrl_cb(const caniot_controller_event_t *ev,
+			   void *user_data)
+{
+	TEST_ASSERT(user_data != NULL);
+
+	struct z_func_ctrl_test_ctx *x = user_data;
+
+	bool all = true;
+
+	if (x->desired.active == true) {
+		all &= ev->context == x->desired.context;
+		all &= ev->status == x->desired.status;
+		all &= (ev->response == NULL) ^ (x->desired.resp_set == true);
+	}
+
+	all &= ev->controller == &x->ctrl;
+	all &= ev->terminated == 1U;
+	all &= ev->handle == x->handle;
+	all &= CANIOT_DID_EQ(ev->did, x->did);
+
+	x->success = all;
+
+	return true;
+}
+
+bool z_func_ctrl1(void)
+{
+	struct z_func_ctrl_test_ctx x = {
+		.did =  gen_rdm_did(false),
+		.success = false,
+		.desired = {
+			.active = true,
+			.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		}
+	};
+	
+	x.desired.status = CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT;
+	x.desired.resp_set = false;
+
+	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
+	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
+	
+	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, NULL));
+	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
+	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES);
+	
+	return x.success == true;
+}
+
+bool z_func_ctrl2(void)
+{
+	struct z_func_ctrl_test_ctx x = {
+		.did =  gen_rdm_did(false),
+		.success = false,
+		.desired = {
+			.active = true,
+			.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		}
+	};
+
+	x.desired.status = CANIOT_CONTROLLER_EVENT_STATUS_OK;
+	x.desired.resp_set = true;
+
+	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
+	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
+
+	memcpy(&x.resp, &x.req, sizeof(x.req));
+	x.resp.id.query = CANIOT_RESPONSE;
+
+	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, &x.resp));
+	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
+	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES);
+	
+	return x.success == true;
+}
+
+bool z_func_ctrl3(void)
+{
+	struct z_func_ctrl_test_ctx x = {
+		.did =  gen_rdm_did(false),
+		.success = false,
+		.desired = {
+			.active = true,
+			.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		}
+	};
+
+	x.desired.status = CANIOT_CONTROLLER_EVENT_STATUS_ERROR;
+	x.desired.resp_set = true;
+
+	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
+	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
+
+	memcpy(&x.resp, &x.req, sizeof(x.req));
+	x.resp.id.query = CANIOT_RESPONSE;
+	x.resp.id.type = caniot_resp_error_for(x.req.id.type);
+	x.resp.err = -CANIOT_EHANDLERC;
+
+	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, &x.resp));
+	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
+	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES);
+	
+	return x.success == true;
+}
+
+bool z_func_ctrl4(void)
+{
+	struct z_func_ctrl_test_ctx x = {
+		.did =  gen_rdm_did(false),
+		.success = false,
+		.desired = {
+			.active = true,
+			.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		}
+	};
+
+	x.desired.status = CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED;
+	x.desired.resp_set = false;
+
+	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
+	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
+
+	CHECK_0(caniot_controller_cancel_query(&x.ctrl, x.handle, false));
+	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, NULL));
+	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
+	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES);
+	
+	return x.success == true;
+}
+
+/*___________________________________________________________________________*/
+
 struct test
 {
+	const char *name;
 	bool (*test_handler)(void);
 
 	size_t rerolls;
@@ -342,6 +524,7 @@ struct test
 
 #define TEST(_handler, _rerolls) \
 	{ \
+		.name = #_handler, \
 		.test_handler = _handler, \
 		.rerolls = _rerolls \
 	}
@@ -364,6 +547,10 @@ const struct test tests[] = {
 	TEST(z_func__caniot_device_get_filter_broadcast, 1U),
 	TEST(z_func___si_caniot_device_get_filter, 100U),
 	TEST(z_func___si_caniot_device_get_filter_broadcast, 100U),
+	TEST(z_func_ctrl1, 1U),
+	TEST(z_func_ctrl2, 1U),
+	TEST(z_func_ctrl3, 1U),
+	TEST(z_func_ctrl4, 1U),
 };
 
 
@@ -390,7 +577,7 @@ int main(void)
 		}
 
 		const bool success = failures == 0U;
-		printf("%lu:\t%s %zu/%zu  \t(%.1f %%)\n", i, success ? "OK" : "NOK",
-		       sucesses, tst->rerolls, (sucesses * 100.0) / tst->rerolls);
+		printf("%lu:\t%s %zu/%zu  \t(%.1f %%) -- %s\n", i, success ? "OK" : "NOK",
+		       sucesses, tst->rerolls, (sucesses * 100.0) / tst->rerolls, tst->name);
 	}
 }

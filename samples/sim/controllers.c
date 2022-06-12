@@ -58,7 +58,7 @@ void init_controllers(void)
 
 	for (ctrl = controllers; ctrl < controllers + ARRAY_SIZE(controllers); ctrl++) {
 		ctrl->driv = &driv;
-		caniot_controller_init(ctrl, &driv, ctrl_event_cb, NULL);
+		caniot_controller_driv_init(ctrl, &driv, ctrl_event_cb, NULL);
 	}
 }
 
@@ -67,7 +67,7 @@ void controllers_process(const struct caniot_frame *frame)
 	struct caniot_controller *ctrl;
 
 	for (ctrl = controllers; ctrl < controllers + ARRAY_SIZE(controllers); ctrl++) {
-		caniot_controller_process_frame(ctrl, frame);
+		caniot_controller_process_single(ctrl, 100U, frame);
 	}
 }
 
@@ -79,7 +79,7 @@ int ctrl_Q(uint32_t ctrlid,
 	int ret = -EINVAL;
 
 	if (ctrlid < CONTROLLERS_COUNT) {
-		caniot_controller_query(&controllers[ctrlid], did, frame, timeout);
+		caniot_controller_query_send(&controllers[ctrlid], did, frame, timeout);
 
 		ret = 0;
 	}
@@ -89,5 +89,5 @@ int ctrl_Q(uint32_t ctrlid,
 
 int ctrl_C(uint32_t ctrlid, uint8_t handle, bool suppress)
 {
-	caniot_controller_cancel(&controllers[ctrlid], handle, suppress);
+	caniot_controller_cancel_query(&controllers[ctrlid], handle, suppress);
 }

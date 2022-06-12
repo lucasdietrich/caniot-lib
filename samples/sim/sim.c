@@ -11,15 +11,6 @@
 
 #include "header.h"
 
-static void dispatch_can_frame(const struct caniot_frame *frame)
-{
-	if (caniot_controller_is_target(frame)) {
-		controllers_process(frame);
-	} else {
-		devices_process(frame);
-	}
-}
-
 caniot_frame_t qtelemetry = {
 	.id = {
 		.type = CANIOT_FRAME_TYPE_TELEMETRY,
@@ -57,6 +48,20 @@ caniot_frame_t qcommand = {
 	}
 };
 
+caniot_frame_t fake_telem_resp = {
+	.id = {
+		.type = CANIOT_FRAME_TYPE_TELEMETRY,
+		.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
+		.query = CANIOT_RESPONSE,
+		.cls = CANIOT_DEVICE_CLASS1,
+		.sid = CANIOT_DEVICE_SID0,
+	},
+	.len = 0U,
+	.buf = {
+		0xFF
+	}
+};
+
 struct timed_frame {
 	uint64_t time; /* ms */
 
@@ -75,6 +80,7 @@ struct timed_frame timed_frames[] = {
 int main(void)
 {
 	int ret;
+	uint32_t counter = 0;
 	
 	init_controllers();
 	init_devices();
@@ -82,9 +88,12 @@ int main(void)
 	caniot_frame_t frame;
 	caniot_clear_frame(&frame);
 
-	ctrl_Q(0U, CANIOT_DID(CANIOT_CLASS_BROADCAST, CANIOT_SUBID_BROADCAST), &qtelemetry, 1000U);
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID1), &qwrite_attr, 1000U);
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID2), &qcommand, 750U);
+	// ctrl_Q(0U, CANIOT_DID(CANIOT_CLASS_BROADCAST, CANIOT_SUBID_BROADCAST), &qtelemetry, 1000U);
+	ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), &qwrite_attr, 1000U);
+
+	can_send(&fake_telem_resp, 0U);
+
+	// ctrl_C(0U, handle, false);
 	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID3), &qtelemetry, 650U);
 	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID4), &qwrite_attr, 550U);
 
@@ -108,13 +117,22 @@ int main(void)
 			// caniot_show_frame(&frame);
 			caniot_explain_frame(&frame);
 			printf("\n");
-			dispatch_can_frame(&frame);
+
+			if (caniot_controller_is_target(&frame)) {
+				controllers_process(&frame);
+			} else {
+				devices_process(&frame);
+			}
 		} else if (ret == -CANIOT_EAGAIN) {
+			controllers_process(NULL);
+			vtime_inc(1000U);
 			sleep(1);
 		} else {
 			printf("Error on can_recv\n");
 			exit(EXIT_FAILURE);
 		}
+
+		counter++;
 	}
 
 	return 0;

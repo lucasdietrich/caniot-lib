@@ -125,6 +125,15 @@ typedef struct {
 	caniot_device_class_t cls : 3U;
 	caniot_device_subid_t sid : 3U;
 	caniot_endpoint_t endpoint : 2U;
+	
+	/* TODO query id 
+	 0: not in a query context
+	 1 -> 7: query id
+
+	 targeted controller:
+	 0: broadcast, not targeted
+	 1 -> 7 : targeted controller
+	 */
 } caniot_id_t;
 
 struct caniot_attribute

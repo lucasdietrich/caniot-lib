@@ -4,12 +4,18 @@
 #define pendq caniot_pendq
 #define pqt caniot_pqt
 
+#define __DBG(fmt, ...) CANIOT_DBG("-- " fmt, ## __VA_ARGS__)
+
 static bool is_query_pending_for(struct caniot_controller *ctrl,
 				 caniot_did_t did)
 {
 	ASSERT(ctrl != NULL);
 
-	return ctrl->pendingq.pending_devices_bf & (1LLU << did);
+	const bool result = ctrl->pendingq.pending_devices_bf & (1LLU << did);
+
+	__DBG("is_query_pending_for(%u) -> %u\n", did, (uint32_t)result);
+
+	return result;
 }
 
 static void mark_query_pending_for(struct caniot_controller *ctrl,
@@ -17,6 +23,8 @@ static void mark_query_pending_for(struct caniot_controller *ctrl,
 				   bool status)
 {
 	ASSERT(ctrl != NULL);
+
+	__DBG("mark_query_pending_for(%u, %u)\n", did, status);
 
 	if (status == true) {
 		ctrl->pendingq.pending_devices_bf |= (1LLU << did);
@@ -70,6 +78,8 @@ static void pendq_queue(struct caniot_controller *ctrl,
 	pq->tie.timeout = timeout;
 
 	_pendq_queue(&ctrl->pendingq.timeout_queue, &pq->tie);
+
+	__DBG("pendq_queue(%p, %u)\n", pq, timeout);
 }
 
 static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
@@ -91,19 +101,26 @@ static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
 			break;
 		}
 	}
+
+	__DBG("pendq_shift(%u)\n", time_passed);
 }
 
-static struct pendq *pendq_get_expired(struct pqt **root)
+static struct pendq *pendq_pop_expired(struct pqt **root)
 {
 	ASSERT(root != NULL);
+
+	struct pendq *pq = NULL;
 
 	if ((*root != NULL) && ((*root)->delay == 0)) {
 		struct pqt *item = *root;
 		*root = (*root)->next;
 
-		return CONTAINER_OF(item, struct pendq, tie);
+		pq = CONTAINER_OF(item, struct pendq, tie);
 	}
-	return NULL;
+
+	__DBG("pendq_pop_expired() -> %p\n", pq);
+	
+	return pq;
 }
 
 static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
@@ -115,16 +132,20 @@ static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
 		if (p_current == &pq->tie) {
+			__DBG("pendq_remove(%p) -> removed\n", pq);
+
 			*prev_next_p = p_current->next;
 			if (p_current->next != NULL) {
 				p_current->next->delay
 					+= pq->tie.delay;
 			}
 			pq->tie.next = NULL;
-			break;
+			return;
 		}
 		prev_next_p = &(p_current->next);
 	}
+
+	__DBG("pendq_remove(%p) -> not found\n", pq);
 }
 
 static void pendq_init_queue(struct caniot_controller *ctrl)
@@ -148,7 +169,11 @@ static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
 
 	struct pendq *p = ctrl->pendingq.free_list;
 	if (p != NULL) {
+		__DBG("pendq_alloc() -> %p\n", p);
+
 		ctrl->pendingq.free_list = p->next;
+	} else {
+		__DBG("pendq_alloc() -> NULL\n");
 	}
 	return p;
 }
@@ -158,24 +183,55 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 	ASSERT(ctrl != NULL);
 
 	if (p != NULL) {
+		__DBG("pendq_free(%p)\n", p);
+
 		p->next = ctrl->pendingq.free_list;
 		ctrl->pendingq.free_list = p;
+	} else {
+		__DBG("pendq_free(NULL)\n");
 	}
 }
 
-static struct pendq *pendq_find(struct caniot_controller *ctrl,
-				caniot_did_t did)
+static struct pendq *pendq_get_by_did(struct caniot_controller *ctrl,
+				      caniot_did_t did)
 {
 	ASSERT(ctrl != NULL);
-	
+
+	struct pendq *retpq = NULL;
+
 	struct pqt *tie;
 	for (tie = ctrl->pendingq.timeout_queue; tie != NULL; tie = tie->next) {
 		struct pendq *const pq = CONTAINER_OF(tie, struct pendq, tie);
 		if (CANIOT_DID_EQ(pq->did, did)) {
-			return pq;
+			retpq = pq;
+			break;
 		}
 	}
-	return NULL;
+
+	__DBG("pendq_get_by_did(%u) -> %p\n", did, retpq);
+
+	return retpq;
+}
+
+static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl,
+					 uint8_t handle)
+{
+	ASSERT(ctrl);
+
+	struct pendq *retpq = NULL;
+
+	struct pqt *tie;
+	for (tie = ctrl->pendingq.timeout_queue; tie != NULL; tie = tie->next) {
+		struct pendq *const pq = CONTAINER_OF(tie, struct pendq, tie);
+		if (pq->handle == handle) {
+			retpq = pq;
+			break;
+		}
+	}
+
+	__DBG("pendq_get_by_handle(%u) -> %p\n", handle, retpq);
+
+	return retpq;
 }
 
 static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
@@ -185,8 +241,11 @@ static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
 
 	struct pendq *pq = NULL;
 	if (is_query_pending_for(ctrl, did)) {
-		pq = pendq_find(ctrl, did);
+		pq = pendq_get_by_did(ctrl, did);
 	}
+
+	__DBG("peek_pending_query(%u) -> %p\n", did, pq);
+
 	return pq;
 }
 
@@ -231,35 +290,16 @@ int caniot_controller_deinit(struct caniot_controller *ctrl)
 	return -CANIOT_ENIMPL;
 }
 
-static void user_event(struct caniot_controller *ctrl,
-		       const caniot_controller_event_t *ev,
-		       struct pendq *pq)
+static bool user_event(struct caniot_controller *ctrl,
+		       const caniot_controller_event_t *ev)
 {
 	ASSERT(ctrl != NULL);
 	ASSERT(ev != NULL);
 	ASSERT(ctrl->event_cb != NULL);
 
-	bool unregister = false;
-	
-	/* already mark as terminated, so we can query the same device 
-	 * immediately in the following controller callback
-	 */
-	if (ev->terminated == CANIOT_CONTROLLER_QUERY_TERMINATED) {
-		unregister = true;
-		mark_query_pending_for(ctrl, ev->did, false);
-	}
+	__DBG("user_event(%p)\n", ev);
 
-	/* if callback returns false, the query should be aborted if not terminated */
-	if ((ctrl->event_cb(ev, ctrl->user_data) == false) && !unregister) {
-		unregister = true;
-		mark_query_pending_for(ctrl, ev->did, false);
-	}
-
-	/* unregister the pending query */
-	if (unregister && (pq != NULL)) {
-		pendq_remove(ctrl, pq);
-		pendq_free(ctrl, pq);
-	}
+	return ctrl->event_cb(ev, ctrl->user_data);
 }
 
 static void orphan_resp_event(struct caniot_controller *ctrl,
@@ -268,12 +308,14 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 	ASSERT(ctrl != NULL);
 	ASSERT(response != NULL);
 
+	const caniot_did_t did = CANIOT_DID(response->id.cls, response->id.sid);
+
 	const caniot_controller_event_t ev = {
 		.controller = ctrl,
 		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN,
 		.status = CANIOT_CONTROLLER_EVENT_STATUS_OK,
 
-		.did = CANIOT_DID(response->id.cls, response->id.sid),
+		.did = did,
 
 		.terminated = 1U, /* meaningless in this context */
 		.handle = 0U, /* meaningless in this context */
@@ -281,49 +323,7 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 		.response = response,
 	};
 
-	user_event(ctrl, &ev, NULL);
-}
-
-static void ignored_query_event(struct caniot_controller *ctrl,
-				struct pendq *pq)
-{
-	ASSERT(pq != NULL);
-
-	const caniot_controller_event_t ev = {
-		.controller = ctrl,
-		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
-		.status = CANIOT_CONTROLLER_EVENT_STATUS_IGNORED,
-
-		.did = pq->did,
-
-		.terminated = 1U,
-		.handle = pq->handle,
-
-		.response = NULL,
-	};
-
-	user_event(ctrl, &ev, pq);
-}
-
-static void expired_query_event(struct caniot_controller *ctrl,
-				struct pendq *pq)
-{
-	ASSERT(pq != NULL);
-
-	const caniot_controller_event_t ev = {
-		.controller = ctrl,
-		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
-		.status = CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT,
-		
-		.did = pq->did,
-
-		.terminated = 1U,
-		.handle = pq->handle,
-
-		.response = NULL,
-	};
-
-	user_event(ctrl, &ev, pq);
+	user_event(ctrl, &ev);
 }
 
 static void resp_query_event(struct caniot_controller *ctrl,
@@ -332,7 +332,7 @@ static void resp_query_event(struct caniot_controller *ctrl,
 {
 	ASSERT(pq != NULL);
 
-	const bool is_broadcast = caniot_is_broadcast(pq->did);
+	const bool terminated = caniot_is_broadcast(pq->did) == false;
 
 	const caniot_controller_event_t ev = {
 		.controller = ctrl,
@@ -343,22 +343,76 @@ static void resp_query_event(struct caniot_controller *ctrl,
 
 		.did = CANIOT_DID(response->id.cls, response->id.sid),
 
-		.terminated = is_broadcast == false,
+		.terminated = terminated,
 		.handle = pq->handle,
 
 		.response = response,
 	};
 
-	user_event(ctrl, &ev, pq);
+	if (terminated) {
+		mark_query_pending_for(ctrl, pq->did, false);
+		pendq_remove(ctrl, pq);
+		pendq_free(ctrl, pq);
+	}	
+
+	if ((user_event(ctrl, &ev) == false) && 
+	    (terminated == false)) { /* only unregister if not previously terminated */
+		mark_query_pending_for(ctrl, pq->did, false);
+		pendq_remove(ctrl, pq);
+		pendq_free(ctrl, pq);
+	}
+}
+
+static void cancelled_query_event(struct caniot_controller *ctrl,
+				  struct pendq *pq)
+{
+	ASSERT(pq != NULL);
+
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		.status = CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED,
+
+		.did = pq->did,
+
+		.terminated = 1U,
+		.handle = pq->handle,
+
+		.response = NULL,
+	};
+
+	mark_query_pending_for(ctrl, pq->did, false);
+	pendq_remove(ctrl, pq);
+	pendq_free(ctrl, pq);
+
+	user_event(ctrl, &ev);
 }
 
 static void pendq_call_expired(struct caniot_controller *ctrl)
 {
+	ASSERT(ctrl != NULL);
+
 	struct pendq *pq;
 	struct pqt **const q = &ctrl->pendingq.timeout_queue;
 
-	while ((pq = pendq_get_expired(q)) != NULL) {
-		expired_query_event(ctrl, pq);
+	while ((pq = pendq_pop_expired(q)) != NULL) {
+		const caniot_controller_event_t ev = {
+			.controller = ctrl,
+			.context = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+			.status = CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT,
+
+			.did = pq->did,
+
+			.terminated = 1U,
+			.handle = pq->handle,
+
+			.response = NULL,
+		};
+
+		mark_query_pending_for(ctrl, pq->did, false);
+		pendq_free(ctrl, pq);
+
+		user_event(ctrl, &ev);
 	}
 }
 
@@ -374,10 +428,10 @@ static uint32_t process_get_diff_ms(struct caniot_controller *ctrl)
 		ctrl->last_process.ms - last_ms;
 }
 
-static struct pendq *pendq_prepare(struct caniot_controller *ctrl,
-				   caniot_did_t did,
-				   caniot_frame_type_t query_type,
-				   uint32_t timeout)
+static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
+					     caniot_did_t did,
+					     caniot_frame_type_t query_type,
+					     uint32_t timeout)
 {
 	/* allocate */
 	struct pendq *pq = pendq_alloc(ctrl);
@@ -391,6 +445,14 @@ static struct pendq *pendq_prepare(struct caniot_controller *ctrl,
 
 	return pq;
 }
+
+static struct pendq *pendq_cancel(struct caniot_controller *ctrl,
+				  struct pendq *pq)
+{
+	ASSERT(ctrl != NULL);
+	ASSERT(pq != NULL);
+}
+
 
 // Send query to device and prepare response callback
 int caniot_controller_query(struct caniot_controller *ctrl,
@@ -422,7 +484,7 @@ int caniot_controller_query(struct caniot_controller *ctrl,
 		goto exit;
 	}
 
-	struct pendq *pq = pendq_prepare(ctrl, did, frame->id.type, timeout);
+	struct pendq *pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type, timeout);
 	if (pq == NULL) {
 		ret = -CANIOT_EPQALLOC;
 		goto exit;
@@ -434,6 +496,9 @@ int caniot_controller_query(struct caniot_controller *ctrl,
 	/* send frame */
 	ret = ctrl->driv->send(frame, 0U);
 	if (ret < 0) {
+		/* deallocate immediately*/
+		pendq_free(ctrl, pq);
+
 		goto exit;
 	}
 
@@ -446,6 +511,38 @@ int caniot_controller_query(struct caniot_controller *ctrl,
 	ret = 0;
 
 exit:
+	__DBG("caniot_controller_query(%u, %p, %u) -> %d\n", did, frame, timeout, ret);
+
+	return ret;
+}
+
+int caniot_controller_cancel(struct caniot_controller *ctrl,
+			     uint8_t handle,
+			     bool suppress)
+{
+	int ret;
+
+	/* validate arguments */
+	if (ctrl == NULL) {
+		ret = -CANIOT_EINVAL;
+		goto exit;
+	}
+
+	struct pendq *pq = pendq_get_by_handle(ctrl, handle);
+	if (pq == NULL) {
+		ret = -CANIOT_ENOHANDLE;
+		goto exit;
+	}
+
+	/* execute user callback if not suppressed */
+	if (suppress == false) {
+		cancelled_query_event(ctrl, pq);
+	}
+
+	ret = 0;
+exit:
+	__DBG("caniot_controller_cancel(%u, %u) -> %d\n", handle, suppress, ret);
+
 	return ret;
 }
 
@@ -597,13 +694,15 @@ static int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	// Call callback and clear pending query
 	struct pendq *pq = peek_pending_query(ctrl, did);
 	if (pq == NULL) {
+		/* not in a context of a query */
 		orphan_resp_event(ctrl, frame);
-	} else if ((true == caniot_type_is_valid_response_of(frame->id.type,
-							     pq->query_type)) ||
-		   (true == caniot_is_error_frame(frame->id))) {
+	} else if ((true == caniot_type_is_response_of(frame->id.type, 
+						       pq->query_type, NULL))) {
+		/* is response for pending query */
 		resp_query_event(ctrl, frame, pq);
 	} else {
-		ignored_query_event(ctrl, pq);
+		/* is not response for pending query */
+		orphan_resp_event(ctrl, frame);
 	}
 
 	return 0;

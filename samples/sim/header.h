@@ -18,6 +18,7 @@ int ctrl_Q(uint32_t ctrlid,
 	   caniot_did_t did,
 	   struct caniot_frame *frame,
 	   uint32_t timeout);
+int ctrl_C(uint32_t ctrlid, uint8_t handle, bool suppress);
 
 int can_send(const struct caniot_frame *frame, uint32_t delay_ms);
 int can_recv(struct caniot_frame *frame);

@@ -299,8 +299,6 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_API_MIN_INIT(cmd, tlm) \
 	CANIOT_API_CFG_INIT(cmd, tlm, NULL, NULL)
 
-#define TELEMTRY_MASK
-
 #ifdef __cplusplus
 }
 #endif

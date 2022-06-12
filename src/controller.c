@@ -301,9 +301,24 @@ exit:
 
 int caniot_controller_deinit(struct caniot_controller *ctrl)
 {
-	(void)ctrl;
+	ASSERT(ctrl);
 
 	return -CANIOT_ENIMPL;
+}
+
+uint32_t caniot_controller_next_timeout(const struct caniot_controller *ctrl)
+{
+	ASSERT(ctrl);
+
+	uint32_t next_timeout = (uint32_t)-1;
+
+	struct pqt *next = ctrl->pendingq.timeout_queue;
+
+	if (next != NULL) {
+		next_timeout = next->timeout;
+	}
+
+	return next_timeout;
 }
 
 static bool user_event(struct caniot_controller *ctrl,
@@ -313,7 +328,8 @@ static bool user_event(struct caniot_controller *ctrl,
 	ASSERT(ev != NULL);
 	ASSERT(ctrl->event_cb != NULL);
 
-	__DBG("user_event(%p)\n", ev);
+	__DBG("user_event(%p) -> x=%u s=%u t=%u did=%u h=%u resp=%p\n", 
+	      ev, ev->context, ev->status, ev->terminated, ev->did, ev->handle, ev->response);
 
 	return ctrl->event_cb(ev, ctrl->user_data);
 }
@@ -448,13 +464,6 @@ static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 	}
 
 	return pq;
-}
-
-static struct pendq *pendq_cancel(struct caniot_controller *ctrl,
-				  struct pendq *pq)
-{
-	ASSERT(ctrl != NULL);
-	ASSERT(pq != NULL);
 }
 
 static int query_check_and_finalize(struct caniot_controller *ctrl,

@@ -117,6 +117,8 @@ int caniot_controller_driv_init(struct caniot_controller *ctrl,
 
 int caniot_controller_deinit(struct caniot_controller *ctrl);
 
+uint32_t caniot_controller_next_timeout(const struct caniot_controller *ctrl);
+
 /**
  * @brief Build a query frame to be sent to a device
  * 

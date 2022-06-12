@@ -11,6 +11,10 @@
  * - ARM/x86/any : printf("Hello %d\n", 42);
  */
 
+#if !defined(CONFIG_CANIOT_ASSERT)
+#	define CONFIG_CANIOT_ASSERT 0
+#endif
+
 #if defined(__AVR__)
 #	include <stdio.h>
 #	include <avr/pgmspace.h>
@@ -19,14 +23,21 @@
 #	define F(x) PSTR(x) 
 #	define memcpy_P memcpy_P
 #	define ROM	PROGMEM
+#	define ASSERT(x)
 #elif defined(__ZEPHYR__)
 #	include <stdio.h>
+#	include <zephyr.h>
 #	define snprintf snprintf
 #	define strlen_P strlen
 #	define strncpy_P strncpy
 #	define F(x) (x)
 #	define memcpy_P memcpy
 #	define ROM
+#	if CONFIG_CANIOT_ASSERT
+#		define ASSERT(x) __ASSERT(x, STRINGIFY(xSTRINGIFY()))
+#	else
+#		define ASSERT(x) 
+#	endif
 #else /* stdlib */
 #	include <stdio.h>
 #	define snprintf snprintf
@@ -35,6 +46,13 @@
 #	define F(x) x
 #	define memcpy_P memcpy
 #	define ROM
+#	if CONFIG_CANIOT_ASSERT
+#		include <stdbool.h>
+	extern void __assert(bool statement);
+#		define ASSERT(x) __assert(x)
+#	else
+#		define ASSERT(x) 
+#	endif
 #endif
 
 
@@ -74,25 +92,13 @@
 #define CANIOT_ERR(...)
 #endif /* CANIOT_LOG_LEVEL >= 1 */
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-
-#define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
+#if !defined(__ZEPHYR__)
+#	define MIN(a, b) ((a) < (b) ? (a) : (b))
+#	define MAX(a, b) ((a) > (b) ? (a) : (b))
+#	define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#	define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
+#endif 
 
 #define INDEX_OF(obj, base, _struct) ((_struct *)(obj) - (_struct *)(base))
-
-#if !defined(CONFIG_CANIOT_ASSERT)
-#define CONFIG_CANIOT_ASSERT 0
-#endif
-
-#if CONFIG_CANIOT_ASSERT
-#include <stdbool.h>
-extern void __assert(bool statement);
-#define ASSERT(x) __assert(x)
-#else
-#define ASSERT(x) 
-#endif
 
 #endif /* _CANIOT_ARCHUTILS_H_ */

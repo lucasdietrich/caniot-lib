@@ -138,6 +138,10 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 				     struct caniot_frame *frame,
 				     uint32_t timeout);
 
+bool caniot_controller_query_pending(struct caniot_controller *ctrl,
+				     uint8_t handle);
+
+
 int caniot_controller_cancel_query(struct caniot_controller *ctrl,
 				   uint8_t handle,
 				   bool suppress);

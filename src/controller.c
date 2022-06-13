@@ -75,13 +75,18 @@ static void pendq_queue(struct caniot_controller *ctrl,
 	if (pq == NULL)
 		return;
 
-	/* last item doesn't have a "next" item */
-	pq->tie.next = NULL;
-	pq->tie.timeout = timeout;
+	if (timeout != CANIOT_TIMEOUT_FOREVER) {
+		/* last item doesn't have a "next" item */
+		pq->tie.next = NULL;
+		pq->tie.timeout = timeout;
 
-	_pendq_queue(&ctrl->pendingq.timeout_queue, &pq->tie);
+		_pendq_queue(&ctrl->pendingq.timeout_queue, &pq->tie);
 
-	__DBG("pendq_queue(%p, %u)\n", pq, timeout);
+		__DBG("pendq_queue(%p, %u)\n", pq, timeout);
+	} else {
+		/* if timeout is forever, pendq is not queued */
+		__DBG("pendq_queue(%p, FOREVER) -> ignored\n", pq);
+	}
 }
 
 static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
@@ -541,6 +546,18 @@ exit:
 	      did, frame, timeout, ret);
 
 	return ret;
+}
+
+bool caniot_controller_query_pending(struct caniot_controller *ctrl,
+				     uint8_t handle)
+{
+	ASSERT(ctrl != NULL);
+
+	struct pendq *const pq = pendq_get_by_handle(ctrl, handle);
+
+	__DBG("caniot_controller_query_pending(%u) -> %u\n", handle, pq != NULL); 
+
+	return pq != NULL;
 }
 
 int caniot_controller_cancel_query(struct caniot_controller *ctrl,

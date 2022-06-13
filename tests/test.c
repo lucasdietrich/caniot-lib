@@ -512,6 +512,27 @@ bool z_func_ctrl4(void)
 	return x.success == true;
 }
 
+/*
+TODO how to test static functions ?
+
+extern struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
+					     caniot_did_t did,
+					     caniot_frame_type_t query_type,
+					     uint32_t timeout);
+
+bool z_test__alloc_free(void)
+{
+	struct caniot_controller ctrl;
+
+	CHECK_0(caniot_controller_init(&ctrl, z_func_ctrl_cb, NULL));
+
+	pendq_alloc_and_prepare(&ctrl, gen_rdm_did(false), CANIOT_FRAME_TYPE_COMMAND, 1000U);
+
+	return true;
+}
+
+*/
+
 /*___________________________________________________________________________*/
 
 struct test

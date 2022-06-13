@@ -6,6 +6,8 @@
 
 #define __DBG(fmt, ...) CANIOT_DBG("-- " fmt, ## __VA_ARGS__)
 
+#define INVALID_HANDLE ((uint8_t) 0xFFU)
+
 static bool is_query_pending_for(struct caniot_controller *ctrl,
 				 caniot_did_t did)
 {
@@ -156,6 +158,7 @@ static void pendq_init_queue(struct caniot_controller *ctrl)
 	for (struct pendq *cur = ctrl->pendingq.pool;
 	     cur < ctrl->pendingq.pool + (CANIOT_MAX_PENDING_QUERIES - 1U); cur++) {
 		cur->next = cur + 1;
+		cur->handle = INVALID_HANDLE;
 	}
 	ctrl->pendingq.pool[CANIOT_MAX_PENDING_QUERIES - 1U].next = NULL;
 
@@ -186,6 +189,7 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 		__DBG("pendq_free(%p)\n", p);
 
 		p->next = ctrl->pendingq.free_list;
+		p->handle = INVALID_HANDLE;
 		ctrl->pendingq.free_list = p;
 	} else {
 		__DBG("pendq_free(NULL)\n");
@@ -217,21 +221,20 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl,
 					 uint8_t handle)
 {
 	ASSERT(ctrl);
+	
+	struct pendq *pq = NULL;
 
-	struct pendq *retpq = NULL;
+	if ((handle != INVALID_HANDLE) && (handle < CANIOT_MAX_PENDING_QUERIES)) {
+		struct pendq *const tmp = &ctrl->pendingq.pool[handle];
 
-	struct pqt *tie;
-	for (tie = ctrl->pendingq.timeout_queue; tie != NULL; tie = tie->next) {
-		struct pendq *const pq = CONTAINER_OF(tie, struct pendq, tie);
-		if (pq->handle == handle) {
-			retpq = pq;
-			break;
+		if (tmp->handle == handle) {
+			pq = tmp;
 		}
 	}
 
-	__DBG("pendq_get_by_handle(%u) -> %p\n", handle, retpq);
+	__DBG("pendq_get_by_handle(%u) -> %p\n", handle, pq);
 
-	return retpq;
+	return pq;
 }
 
 static struct pendq *peek_pending_query(struct caniot_controller *ctrl,

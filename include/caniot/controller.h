@@ -32,7 +32,7 @@ struct caniot_pendq
 {
 	caniot_did_t did;
 
-	uint8_t handle: 5U;
+	uint8_t handle;
 
 	caniot_frame_type_t query_type;
 	union {

@@ -329,7 +329,8 @@ static bool user_event(struct caniot_controller *ctrl,
 	ASSERT(ctrl->event_cb != NULL);
 
 	__DBG("user_event(%p) -> x=%u s=%u t=%u did=%u h=%u resp=%p\n", 
-	      ev, ev->context, ev->status, ev->terminated, ev->did, ev->handle, ev->response);
+	      ev, ev->context, ev->status, ev->terminated, 
+	      ev->did, ev->handle, ev->response);
 
 	return ctrl->event_cb(ev, ctrl->user_data);
 }
@@ -501,7 +502,8 @@ static int query_check_and_finalize(struct caniot_controller *ctrl,
 	ret = 0;
 
 exit:
-	__DBG("query_check_and_finalize(%u, %p, %u) -> %d\n", did, frame, timeout, ret);
+	__DBG("query_check_and_finalize(%u, %p, %u) -> %d\n", 
+	      did, frame, timeout, ret);
 
 	return ret;
 }
@@ -516,7 +518,8 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 		goto exit;
 	}
 
-	struct pendq *pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type, timeout);
+	struct pendq *pq = pendq_alloc_and_prepare(ctrl, did, 
+						   frame->id.type, timeout);
 	if (pq == NULL) {
 		ret = -CANIOT_EPQALLOC;
 		goto exit;
@@ -531,7 +534,8 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 	ret = pq->handle;
 
 exit:
-	__DBG("caniot_controller_query_build(%u, %p, %u) -> %d\n", did, frame, timeout, ret);
+	__DBG("caniot_controller_query_build(%u, %p, %u) -> %d\n", 
+	      did, frame, timeout, ret);
 
 	return ret;
 }

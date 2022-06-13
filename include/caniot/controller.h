@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define CANIOT_TIMEOUT_FOREVER ((uint32_t) -1)
+
 struct caniot_device_entry
 {
 	// uint32_t last_seen;	/* timestamp this device was last seen */

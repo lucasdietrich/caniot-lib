@@ -472,43 +472,6 @@ static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 	return pq;
 }
 
-static int query_check_and_finalize(struct caniot_controller *ctrl,
-				    caniot_did_t did,
-				    struct caniot_frame *frame,
-				    uint32_t timeout)
-{
-	int ret;
-
-	/* validate arguments */
-	if (ctrl == NULL || frame == NULL) {
-		ret = -CANIOT_EINVAL;
-		goto exit;
-	}
-
-
-	if (caniot_deviceid_valid(did) == false) {
-		ret = -CANIOT_EDEVICE;
-		goto exit;
-	}
-
-	/* another query is already pending for the device */
-	if (is_query_pending_for(ctrl, did) == true) {
-		ret = -CANIOT_EAGAIN;
-		goto exit;
-	}
-
-	/* finalize and send the query frame */
-	finalize_query_frame(frame, did);
-
-	ret = 0;
-
-exit:
-	__DBG("query_check_and_finalize(%u, %p, %u) -> %d\n", 
-	      did, frame, timeout, ret);
-
-	return ret;
-}
-
 static int query(struct caniot_controller *ctrl,
 		 caniot_did_t did,
 		 struct caniot_frame *frame,

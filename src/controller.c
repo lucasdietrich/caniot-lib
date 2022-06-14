@@ -487,7 +487,7 @@ static int query(struct caniot_controller *ctrl,
 	}
 
 	const bool alloc_context = timeout != 0U;
-	struct pendq *pq;
+	struct pendq *pq = NULL;
 
 	/* if timeout is defined, we need to allocate a context */
 	if (alloc_context == true) {
@@ -550,7 +550,6 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 {
 	int ret = query(ctrl, did, frame, timeout, false);
 
-exit:
 	__DBG("caniot_controller_query_register(%u, %p, %u) -> %d\n",
 	      did, frame, timeout, ret);
 
@@ -659,7 +658,6 @@ int caniot_controller_query_send(struct caniot_controller *ctrl,
 {
 	int ret = query(ctrl, did, frame, timeout, true);
 
-exit:
 	__DBG("caniot_controller_query_send(%u, %p, %u) -> %d\n",
 	      did, frame, timeout, ret);
 	
@@ -668,6 +666,10 @@ exit:
 
 static uint32_t process_get_diff_ms(struct caniot_controller *ctrl)
 {
+	ASSERT(ctrl != NULL);
+	ASSERT(ctrl->driv != NULL);
+	ASSERT(ctrl->driv->get_time != NULL);
+
 	const uint32_t last_sec = ctrl->last_process.sec;
 	const uint16_t last_ms = ctrl->last_process.ms;
 
@@ -680,8 +682,9 @@ static uint32_t process_get_diff_ms(struct caniot_controller *ctrl)
 
 int caniot_controller_process(struct caniot_controller *ctrl)
 {
-	ASSERT(ctrl);
-	ASSERT(ctrl->driv);
+	ASSERT(ctrl != NULL);
+	ASSERT(ctrl->driv != NULL);
+	ASSERT(ctrl->driv->recv != NULL)
 	
 	int ret;
 	struct caniot_frame frame;

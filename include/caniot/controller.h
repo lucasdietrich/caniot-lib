@@ -30,8 +30,15 @@ struct caniot_pqt
 
 struct caniot_pendq
 {
+	/**
+	 * @brief Device the query is pending on.
+	 */
 	caniot_did_t did;
 
+	/**
+	 * @brief Handle identifying the query.
+	 * (0 = invalid)
+	 */
 	uint8_t handle;
 
 	caniot_frame_type_t query_type;
@@ -120,18 +127,24 @@ int caniot_controller_driv_init(struct caniot_controller *ctrl,
 int caniot_controller_deinit(struct caniot_controller *ctrl);
 
 uint32_t caniot_controller_next_timeout(const struct caniot_controller *ctrl);
-
 /**
  * @brief Build a query frame to be sent to a device
  * 
  * Note: That if the frame send fails, the query should be cancelled
  *  using function caniot_controller_cancel_query() with the returned handle
  * 
+ * Note: 
+ * 
  * @param controller 
  * @param did 
  * @param frame 
  * @param timeout 
- * @return int handle on success (>= 0), negative value on error
+ * 	- If timeout is 0 no context is allocated, 
+ *  	- If timeout is CANIOT_TIMEOUT_FOREVER a context is allocated but 
+ *  	  the query should be cancelled if it doesn't get a response or if did is BROADCAST
+ * 	- otherwise a context is allocated and the query will 
+ * 	  be automatically cancelled after timeout
+ * @return int handle on success (> 0), negative value on error, 0 if no context allocated
  */
 int caniot_controller_query_register(struct caniot_controller *ctrl,
 				     caniot_did_t did,

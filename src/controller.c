@@ -684,7 +684,7 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 {
 	ASSERT(ctrl != NULL);
 	ASSERT(ctrl->driv != NULL);
-	ASSERT(ctrl->driv->recv != NULL)
+	ASSERT(ctrl->driv->recv != NULL);
 	
 	int ret;
 	struct caniot_frame frame;

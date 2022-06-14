@@ -226,7 +226,7 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl,
 	
 	struct pendq *pq = NULL;
 
-	if ((handle != INVALID_HANDLE) && (handle < CANIOT_MAX_PENDING_QUERIES)) {
+	if ((handle != INVALID_HANDLE) && (handle <= CANIOT_MAX_PENDING_QUERIES)) {
 		struct pendq *const tmp = &ctrl->pendingq.pool[handle - 1U];
 
 		if (tmp->handle == handle) {
@@ -509,10 +509,11 @@ exit:
 	return ret;
 }
 
-int caniot_controller_query_register(struct caniot_controller *ctrl,
-				     caniot_did_t did,
-				     struct caniot_frame *frame,
-				     uint32_t timeout)
+static int query(struct caniot_controller *ctrl,
+		 caniot_did_t did,
+		 struct caniot_frame *frame,
+		 uint32_t timeout,
+		 bool driv_send)
 {
 	int ret;
 
@@ -522,12 +523,11 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 		goto exit;
 	}
 
-	/* finalize and send the query frame */
-	finalize_query_frame(frame, did);
+	const bool alloc_context = timeout != 0U;
+	struct pendq *pq;
 
 	/* if timeout is defined, we need to allocate a context */
-	if (timeout != 0U) {
-
+	if (alloc_context == true) {
 		if (caniot_deviceid_valid(did) == false) {
 			ret = -CANIOT_EDEVICE;
 			goto exit;
@@ -539,13 +539,25 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 			goto exit;
 		}
 
-		struct pendq *pq = pendq_alloc_and_prepare(ctrl, did,
-							   frame->id.type, timeout);
+		pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type, timeout);
 		if (pq == NULL) {
 			ret = -CANIOT_EPQALLOC;
 			goto exit;
 		}
+	}
 
+	/* finalize and send the query frame */
+	finalize_query_frame(frame, did);
+
+	if (driv_send == true) {
+		/* send frame */
+		ret = ctrl->driv->send(frame, 0U);
+		if (ret < 0) {
+			goto exit;
+		}
+	}
+
+	if (alloc_context == true) {
 		if (timeout != CANIOT_TIMEOUT_FOREVER) {
 			/* reference query for timeout */
 			pendq_queue(ctrl, pq, timeout);
@@ -556,11 +568,25 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 
 		ret = pq->handle;
 	} else {
-		/* if timeout is 0, we don't allocate a context */
 		ret = 0;
 	}
+
 exit:
-	__DBG("caniot_controller_query_build(%u, %p, %u) -> %d\n",
+	__DBG("query(%u, %p, %u, %u) -> %d\n",
+	      did, frame, timeout, (uint32_t) driv_send, ret);
+
+	return ret;
+}
+
+int caniot_controller_query_register(struct caniot_controller *ctrl,
+				     caniot_did_t did,
+				     struct caniot_frame *frame,
+				     uint32_t timeout)
+{
+	int ret = query(ctrl, did, frame, timeout, false);
+
+exit:
+	__DBG("caniot_controller_query_register(%u, %p, %u) -> %d\n",
 	      did, frame, timeout, ret);
 
 	return ret;
@@ -666,33 +692,12 @@ int caniot_controller_query_send(struct caniot_controller *ctrl,
 				 struct caniot_frame *frame,
 				 uint32_t timeout)
 {
-	int ret = query_check_and_finalize(ctrl, did, frame, timeout);
-	if (ret < 0) {
-		goto exit;
-	}
-
-	struct pendq *pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type, timeout);
-	if (pq != NULL) {
-		/* send frame */
-		ret = ctrl->driv->send(frame, 0U);
-		if (ret >= 0) {
-			/* add query to pending query */
-			pendq_queue(ctrl, pq, timeout);
-
-			/* tells that a query is pending for the device */
-			mark_query_pending_for(ctrl, did, true);
-
-			ret = pq->handle;
-		} else {
-		/* deallocate immediately*/
-			pendq_free(ctrl, pq);
-		}
-	} else {
-		ret = -CANIOT_EPQALLOC;
-		goto exit;
-	}
+	int ret = query(ctrl, did, frame, timeout, true);
 
 exit:
+	__DBG("caniot_controller_query_send(%u, %p, %u) -> %d\n",
+	      did, frame, timeout, ret);
+	
 	return ret;
 }
 

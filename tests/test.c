@@ -21,9 +21,10 @@
 		exit(EXIT_FAILURE); \
 	}
 
-#define CHECK(statement) if (statement == false) { return false; }
-#define CHECK_0(statement) if (statement != 0) { return false; }
-#define CHECK_POSITIVE(statement) if (statement < 0) { return false; }
+#define CHECK(statement) if ((statement) == false) { return false; }
+#define CHECK_0(statement) if ((statement) != 0) { return false; }
+#define CHECK_POSITIVE(statement) if ((statement) < 0) { return false; }
+#define CHECK_STRICTLY_POSITIVE(statement) if ((statement) < 0) { return false; }
 
 void __assert(bool statement)
 {
@@ -411,7 +412,7 @@ bool z_func_ctrl1(void)
 
 	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
-	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK_STRICTLY_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == true);
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
 	
@@ -440,7 +441,7 @@ bool z_func_ctrl2(void)
 
 	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
-	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK_STRICTLY_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == true);
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
 
@@ -472,7 +473,7 @@ bool z_func_ctrl3(void)
 
 	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
-	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK_STRICTLY_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == true);
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
 
@@ -506,7 +507,7 @@ bool z_func_ctrl4(void)
 
 	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
-	CHECK_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
+	CHECK_STRICTLY_POSITIVE(x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == true);
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) == CANIOT_MAX_PENDING_QUERIES - 1U);
 

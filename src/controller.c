@@ -549,6 +549,7 @@ static int query(struct caniot_controller *ctrl,
 	/* finalize and send the query frame */
 	finalize_query_frame(frame, did);
 
+#if CANIOT_CTRL_DRIVERS_API
 	if (driv_send == true) {
 		/* send frame */
 		ret = ctrl->driv->send(frame, 0U);
@@ -556,6 +557,7 @@ static int query(struct caniot_controller *ctrl,
 			goto exit;
 		}
 	}
+#endif
 
 	if (alloc_context == true) {
 		if (timeout != CANIOT_TIMEOUT_FOREVER) {

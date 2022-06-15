@@ -678,7 +678,7 @@ int caniot_controller_send(struct caniot_controller *ctrl,
 			   caniot_did_t did,
 			   struct caniot_frame *frame)
 {
-	int ret = query(ctrl, did, frame, 0, true);
+	int ret = query(ctrl, did, frame, 0U, true);
 
 	if (ret < 0) {
 		goto exit;

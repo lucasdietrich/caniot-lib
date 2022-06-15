@@ -186,9 +186,9 @@ int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
  * @return int 
  */
 int caniot_controller_query(struct caniot_controller *ctrl,
-				 caniot_did_t did,
-				 struct caniot_frame *frame,
-				 uint32_t timeout);
+			    caniot_did_t did,
+			    struct caniot_frame *frame,
+			    uint32_t timeout);
 
 /**
  * @brief Send a query frame only
@@ -199,8 +199,8 @@ int caniot_controller_query(struct caniot_controller *ctrl,
  * @return int 
  */
 int caniot_controller_send(struct caniot_controller *ctrl,
-				 caniot_did_t did,
-				 struct caniot_frame *frame);
+			   caniot_did_t did,
+			   struct caniot_frame *frame);
 
 /**
  * 

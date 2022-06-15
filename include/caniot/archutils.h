@@ -23,7 +23,7 @@
 #	define F(x) PSTR(x) 
 #	define memcpy_P memcpy_P
 #	define ROM	PROGMEM
-#	define ASSERT(x)
+#	define Z_ASSERT(x)
 #elif defined(__ZEPHYR__)
 #	include <stdio.h>
 #	include <zephyr.h>
@@ -33,11 +33,7 @@
 #	define F(x) (x)
 #	define memcpy_P memcpy
 #	define ROM
-#	if CONFIG_CANIOT_ASSERT
-#		define ASSERT(x) __ASSERT(x, STRINGIFY(xSTRINGIFY()))
-#	else
-#		define ASSERT(x) 
-#	endif
+#	define Z_ASSERT(x) __ASSERT(x, STRINGIFY(xSTRINGIFY()))
 #else /* stdlib */
 #	include <stdio.h>
 #	define snprintf snprintf
@@ -46,13 +42,16 @@
 #	define F(x) x
 #	define memcpy_P memcpy
 #	define ROM
-#	if CONFIG_CANIOT_ASSERT
-#		include <stdbool.h>
+
+#	include <stdbool.h>
 	extern void __assert(bool statement);
-#		define ASSERT(x) __assert(x)
-#	else
-#		define ASSERT(x) 
-#	endif
+#	define Z_ASSERT(x) __assert(x)
+#endif
+
+#if CONFIG_CANIOT_ASSERT
+#	define ASSERT(x) Z_ASSERT(x)
+#else
+#	define ASSERT(x) 
 #endif
 
 

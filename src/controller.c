@@ -243,7 +243,7 @@ int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
 					   uint8_t handle,
 					   void *user_data)
 {
-	int ret = -EINVAL;
+	int ret = -CANIOT_EINVAL;
 	struct pendq *pq = pendq_get_by_handle(ctrl, handle);
 
 	if (pq != NULL) {

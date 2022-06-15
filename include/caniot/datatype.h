@@ -130,6 +130,8 @@ struct caniot_board_control_command
 	uint8_t _unused10 : 2;
 };
 
+void caniot_board_control_command_init(struct caniot_board_control_command *cmd);
+
 struct caniot_CRTHPT {
 	union {
 		struct {

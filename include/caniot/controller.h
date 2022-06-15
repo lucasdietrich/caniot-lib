@@ -46,6 +46,9 @@ struct caniot_pendq
 		struct caniot_pqt tie; /* for timeout queue */
 		struct caniot_pendq *next; /* for memory allocation */
 	};
+
+	/* User context */
+	void *user_data;
 };
 
 struct caniot_controller;
@@ -82,6 +85,8 @@ typedef struct {
 	uint8_t handle;
 
 	const struct caniot_frame *response;
+
+	void *user_data;
 } caniot_controller_event_t;
 
 typedef bool (*caniot_controller_event_cb_t)(const caniot_controller_event_t *ev,
@@ -165,12 +170,40 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 
 /*___________________________________________________________________________*/
 
-int caniot_controller_query_send(struct caniot_controller *ctrl,
+int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
+					   uint8_t handle,
+					   void *user_data);
+
+/*___________________________________________________________________________*/
+
+/**
+ * @brief Do a query which expects a response
+ * 
+ * @param ctrl 
+ * @param did 
+ * @param frame 
+ * @param timeout 
+ * @return int 
+ */
+int caniot_controller_query(struct caniot_controller *ctrl,
 				 caniot_did_t did,
 				 struct caniot_frame *frame,
 				 uint32_t timeout);
 
 /**
+ * @brief Send a query frame only
+ * 
+ * @param ctrl 
+ * @param did 
+ * @param frame 
+ * @return int 
+ */
+int caniot_controller_send(struct caniot_controller *ctrl,
+				 caniot_did_t did,
+				 struct caniot_frame *frame);
+
+/**
+ * 
  * @brief Check timeouts and receive incoming CANIOT message if any and handle it
  *
  * Note: Should be called on query timeout or when an incoming can message

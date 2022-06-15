@@ -239,6 +239,21 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl,
 	return pq;
 }
 
+int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
+					   uint8_t handle,
+					   void *user_data)
+{
+	int ret = -EINVAL;
+	struct pendq *pq = pendq_get_by_handle(ctrl, handle);
+
+	if (pq != NULL) {
+		pq->user_data = user_data;
+		ret = 0;
+	}
+
+	return ret;
+}
+
 static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
 					caniot_did_t did)
 {
@@ -359,6 +374,8 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 		.handle = 0U, /* meaningless in this context */
 
 		.response = response,
+
+		.user_data = NULL
 	};
 
 	user_event(ctrl, &ev);
@@ -385,6 +402,7 @@ static void resp_query_event(struct caniot_controller *ctrl,
 		.handle = pq->handle,
 
 		.response = response,
+		.user_data = pq->user_data,
 	};
 
 	if (terminated) {
@@ -417,6 +435,7 @@ static void cancelled_query_event(struct caniot_controller *ctrl,
 		.handle = pq->handle,
 
 		.response = NULL,
+		.user_data = pq->user_data
 	};
 
 	mark_query_pending_for(ctrl, pq->did, false);
@@ -445,6 +464,7 @@ static void pendq_call_expired(struct caniot_controller *ctrl)
 			.handle = pq->handle,
 
 			.response = NULL,
+			.user_data = pq->user_data
 		};
 
 		mark_query_pending_for(ctrl, pq->did, false);
@@ -644,6 +664,9 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 	/* call callbacks for expired queries */
 	pendq_call_expired(ctrl);
 
+	__DBG("caniot_controller_process_single(%u, %p) -> 0\n", 
+	      time_passed, frame);
+
 	return 0U;
 }
 
@@ -651,16 +674,33 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 
 #if CANIOT_CTRL_DRIVERS_API
 
-int caniot_controller_query_send(struct caniot_controller *ctrl,
-				 caniot_did_t did,
-				 struct caniot_frame *frame,
-				 uint32_t timeout)
+int caniot_controller_send(struct caniot_controller *ctrl,
+			   caniot_did_t did,
+			   struct caniot_frame *frame)
+{
+	int ret = query(ctrl, did, frame, 0, true);
+
+	if (ret < 0) {
+		goto exit;
+	}
+
+	ASSERT(ret == 0);
+
+	ret = 0;
+exit:
+	return ret;
+}
+
+int caniot_controller_query(struct caniot_controller *ctrl,
+			    caniot_did_t did,
+			    struct caniot_frame *frame,
+			    uint32_t timeout)
 {
 	int ret = query(ctrl, did, frame, timeout, true);
 
-	__DBG("caniot_controller_query_send(%u, %p, %u) -> %d\n",
+	__DBG("caniot_controller_query(%u, %p, %u) -> %d\n",
 	      did, frame, timeout, ret);
-	
+
 	return ret;
 }
 

@@ -79,7 +79,7 @@ int ctrl_Q(uint32_t ctrlid,
 	int ret = -EINVAL;
 
 	if (ctrlid < CONTROLLERS_COUNT) {
-		caniot_controller_query_send(&controllers[ctrlid], did, frame, timeout);
+		caniot_controller_query(&controllers[ctrlid], did, frame, timeout);
 
 		ret = 0;
 	}

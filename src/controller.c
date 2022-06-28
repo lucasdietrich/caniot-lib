@@ -450,13 +450,6 @@ static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 	return pq;
 }
 
-static struct pendq *pendq_cancel(struct caniot_controller *ctrl,
-				  struct pendq *pq)
-{
-	ASSERT(ctrl != NULL);
-	ASSERT(pq != NULL);
-}
-
 static int query_check_and_finalize(struct caniot_controller *ctrl,
 				    caniot_did_t did,
 				    struct caniot_frame *frame,

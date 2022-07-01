@@ -57,3 +57,10 @@ int16_t caniot_dt_T10_to_T16(uint16_t T)
 {
 	return ((int16_t)T * 10) - 2800;
 }
+
+void caniot_board_control_command_init(struct caniot_board_control_command *cmd)
+{
+	ASSERT(cmd != NULL);
+
+	memset(cmd, 0x00U, sizeof(struct caniot_board_control_command));
+}

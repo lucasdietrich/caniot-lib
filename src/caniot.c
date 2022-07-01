@@ -329,7 +329,7 @@ void caniot_build_query_command(struct caniot_frame *frame,
 	ASSERT(frame);
 	ASSERT(buf);
 
-	frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
+	frame->id.type = CANIOT_FRAME_TYPE_COMMAND;
 	frame->id.query = CANIOT_QUERY;
 	frame->id.endpoint = endpoint;
 	frame->len = MIN(size, sizeof(frame->buf));

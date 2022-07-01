@@ -1,0 +1,42 @@
+menuconfig CANIOT_LIB
+        bool "Enable CANIOT_LIB module"
+        default n
+        help
+          Enable support for CANIOT_LIB library
+
+if CANIOT_LIB
+
+module = CANIOTLIB
+module-str = CANIOT-LIB
+
+config CANIOT_LOG_LEVEL
+	int "Log level"
+        default 3
+	help
+	        Log level for the CANIOT lib
+
+config CANIOT_ASSERT
+	bool "Enable assertion"
+	depends on ASSERT
+        default n
+	help
+	        CANIOT assert
+
+config CANIOT_MAX_PENDING_QUERIES
+	int "Controller max pending query"
+        default 6
+	help
+	        Controller max pending query
+
+config CANIOT_DRIVERS_API
+	bool "Enable Drivers API for device"
+        default n
+	help
+	       Enable Drivers API for device
+
+config CANIOT_CTRL_DRIVERS_API
+	bool "Enable Drivers API for controller"
+        default n
+	help
+	        Enable Drivers API for controller
+endif

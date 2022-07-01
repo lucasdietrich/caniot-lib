@@ -182,7 +182,9 @@ struct caniot_drivers_api {
 	/**
 	 * @brief Send a CANIOT frame
 	 * 
-	 * Note: Should not block.
+	 * Note: 
+	 * 	- Should not block.
+	 * 	- Should be thread safe (in a multi-threaded environment).
 	 *
 	 * Return 0 on success, any other value on error.
 	 */
@@ -191,7 +193,9 @@ struct caniot_drivers_api {
 	/**
 	 * @brief Receive a CANIOT frame.
 	 * 
-	 * Note: Should not block.
+	 * Note:
+	 * 	- Should not block.
+	 * 	- Should be thread safe (in a multi-threaded environment).
 	 *
 	 * Return 0 on success, -EAGAIN if no frame is available.
 	 */

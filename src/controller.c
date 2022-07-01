@@ -678,16 +678,12 @@ int caniot_controller_send(struct caniot_controller *ctrl,
 			   caniot_did_t did,
 			   struct caniot_frame *frame)
 {
-	int ret = query(ctrl, did, frame, 0U, true);
+	const int ret = caniot_controller_query(ctrl, did, frame, 0U);
 
-	if (ret < 0) {
-		goto exit;
-	}
+	/* As timeout is 0U, no context is created and the frame is
+	 * sent immediately. */
+	ASSERT(ret <= 0);
 
-	ASSERT(ret == 0);
-
-	ret = 0;
-exit:
 	return ret;
 }
 

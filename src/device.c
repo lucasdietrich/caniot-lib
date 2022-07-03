@@ -832,32 +832,37 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 }
 
 static uint32_t get_response_delay(struct caniot_device *dev,
-				   struct caniot_frame *frame)
+				   bool random)
 {
 	ASSERT(dev != NULL);
-	ASSERT(frame != NULL);
 
-	uint32_t delay_ms = 0;
+	uint32_t delay_ms = 0U;
 
-	if (is_telemetry_response(frame)) {
+	/* delay only on broadcast command */
+	if (random == true) {
+		ASSERT(dev->driv->entropy != NULL);
+
+		/* define default parameters */
+		uint16_t delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT;
+		uint16_t delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT;
+
+		uint16_t rdm;
+		dev->driv->entropy((uint8_t *)&rdm, sizeof(rdm));
+
+		/* get parameters from local configuration if possible */
 		int ret = prepare_config_read(dev);
 		if (ret == 0) {
-			if (dev->config->flags.telemetry_delay_rdm == 1u) {
-				dev->driv->entropy((uint8_t *)&delay_ms, sizeof(delay_ms));
-
-				uint32_t amplitude = 100U;
-				if (dev->config->telemetry.delay_max > dev->config->telemetry.delay_min) {
-					amplitude = dev->config->telemetry.delay_max
-						- dev->config->telemetry.delay_min;
-				}
-
-				delay_ms = dev->config->telemetry.delay_min + (delay_ms % amplitude);
-			} else {
-				delay_ms = dev->config->telemetry.delay;
-			}
-		} else {
-			delay_ms = CANIOT_TELEMETRY_DELAY_DEFAULT;
+			delay_min = dev->config->telemetry.delay_min;
+			delay_max = dev->config->telemetry.delay_max;
 		}
+
+		/* evaluate amplitude */
+		uint32_t amplitude = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT;
+		if (delay_max > delay_min) {
+			amplitude = delay_max - delay_min;
+		}
+
+		delay_ms = delay_min + (rdm % amplitude);
 	}
 
 	return delay_ms;
@@ -894,11 +899,19 @@ int caniot_device_process(struct caniot_device *dev)
 	caniot_clear_frame(&req);
 	ret = dev->driv->recv(&req);
 
+	/* response delay is not random by default */
+	bool random_delay = false;
+
 	/* if we received a frame */
 	if (ret == 0) {
 		/* handle received frame */
 		ret = caniot_device_handle_rx_frame(dev, &req, &resp);
-	/* if we didn't received a frame and telemetry is requested */
+
+		/* broadcast request requires a randomly delayed response */
+		if (caniot_is_broadcast(caniot_frame_get_did(&req)) == true) {
+			random_delay = true;
+		}
+	/* if we didn't received a frame but telemetry is requested */
 	} else if (telemetry_requested(dev)) {
 		/* prepare telemetry response */
 		ret = build_telemetry_resp(dev, &resp, dev->config->flags.telemetry_endpoint);
@@ -917,7 +930,7 @@ int caniot_device_process(struct caniot_device *dev)
 	}
 
 	/* send response or error frame if configured */
-	ret = dev->driv->send(&resp, get_response_delay(dev, &resp));
+	ret = dev->driv->send(&resp, get_response_delay(dev, random_delay));
 	if (ret == 0) {
 		dev->system.sent.total++;
 

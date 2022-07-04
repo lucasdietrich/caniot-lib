@@ -12,7 +12,7 @@ int caniot_phys_hysteresis_init(caniot_phys_hysteresis_t *hysteresis,
 	}
 
 	if (low > high) {
-		return -CANIOT_PHYS_HYST_INVALID;
+		return -CANIOT_EHYST;
 	}
 
 	hysteresis->state = CANIOT_PHYS_HYSTERESIS_UNDEF;

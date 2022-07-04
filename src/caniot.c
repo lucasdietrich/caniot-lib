@@ -376,7 +376,7 @@ bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 
 bool caniot_is_error(int cterr)
 {
-	return (-cterr >= CANIOT_ERROR_BASE && -cterr <= (CANIOT_ERROR_BASE + 0xFF));
+	return ((-cterr >= CANIOT_ERROR_BASE) && (-cterr <= CANIOT_ERROR_MAX));
 }
 
 bool caniot_device_is_target(caniot_did_t did,
@@ -560,4 +560,24 @@ caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query)
 void caniot_test(void)
 {
 	printf("caniot test\n");
+}
+
+caniot_error_t caniot_interpret_error(int err, bool *forwarded)
+{
+	bool zforwarded = false;
+
+	if ((-err >= CANIOT_ERROR_BASE) && (-err <= CANIOT_ERROR_MAX)) {
+		err = -err - CANIOT_ERROR_BASE;
+
+		if (err & CANIOT_ERROR_DEVICE_MASK != 0) {
+			err &= ~CANIOT_ERROR_DEVICE_MASK;
+			zforwarded = true;
+		}
+	}
+
+	if (forwarded != NULL) {
+		*forwarded = zforwarded;
+	}
+
+	return (caniot_error_t)(err);
 }

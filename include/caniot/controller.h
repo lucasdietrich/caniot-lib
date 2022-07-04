@@ -59,11 +59,10 @@ typedef enum {
 } caniot_controller_event_context_t;
 
 typedef enum {
-	CANIOT_CONTROLLER_EVENT_STATUS_OK = 0U, 	/* is not part of a query (frame is set) */
-	CANIOT_CONTROLLER_EVENT_STATUS_ERROR, 		/* is part of a query (frame is set) */
-	CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT, 	/* a query timed out (frame not set) */	
-	// CANIOT_CONTROLLER_EVENT_STATUS_IGNORED,	/* a query was ignored (frame not set) */
-	CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED,	/* a query was cancelled (frame not set) */
+	CANIOT_CONTROLLER_EVENT_STATUS_OK = 0U, 	/* is not part of a query (response is set) */
+	CANIOT_CONTROLLER_EVENT_STATUS_ERROR, 		/* error frame received, is part of a query (response is set) */
+	CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT, 	/* a query timed out (response not set) */	
+	CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED,	/* a query was cancelled (response not set) */
 } caniot_controller_event_status_t;
 
 typedef enum {
@@ -75,7 +74,7 @@ typedef struct {
 	struct caniot_controller *controller;
 
 	caniot_controller_event_context_t context : 2U;
-	caniot_controller_event_status_t status : 3U;
+	caniot_controller_event_status_t status : 2U;
 
 	/* terminated only valid if context is CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN */
 	caniot_controller_query_terminated_t terminated : 1U; 

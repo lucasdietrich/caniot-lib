@@ -300,8 +300,15 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 /*___________________________________________________________________________*/
 
+caniot_did_t caniot_frame_get_did(struct caniot_frame *frame)
+{
+	ASSERT(frame != NULL);
+
+	return CANIOT_DID(frame->id.cls, frame->id.sid);
+}
+
 void caniot_frame_set_did(struct caniot_frame *frame,
-				 caniot_did_t did)
+			  caniot_did_t did)
 {
 	ASSERT(frame != NULL);
 	ASSERT(caniot_deviceid_valid(did) == true);

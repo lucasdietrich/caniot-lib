@@ -58,7 +58,6 @@ extern "C" {
 /* milliseconds */
 #define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	0U
 #define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	100U
-#define CANIOT_TELEMETRY_DELAY_DEFAULT		5U
 
 /* seconds */
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT		60U
@@ -259,6 +258,8 @@ void caniot_build_query_read_attribute(struct caniot_frame *frame,
 void caniot_build_query_write_attribute(struct caniot_frame *frame,
 					uint16_t key,
 					uint32_t value);
+
+caniot_did_t caniot_frame_get_did(struct caniot_frame *frame);
 
 void caniot_frame_set_did(struct caniot_frame *frame,
 			  caniot_did_t did);

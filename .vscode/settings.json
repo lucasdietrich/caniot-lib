@@ -15,6 +15,7 @@
         "stddef.h": "c",
         "type_traits": "c",
         "header.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "phys.h": "c"
     }
 }

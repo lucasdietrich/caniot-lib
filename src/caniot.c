@@ -243,7 +243,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	size_t total = 0U;
 
 	ret = caniot_explain_id_str(frame->id, buf, len);
-	if (ret > (int)len || ret < 0) {
+	if (ret < 0) {
 		return ret;
 	}
 

@@ -569,7 +569,7 @@ caniot_error_t caniot_interpret_error(int err, bool *forwarded)
 	if ((-err >= CANIOT_ERROR_BASE) && (-err <= CANIOT_ERROR_MAX)) {
 		err = -err - CANIOT_ERROR_BASE;
 
-		if (err & CANIOT_ERROR_DEVICE_MASK != 0) {
+		if ((err & CANIOT_ERROR_DEVICE_MASK) != 0) {
 			err &= ~CANIOT_ERROR_DEVICE_MASK;
 			zforwarded = true;
 		}

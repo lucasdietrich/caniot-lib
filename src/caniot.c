@@ -157,7 +157,7 @@ void caniot_show_frame(const struct caniot_frame *frame)
 
 void caniot_explain_id(caniot_id_t id)
 {
-	CANIOT_INF(F("[ %x ] "), caniot_id_to_canid(id));
+	CANIOT_INF(F("[ 0x%x ] "), caniot_id_to_canid(id));
 	if (caniot_is_error_frame(id) == true) {
 		CANIOT_INF(F("Error frame "));
 		return;
@@ -188,7 +188,7 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		CANIOT_INF(F(": -%04x \n"), (uint32_t)-frame->err);
+		CANIOT_INF(F(": -%04x"), (uint32_t)-frame->err);
 		return;
 	}
 

@@ -787,7 +787,7 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 
 exit:
 	if (ret != 0) {
-		prepare_error(dev, resp, ret, req->id.type);
+		prepare_error(dev, resp, req->id.type, ret);
 	}
 	return ret;
 }

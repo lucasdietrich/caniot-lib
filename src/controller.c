@@ -632,14 +632,15 @@ static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	struct pendq *pq = peek_pending_query(ctrl, did);
 	if (pq != NULL) {
 		bool is_error = false;
-		bool is_valid_response = caniot_type_is_response_of(
-			frame->id.type, pq->query_type, &is_error);
+		const bool is_valid_response = caniot_type_is_response_of(
+			frame->id.type, pq->query_type, &is_error
+		);
 
 		if (is_valid_response || is_error) {
-		/* is response for pending query */
+			/* is response for pending query */
 			resp_query_event(ctrl, frame, pq);
 		} else {
-		/* is not response for pending query */
+			/* is not response for pending query */
 			orphan_resp_event(ctrl, frame);
 		}
 	} else {

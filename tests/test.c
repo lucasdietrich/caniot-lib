@@ -240,7 +240,7 @@ bool z_func__caniot_type_is_response_of(void)
 	struct {
 		caniot_frame_type_t resp;
 		caniot_frame_type_t req;
-		bool result;
+		bool isresult;
 		bool iserr;
 	} tests[] = {
 		{CANIOT_FRAME_TYPE_TELEMETRY, CANIOT_FRAME_TYPE_TELEMETRY, true, false},
@@ -271,7 +271,7 @@ bool z_func__caniot_type_is_response_of(void)
 	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
 		all &= caniot_type_is_response_of(tests[i].resp,
 						  tests[i].req,
-						  &iserr) == tests[i].result;
+						  &iserr) == tests[i].isresult;
 		all &= iserr == tests[i].iserr;
 
 		if (!all) {

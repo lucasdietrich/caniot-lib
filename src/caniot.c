@@ -479,43 +479,51 @@ bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
 	}
 }
 
+typedef enum {
+	CANIOT_IS_RESPONSE = 0,
+	CANIOT_IS_ERROR,
+	CANIOT_IS_OTHER_RESPONSE,
+	CANIOT_IS_OTHER_ERROR,
+} caniot_query_response_type;
+
+caniot_query_response_type caniot_type_what_response_of(caniot_frame_type_t resp,
+							caniot_frame_type_t query)
+{
+	/* matrix representing how the current
+	 * response type matches the query type
+	 */
+
+	/*    Query  (row) | Response (columns) | Result
+	 * ---------------------------------
+	 *    	  | C | T | W | R |
+	 *  	C | 1 | 0 | 3 | 2 |
+	 * 	T | 1 | 0 | 3 | 2 |
+	 * 	W | 3 | 2 | 1 | 0 |
+	 * 	R | 3 | 2 | 1 | 0 |
+	 * ---------------------------------
+	 *
+	 * 	0: CANIOT_IS_RESPONSE
+	 * 	1: CANIOT_IS_ERROR
+	 * 	2: CANIOT_IS_OTHER_RESPONSE
+	 * 	3: CANIOT_IS_OTHER_ERROR
+	 */
+
+	const bool is_error =
+		(resp == CANIOT_FRAME_TYPE_COMMAND) ||
+		(resp == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
+
+	const bool is_response_of = ((((uint8_t)resp) & ((uint8_t)query)) >> 1U) == 1U;
+
+	return (caniot_query_response_type)(
+		(is_error ? 1 : 0) |
+		(is_response_of ? 2 : 0)
+		);
+}
+
 bool caniot_type_is_response_of(caniot_frame_type_t resp,
 				caniot_frame_type_t query,
 				bool *iserror)
 {
-	/* VARIANT 1 */
-
-	/*
-	bool error = false;
-	bool match = false;
-
-	switch (resp) {
-	case CANIOT_FRAME_TYPE_COMMAND:
-		error = true;
-	case CANIOT_FRAME_TYPE_TELEMETRY:
-		match = (query == CANIOT_FRAME_TYPE_COMMAND) ||
-			(query == CANIOT_FRAME_TYPE_TELEMETRY);
-		break;
-
-	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
-		error = true;
-	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
-		match = (query == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE) ||
-			(query == CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
-		break;
-	default:
-		break;
-	}
-
-	if (iserror != NULL) {
-		*iserror = error;
-	}
-
-	return match;
-
-	*/
-
-	/*___________________________________________________________________*/
 	/* VARIANT 2 */
 
 	bool match = false;
@@ -524,6 +532,7 @@ bool caniot_type_is_response_of(caniot_frame_type_t resp,
 	switch (query) {
 	case CANIOT_FRAME_TYPE_COMMAND:
 	case CANIOT_FRAME_TYPE_TELEMETRY:
+		errtype = CANIOT_FRAME_TYPE_COMMAND;
 		match = resp == CANIOT_FRAME_TYPE_TELEMETRY;
 		break;
 

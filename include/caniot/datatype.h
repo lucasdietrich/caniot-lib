@@ -66,6 +66,7 @@ typedef enum {
 	CANIOT_XPS_PULSE_CANCEL,
 } caniot_complex_digital_cmd_t;
 
+/* is the same as board level telemetry (blt) */
 struct caniot_board_control_telemetry
 {
 	union {
@@ -91,8 +92,6 @@ struct caniot_board_control_telemetry
 		};
 		uint8_t pdio;
 	};
-
-
 
 	uint8_t _unused : 4;
 

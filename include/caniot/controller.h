@@ -167,13 +167,13 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 				     uint32_t time_passed,
 				     const struct caniot_frame *frame);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
 					   uint8_t handle,
 					   void *user_data);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 /**
  * @brief Do a query which expects a response
@@ -212,7 +212,7 @@ int caniot_controller_send(struct caniot_controller *ctrl,
  */
 int caniot_controller_process(struct caniot_controller *ctrl);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl);
 

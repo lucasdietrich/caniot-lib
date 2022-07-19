@@ -671,7 +671,7 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 	return 0U;
 }
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 #if CANIOT_CTRL_DRIVERS_API
 
@@ -748,7 +748,7 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 
 #endif
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl)
 {

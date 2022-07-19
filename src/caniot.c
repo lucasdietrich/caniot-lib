@@ -298,7 +298,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 }
 #endif
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 caniot_did_t caniot_frame_get_did(struct caniot_frame *frame)
 {
@@ -366,7 +366,7 @@ void caniot_build_query_write_attribute(struct caniot_frame *frame,
 	frame->attr.val = value;
 }
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 {

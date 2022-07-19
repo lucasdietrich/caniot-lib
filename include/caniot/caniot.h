@@ -242,7 +242,7 @@ int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len);
 
 int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t len);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 void caniot_build_query_telemetry(struct caniot_frame *frame,
 				  uint8_t endpoint);
@@ -264,7 +264,7 @@ caniot_did_t caniot_frame_get_did(struct caniot_frame *frame);
 void caniot_frame_set_did(struct caniot_frame *frame,
 			  caniot_did_t did);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 bool caniot_is_error(int cterr);
 

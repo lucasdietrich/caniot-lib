@@ -806,7 +806,7 @@ bool caniot_device_time_synced(struct caniot_device *dev)
 	return dev->system.uptime_synced != 0;
 }
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 #if CANIOT_DRIVERS_API
 uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)

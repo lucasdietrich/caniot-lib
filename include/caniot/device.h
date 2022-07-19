@@ -214,7 +214,7 @@ static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
 			 CANIOT_DID_SID(CANIOT_DID_BROADCAST), 0U);
 }
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 void caniot_app_init(struct caniot_device *dev);
 
@@ -231,7 +231,7 @@ int caniot_device_scales_rdmdelay(struct caniot_device *dev,
 
 bool caniot_device_time_synced(struct caniot_device *dev);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 /**
  * @brief Verify if device is properly defined
@@ -241,7 +241,7 @@ bool caniot_device_time_synced(struct caniot_device *dev);
  */
 int caniot_device_verify(struct caniot_device *dev);
 
-/*___________________________________________________________________________*/
+/*____________________________________________________________________________*/
 
 #define CANIOT_CONFIG_DEFAULT_INIT() \
 { \

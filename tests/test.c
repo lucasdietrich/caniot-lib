@@ -282,6 +282,37 @@ bool z_func__caniot_type_is_response_of(void)
 	return all;
 }
 
+bool z_func__caniot_type_what_response_of(void)
+{
+	bool all = true;
+
+	/*    Query  (row) | Response (columns) | Result
+	 * ---------------------------------
+	 *    	  | C | T | W | R |
+	 *  	C | 1 | 0 | 3 | 2 |
+	 * 	T | 1 | 0 | 3 | 2 |
+	 * 	W | 3 | 2 | 1 | 0 |
+	 * 	R | 3 | 2 | 1 | 0 |
+	 * ---------------------------------
+	 */
+	caniot_query_response_type_t matrix[4][4] = {
+		{1, 0, 3, 2},
+		{1, 0, 3, 2},
+		{3, 2, 1, 0},
+		{3, 2, 1, 0},
+	};
+
+	for (size_t q = 0; q < ARRAY_SIZE(matrix); q++) {
+		for (size_t r = 0; r < ARRAY_SIZE(matrix[0]); r++) {
+			// printf("r, q = %d,%d -> %d / %d\n", r, q, 
+			//        caniot_type_what_response_of(r, q), matrix[q][r]);
+			all &= caniot_type_what_response_of(r, q) == matrix[q][r];
+		}
+	}
+
+	return all;
+}
+
 bool z_func__caniot_resp_error_for(void)
 {
 	bool all = true;
@@ -570,6 +601,7 @@ const struct test tests[] = {
 	TEST(z_func__caniot_device_is_target, 100U),
 	TEST(z_func__caniot_type_is_valid_response_of, 1U),
 	TEST(z_func__caniot_type_is_response_of, 1U),
+	TEST(z_func__caniot_type_what_response_of, 1U),
 	TEST(z_func__caniot_resp_error_for, 1U),
 	TEST(z_func__caniot_validate_drivers_api, 1U),
 	TEST(z_func__caniot_device_get_filter, 100U),

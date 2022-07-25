@@ -276,6 +276,16 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b);
 
 bool caniot_deviceid_valid(caniot_did_t did);
 
+typedef enum {
+	CANIOT_IS_RESPONSE = 0,
+	CANIOT_IS_ERROR,
+	CANIOT_IS_OTHER_RESPONSE,
+	CANIOT_IS_OTHER_ERROR,
+} caniot_query_response_type_t;
+
+caniot_query_response_type_t caniot_type_what_response_of(caniot_frame_type_t resp,
+							caniot_frame_type_t query);
+
 bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
 				      caniot_frame_type_t query);
 

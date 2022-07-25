@@ -479,15 +479,8 @@ bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
 	}
 }
 
-typedef enum {
-	CANIOT_IS_RESPONSE = 0,
-	CANIOT_IS_ERROR,
-	CANIOT_IS_OTHER_RESPONSE,
-	CANIOT_IS_OTHER_ERROR,
-} caniot_query_response_type;
-
-caniot_query_response_type caniot_type_what_response_of(caniot_frame_type_t resp,
-							caniot_frame_type_t query)
+caniot_query_response_type_t caniot_type_what_response_of(caniot_frame_type_t resp,
+							  caniot_frame_type_t query)
 {
 	/* matrix representing how the current
 	 * response type matches the query type
@@ -512,11 +505,11 @@ caniot_query_response_type caniot_type_what_response_of(caniot_frame_type_t resp
 		(resp == CANIOT_FRAME_TYPE_COMMAND) ||
 		(resp == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
 
-	const bool is_response_of = ((((uint8_t)resp) & ((uint8_t)query)) >> 1U) == 1U;
+	const bool is_response_of = ((resp ^ query) & 2) == 0;
 
-	return (caniot_query_response_type)(
+	return (caniot_query_response_type_t)(
 		(is_error ? 1 : 0) |
-		(is_response_of ? 2 : 0)
+		(is_response_of ? 0 : 2)
 		);
 }
 

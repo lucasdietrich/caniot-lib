@@ -244,20 +244,20 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 /*____________________________________________________________________________*/
 
-void caniot_build_query_telemetry(struct caniot_frame *frame,
-				  uint8_t endpoint);
+int caniot_build_query_telemetry(struct caniot_frame *frame,
+				 uint8_t endpoint);
 
-void caniot_build_query_command(struct caniot_frame *frame,
-				uint8_t endpoint,
-				const uint8_t *buf,
-				uint8_t size);
+int caniot_build_query_command(struct caniot_frame *frame,
+			       uint8_t endpoint,
+			       const uint8_t *buf,
+			       uint8_t size);
 
-void caniot_build_query_read_attribute(struct caniot_frame *frame,
-				       uint16_t key);
+int caniot_build_query_read_attribute(struct caniot_frame *frame,
+				      uint16_t key);
 
-void caniot_build_query_write_attribute(struct caniot_frame *frame,
-					uint16_t key,
-					uint32_t value);
+int caniot_build_query_write_attribute(struct caniot_frame *frame,
+				       uint16_t key,
+				       uint32_t value);
 
 caniot_did_t caniot_frame_get_did(struct caniot_frame *frame);
 
@@ -276,6 +276,10 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b);
 
 bool caniot_deviceid_valid(caniot_did_t did);
 
+bool caniot_endpoint_valid(caniot_endpoint_t endpoint);
+
+bool caniot_attr_key_valid(uint16_t key);
+
 typedef enum {
 	CANIOT_IS_RESPONSE = 0,
 	CANIOT_IS_ERROR,
@@ -284,7 +288,7 @@ typedef enum {
 } caniot_query_response_type_t;
 
 caniot_query_response_type_t caniot_type_what_response_of(caniot_frame_type_t resp,
-							caniot_frame_type_t query);
+							  caniot_frame_type_t query);
 
 bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
 				      caniot_frame_type_t query);

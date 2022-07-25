@@ -137,11 +137,11 @@ void caniot_show_deviceid(caniot_did_t did)
 		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
 		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-		       did, did, cls_str, sid_str);
+			   did, did, cls_str, sid_str);
 #else
 		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-		       did, did, get_class_str(CANIOT_DID_CLS(did)),
-		       get_sid_str(CANIOT_DID_SID(did)));
+			   did, did, get_class_str(CANIOT_DID_CLS(did)),
+			   get_sid_str(CANIOT_DID_SID(did)));
 #endif
 	}
 }
@@ -149,10 +149,10 @@ void caniot_show_deviceid(caniot_did_t did)
 void caniot_show_frame(const struct caniot_frame *frame)
 {
 	CANIOT_INF(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
-	       caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
-	       (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
-	       (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
-	       (uint8_t)frame->len);
+		   caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
+		   (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
+		   (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
+		   (uint8_t)frame->len);
 }
 
 void caniot_explain_id(caniot_id_t id)
@@ -199,7 +199,7 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 		}
 	} else {
 		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"), frame->len,
-		       frame->attr.key, frame->attr.val);
+			   frame->attr.key, frame->attr.val);
 	}
 }
 
@@ -317,34 +317,44 @@ void caniot_frame_set_did(struct caniot_frame *frame,
 	frame->id.sid = CANIOT_DID_SID(did);
 }
 
-void caniot_build_query_telemetry(struct caniot_frame *frame,
-				  uint8_t endpoint)
+int caniot_build_query_telemetry(struct caniot_frame *frame,
+				 uint8_t endpoint)
 {
 	ASSERT(frame);
 
-	frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
-	frame->id.query = CANIOT_QUERY;
-	frame->id.endpoint = endpoint;
-	frame->len = 0U;
+	int ret = -CANIOT_EINVAL;
+	if (caniot_endpoint_valid(endpoint) == true) {
+		frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
+		frame->id.query = CANIOT_QUERY;
+		frame->id.endpoint = endpoint;
+		frame->len = 0U;
+		ret = 0;
+	}
+	return ret;
 }
 
-void caniot_build_query_command(struct caniot_frame *frame,
-				uint8_t endpoint,
-				const uint8_t *buf,
-				uint8_t size)
+int caniot_build_query_command(struct caniot_frame *frame,
+			       uint8_t endpoint,
+			       const uint8_t *buf,
+			       uint8_t size)
 {
 	ASSERT(frame);
 	ASSERT(buf);
 
-	frame->id.type = CANIOT_FRAME_TYPE_COMMAND;
-	frame->id.query = CANIOT_QUERY;
-	frame->id.endpoint = endpoint;
-	frame->len = MIN(size, sizeof(frame->buf));
-	memcpy(frame->buf, buf, frame->len);
+	int ret = -CANIOT_EINVAL;
+	if (caniot_endpoint_valid(endpoint) == true) {
+		frame->id.type = CANIOT_FRAME_TYPE_COMMAND;
+		frame->id.query = CANIOT_QUERY;
+		frame->id.endpoint = endpoint;
+		frame->len = MIN(size, sizeof(frame->buf));
+		memcpy(frame->buf, buf, frame->len);
+		ret = 0;
+	}
+	return ret;
 }
 
-void caniot_build_query_read_attribute(struct caniot_frame *frame,
-				       uint16_t key)
+int caniot_build_query_read_attribute(struct caniot_frame *frame,
+				      uint16_t key)
 {
 	ASSERT(frame);
 
@@ -352,11 +362,13 @@ void caniot_build_query_read_attribute(struct caniot_frame *frame,
 	frame->id.query = CANIOT_QUERY;
 	frame->len = 2u;
 	frame->attr.key = key;
+
+	return 0;
 }
 
-void caniot_build_query_write_attribute(struct caniot_frame *frame,
-					uint16_t key,
-					uint32_t value)
+int caniot_build_query_write_attribute(struct caniot_frame *frame,
+				       uint16_t key,
+				       uint32_t value)
 {
 	ASSERT(frame);
 
@@ -364,6 +376,8 @@ void caniot_build_query_write_attribute(struct caniot_frame *frame,
 	frame->len = 6u;
 	frame->attr.key = key;
 	frame->attr.val = value;
+
+	return 0;
 }
 
 /*____________________________________________________________________________*/
@@ -426,7 +440,17 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b)
 
 bool caniot_deviceid_valid(caniot_did_t did)
 {
-	return (did >> 6U) == 0U;
+	return (did <= CANIOT_DID_MAX_VALUE);
+}
+
+bool caniot_endpoint_valid(caniot_endpoint_t endpoint)
+{
+	return (endpoint <= CANIOT_ENDPOINT_BOARD_CONTROL);
+}
+
+bool caniot_attr_key_valid(uint16_t key)
+{
+	return (key <= 0xFFFFLU);
 }
 
 uint16_t caniot_id_to_canid(caniot_id_t id)

@@ -101,6 +101,10 @@ struct caniot_board_control_telemetry
 	uint16_t ext_temperature3 : 10;
 } __attribute__((packed));
 
+typedef struct caniot_board_control_telemetry caniot_blt_t;
+
+#define CANIOT_BLT_SIZE sizeof(struct caniot_board_control_telemetry)
+
 struct caniot_board_control_command
 {
 	caniot_complex_digital_cmd_t coc1 : 3;

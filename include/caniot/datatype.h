@@ -154,6 +154,7 @@ struct caniot_heating_control
 {
 	caniot_heating_status_t heater1_cmd: 4u;
 	caniot_heating_status_t heater2_cmd: 4u;
+	caniot_heating_status_t heater3_cmd: 4u;
 };
 
 void caniot_board_control_command_init(struct caniot_board_control_command *cmd);

@@ -66,6 +66,16 @@ typedef enum {
 	CANIOT_XPS_PULSE_CANCEL,
 } caniot_complex_digital_cmd_t;
 
+typedef enum {
+	CANIOT_HEATER_NONE = 0,
+	CANIOT_HEATER_CONFORT,
+	CANIOT_HEATER_CONFORT_MIN_1,
+	CANIOT_HEATER_CONFORT_MIN_2,
+	CANIOT_HEATER_ENERGY_SAVING,
+	CANIOT_HEATER_FROST_FREE,
+	CANIOT_HEATER_OFF
+} caniot_heating_status_t;
+
 /* is the same as board level telemetry (blt) */
 struct caniot_board_control_telemetry
 {
@@ -90,7 +100,6 @@ struct caniot_board_control_telemetry
 			uint8_t prl1 : 1;
 			uint8_t prl2 : 1;
 		};
-		uint8_t pdio;
 	};
 
 	uint8_t _unused : 4;
@@ -138,6 +147,13 @@ struct caniot_board_control_command
 	caniot_onestate_cmd_t config_reset : 1;
 
 	uint8_t _unused10 : 2;
+};
+
+/* Same for command and telemetry */
+struct caniot_heating_control
+{
+	caniot_heating_status_t heater1_cmd: 4u;
+	caniot_heating_status_t heater2_cmd: 4u;
 };
 
 void caniot_board_control_command_init(struct caniot_board_control_command *cmd);

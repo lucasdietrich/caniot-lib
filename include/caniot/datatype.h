@@ -100,6 +100,7 @@ struct caniot_board_control_telemetry
 			uint8_t prl1 : 1;
 			uint8_t prl2 : 1;
 		};
+		uint8_t pdio;
 	};
 
 	uint8_t _unused : 4;

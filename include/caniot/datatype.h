@@ -76,6 +76,11 @@ typedef enum {
 	CANIOT_HEATER_OFF
 } caniot_heating_status_t;
 
+#define CANIOT_SHUTTER_CMD_NONE 0xFFu
+#define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
+#define CANIOT_SHUTTER_CMD_OPEN (100u)
+#define CANIOT_SHUTTER_CMD_CLOSE (0u)
+
 /* is the same as board level telemetry (blt) */
 struct caniot_board_control_telemetry
 {
@@ -156,6 +161,9 @@ struct caniot_heating_control
 	caniot_heating_status_t heater1_cmd: 4u;
 	caniot_heating_status_t heater2_cmd: 4u;
 	caniot_heating_status_t heater3_cmd: 4u;
+	caniot_heating_status_t heater4_cmd: 4u;
+
+	uint8_t shutters_openness[4u];
 };
 
 void caniot_board_control_command_init(struct caniot_board_control_command *cmd);

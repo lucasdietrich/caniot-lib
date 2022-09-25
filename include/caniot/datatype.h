@@ -82,7 +82,7 @@ typedef enum {
 #define CANIOT_SHUTTER_CMD_CLOSE (0u)
 
 /* is the same as board level telemetry (blt) */
-struct caniot_board_control_telemetry
+struct caniot_blc0_telemetry
 {
 	union {
 		struct {
@@ -116,21 +116,12 @@ struct caniot_board_control_telemetry
 	uint16_t ext_temperature3 : 10;
 } __attribute__((packed));
 
-typedef struct caniot_board_control_telemetry caniot_blt_t;
+typedef struct caniot_blc0_telemetry caniot_blt_t;
 
-#define CANIOT_BLT_SIZE sizeof(struct caniot_board_control_telemetry)
+#define CANIOT_BLT_SIZE sizeof(struct caniot_blc0_telemetry)
 
-struct caniot_board_control_command
+struct caniot_blc_sys_command
 {
-	caniot_complex_digital_cmd_t coc1 : 3;
-	caniot_complex_digital_cmd_t coc2 : 3;
-	caniot_complex_digital_cmd_t crl1 : 3;
-	caniot_complex_digital_cmd_t crl2 : 3;
-
-	uint8_t _unused : 4;
-
-	uint8_t _unused9[5];
-
 	/* in the case of the AVR, proper software reset should use the watchdog :
 	* https://www.avrfreaks.net/comment/178013#comment-178013
 	*/
@@ -155,6 +146,35 @@ struct caniot_board_control_command
 	uint8_t _unused10 : 2;
 };
 
+/* Board level control (blc) command */
+struct caniot_blc0_command
+{
+	uint16_t coc1 : 3u;
+	uint16_t coc2 : 3u;
+	uint16_t crl1 : 3u;
+	uint16_t crl2 : 3u;
+
+	uint8_t _unused: 4u;
+
+	uint8_t _unused9[5u];
+};
+
+struct caniot_blc1_command
+{
+	uint8_t _unused[7u];
+};
+
+struct caniot_blc_command
+{
+	union {
+		struct caniot_blc0_command blc0;
+		struct caniot_blc1_command blc1;
+		uint8_t _unused[7u];
+	};
+
+	struct caniot_blc_sys_command sys;
+};
+
 /* Same for command and telemetry */
 struct caniot_heating_control
 {
@@ -166,68 +186,16 @@ struct caniot_heating_control
 	uint8_t shutters_openness[4u];
 };
 
-void caniot_board_control_command_init(struct caniot_board_control_command *cmd);
-
-struct caniot_CRTHPT {
-	union {
-		struct {
-			uint8_t c1 : 1;
-			uint8_t c2 : 1;
-			uint8_t c3 : 1;
-			uint8_t c4 : 1;
-			uint8_t c5 : 1;
-			uint8_t c6 : 1;
-			uint8_t c7 : 1;
-			uint8_t c8 : 1;
-		};
-		uint8_t contacts;
-	};
-	union {
-		struct {
-			uint8_t r1 : 1;
-			uint8_t r2 : 1;
-			uint8_t r3 : 1;
-			uint8_t r4 : 1;
-			uint8_t r5 : 1;
-			uint8_t r6 : 1;
-			uint8_t r7 : 1;
-			uint8_t r8 : 1;
-		};
-		uint8_t relays;
-		union {
-			struct {
-				caniot_light_cmd_t lights1 : 2;
-				caniot_light_cmd_t lights2 : 2;
-				caniot_light_cmd_t lights3 : 2;
-				caniot_light_cmd_t lights4 : 2;
-			};
-			struct {
-				caniot_light_cmd_t cmd1 : 2;
-				caniot_light_cmd_t cmd2 : 2;
-				caniot_light_cmd_t cmd3 : 2;
-				caniot_light_cmd_t cmd4 : 2;
-			};
-		};
-	};
-	struct {
-		uint16_t int_temperature : 10;
-		uint16_t humidity : 10;
-		uint16_t pressure : 10;
-		uint16_t ext_temperature : 10;
-	};
-} __attribute__((packed));
+void caniot_blc0_command_init(struct caniot_blc0_command *cmd);
 
 #define CANIOT_INTERPRET(buf, s) \
 	((struct s *)buf)
 
-#define CANIOT_INTERPRET_CRTHP(buf) \
-	CANIOT_INTERPRET(buf, caniot_CRTHPT)
-
 #define AS(buf, s) CANIOT_INTERPRET(buf, s)
 
-#define AS_CRTHPT(buf) CANIOT_INTERPRET(buf, caniot_CRTHPT)
-#define AS_BOARD_CONTROL_CMD(buf) CANIOT_INTERPRET(buf, caniot_board_control_command)
-#define AS_BOARD_CONTROL_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_board_control_telemetry)
+#define AS_BLC_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc_command)
+#define AS_BLC0_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc0_command)
+#define AS_BLC0_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc0_telemetry)
 
 int caniot_dt_endpoints_count(uint8_t cls);
 

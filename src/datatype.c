@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+_Static_assert(sizeof(struct caniot_blc_command) == 8U, "Invalid size");
+
 static inline bool is_valid_class(uint8_t cls)
 {
 	return cls <= 0x7u;
@@ -58,9 +60,9 @@ int16_t caniot_dt_T10_to_T16(uint16_t T)
 	return ((int16_t)T * 10) - 2800;
 }
 
-void caniot_board_control_command_init(struct caniot_board_control_command *cmd)
+void caniot_blc0_command_init(struct caniot_blc0_command *cmd)
 {
 	ASSERT(cmd != NULL);
 
-	memset(cmd, 0x00U, sizeof(struct caniot_board_control_command));
+	memset(cmd, 0x00U, sizeof(struct caniot_blc0_command));
 }

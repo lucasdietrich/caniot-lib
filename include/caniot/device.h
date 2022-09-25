@@ -44,6 +44,19 @@ struct caniot_system
 	uint8_t battery;
 } __attribute__((packed));
 
+struct caniot_class0_config
+{
+	/* Duration in seconds of the pulse for OC1, OC2, RL1, RL2
+	 * respectively. */
+	uint32_t pulse_durations[4u];
+
+	/* Output default values for OC1, OC2, RL1, RL2 respectively. */
+	uint32_t outputs_default;
+
+	/* The mask of inputs to be used for notifications. */
+	uint32_t telemetry_on_change;
+} __attribute__((packed));
+
 struct caniot_config
 {
 	struct {
@@ -68,53 +81,8 @@ struct caniot_config
 		char country[2];
 	} location;
 
-	struct {
-		struct {
-			union {
-				uint32_t array[4];
-				struct {
-					uint32_t oc1;
-					uint32_t oc2;
-					uint32_t rl1;
-					uint32_t rl2;
-				};
-			} pulse_duration;
-			struct {
-				union {
-					uint32_t mask;
-					struct {
-						uint8_t open_collectors : 2;
-						uint8_t relays : 2;
-					};
-					struct {
-						uint8_t oc1 : 1;
-						uint8_t oc2 : 1;
-						uint8_t rl1 : 1;
-						uint8_t rl2 : 1;
-					};
-				} outputs_default;
-
-				union {
-					uint32_t mask;
-					struct {
-						uint8_t relays : 2;
-						uint8_t open_collectors : 2;
-						uint8_t inputs : 4;
-					};
-					struct {
-						uint8_t rl1 : 1;
-						uint8_t rl2 : 1;
-						uint8_t oc1 : 1;
-						uint8_t oc2 : 1;
-						uint8_t in1 : 1;
-						uint8_t in2 : 1;
-						uint8_t in3 : 1;
-						uint8_t in4 : 1;
-					};
-				} telemetry_on_change;
-			} mask;
-		} gpio;
-	} custompcb;
+	struct caniot_class0_config cls0_gpio;
+	
 } __attribute__((packed));
 
 struct caniot_device

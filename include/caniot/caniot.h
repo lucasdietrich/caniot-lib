@@ -76,6 +76,10 @@ extern "C" {
 
 #define CANIOT_ADDR_LEN sizeof("0x3f")
 
+/* Defines for emulated devices */
+#define CANIOT_EMU_CLASS 0x7u
+#define CNAIOT_MAGIC_NUMBER_EMU 0xFFFFFFFFu
+
 
 typedef enum
 {

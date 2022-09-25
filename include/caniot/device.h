@@ -142,6 +142,8 @@ struct caniot_api
 
 void caniot_print_device_identification(const struct caniot_device *dev);
 
+int caniot_device_system_reset(struct caniot_device *dev);
+
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
 				  const struct caniot_frame *req,
 				  struct caniot_frame *resp);

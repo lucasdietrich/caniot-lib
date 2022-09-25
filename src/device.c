@@ -322,6 +322,15 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 		   id.name, CANIOT_DID_CLS(id.did), CANIOT_DID_SID(id.did), id.version);
 }
 
+int caniot_device_system_reset(struct caniot_device *dev)
+{
+	if (!dev) return -CANIOT_EINVAL;
+
+	memset(&dev->system, 0, sizeof(struct caniot_system));
+
+	return 0;
+}
+
 static inline void read_identification_nodeid(struct caniot_device *dev,
 					      caniot_did_t *did)
 {

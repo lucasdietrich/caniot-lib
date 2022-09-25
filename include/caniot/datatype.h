@@ -3,6 +3,9 @@
 
 #include "caniot.h"
 
+#include "classes/class0.h"
+#include "classes/class1.h"
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -81,43 +84,6 @@ typedef enum {
 #define CANIOT_SHUTTER_CMD_OPEN (100u)
 #define CANIOT_SHUTTER_CMD_CLOSE (0u)
 
-/* is the same as board level telemetry (blt) */
-struct caniot_blc0_telemetry
-{
-	union {
-		struct {
-			uint8_t rl1 : 1;
-			uint8_t rl2 : 1;
-			uint8_t oc1 : 1;
-			uint8_t oc2 : 1;
-			uint8_t in1 : 1;
-			uint8_t in2 : 1;
-			uint8_t in3 : 1;
-			uint8_t in4 : 1;
-		};
-		uint8_t dio;
-	};
-
-	union {
-		struct {
-			uint8_t poc1 : 1;
-			uint8_t poc2 : 1;
-			uint8_t prl1 : 1;
-			uint8_t prl2 : 1;
-		};
-		uint8_t pdio;
-	};
-
-	uint8_t _unused : 4;
-
-	uint16_t int_temperature : 10;
-	uint16_t ext_temperature : 10;
-	uint16_t ext_temperature2 : 10;
-	uint16_t ext_temperature3 : 10;
-} __attribute__((packed));
-
-typedef struct caniot_blc0_telemetry caniot_blt_t;
-
 #define CANIOT_BLT_SIZE sizeof(struct caniot_blc0_telemetry)
 
 struct caniot_blc_sys_command
@@ -146,6 +112,19 @@ struct caniot_blc_sys_command
 	uint8_t _unused10 : 2;
 };
 
+
+/* is the same as board level telemetry (blt) */
+struct caniot_blc0_telemetry
+{
+	uint8_t dio;
+	uint8_t pdio : 4;
+	uint8_t _unused : 4;
+	uint16_t int_temperature : 10;
+	uint16_t ext_temperature : 10;
+	uint16_t ext_temperature2 : 10;
+	uint16_t ext_temperature3 : 10;
+} __attribute__((packed));
+
 /* Board level control (blc) command */
 struct caniot_blc0_command
 {
@@ -154,10 +133,10 @@ struct caniot_blc0_command
 	uint16_t crl1 : 3u;
 	uint16_t crl2 : 3u;
 
-	uint8_t _unused: 4u;
+	uint8_t _unused : 4u;
 
 	uint8_t _unused9[5u];
-};
+} __attribute__((packed));
 
 struct caniot_blc1_command
 {

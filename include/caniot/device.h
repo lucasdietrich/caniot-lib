@@ -53,7 +53,7 @@ struct caniot_class0_config
 	/* Output default values for OC1, OC2, RL1, RL2 respectively. */
 	uint32_t outputs_default;
 
-	/* The mask of inputs to be used for notifications. */
+	/* The mask gpio to be used for notifications. */
 	uint32_t telemetry_on_change;
 } __attribute__((packed));
 

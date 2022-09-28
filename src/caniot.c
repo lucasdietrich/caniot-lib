@@ -423,10 +423,14 @@ void caniot_show_error(int cterr)
 	}
 }
 
+#if !defined(__AVR__)
+
 int caniot_encode_deviceid(caniot_did_t did, uint8_t *buf, size_t len)
 {
 	return snprintf((char *)buf, len, F("0x%02hhx"), did);
 }
+
+#endif 
 
 int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b)
 {

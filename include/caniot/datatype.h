@@ -110,7 +110,7 @@ struct caniot_blc_sys_command
 	caniot_onestate_cmd_t config_reset : 1;
 
 	uint8_t _unused10 : 2;
-};
+} __attribute__((packed));
 
 
 /* is the same as board level telemetry (blt) */
@@ -152,7 +152,7 @@ struct caniot_blc_command
 	};
 
 	struct caniot_blc_sys_command sys;
-};
+} __attribute__((packed));
 
 /* Same for command and telemetry */
 struct caniot_heating_control

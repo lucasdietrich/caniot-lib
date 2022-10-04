@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-_Static_assert(sizeof(struct caniot_blc_command) == 8U, "Invalid size");
+_Static_assert(sizeof(struct caniot_blc_command) == 8u, "Invalid size");
 
 static inline bool is_valid_class(uint8_t cls)
 {

@@ -230,19 +230,15 @@ int caniot_device_verify(struct caniot_device *dev);
 		.region = CANIOT_LOCATION_REGION_DEFAULT,  \
 		.country = CANIOT_LOCATION_COUNTRY_DEFAULT,  \
 	},  \
-	.custompcb = { \
-		.gpio = { \
-			.pulse_duration = { \
-				.rl1 = 0U, \
-				.rl2 = 0U, \
-				.oc1 = 0U, \
-				.oc2 = 0U, \
-			}, \
-			.mask = { \
-				.outputs_default.mask = 0U, \
-				.telemetry_on_change.mask = 0xFFFFFFFFLU, \
-			} \
-		} \
+	.cls0_gpio = { \
+		.pulse_durations = { \
+			[0] = 0u,  \
+			[1] = 0u,  \
+			[2] = 0u,  \
+			[3] = 0u,  \
+		},  \
+		.outputs_default = 0u, \
+		.telemetry_on_change = 0xFFFFFFFFlu, \
 	}\
 }
 

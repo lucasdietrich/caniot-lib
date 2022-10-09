@@ -447,6 +447,13 @@ bool caniot_deviceid_valid(caniot_did_t did)
 	return (did <= CANIOT_DID_MAX_VALUE);
 }
 
+bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt)
+{
+	return
+		caniot_is_broadcast(pkt) ||
+		caniot_deviceid_equal(dev, pkt);
+}
+
 bool caniot_endpoint_valid(caniot_endpoint_t endpoint)
 {
 	return (endpoint <= CANIOT_ENDPOINT_BOARD_CONTROL);

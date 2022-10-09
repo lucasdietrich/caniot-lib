@@ -138,10 +138,24 @@ struct caniot_blc0_command
 	uint8_t _unused9[5u];
 } __attribute__((packed));
 
+struct caniot_blc1_telemetry
+{
+	uint8_t _unused[8u];
+} __attribute__((packed));
+
 struct caniot_blc1_command
 {
 	uint8_t _unused[7u];
-};
+} __attribute__((packed));
+
+struct caniot_blc_telemetry
+{
+	union {
+		struct caniot_blc0_telemetry blc0;
+		struct caniot_blc1_telemetry blc1;
+		uint8_t _unused[8u];
+	};
+} __attribute__((packed));
 
 struct caniot_blc_command
 {
@@ -163,6 +177,11 @@ struct caniot_heating_control
 	caniot_heating_status_t heater4_cmd: 4u;
 
 	uint8_t shutters_openness[4u];
+};
+
+struct caniot_heating_control_telemetry
+{
+
 };
 
 void caniot_blc0_command_init(struct caniot_blc0_command *cmd);

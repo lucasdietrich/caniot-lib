@@ -280,6 +280,8 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b);
 
 bool caniot_deviceid_valid(caniot_did_t did);
 
+bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt);
+
 bool caniot_endpoint_valid(caniot_endpoint_t endpoint);
 
 bool caniot_attr_key_valid(uint16_t key);

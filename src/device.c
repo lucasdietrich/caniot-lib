@@ -59,7 +59,7 @@ struct attr_ref
 struct attribute
 {
 	uint8_t offset;
-	uint8_t size;
+	uint8_t size; /* TODO merge fields size and option together */
 	uint8_t option;
 	// char name[32];
 };
@@ -125,6 +125,8 @@ static const struct attribute config_attr[] ROM = {
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "flags", flags),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "timezone", timezone),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "location", location),
+
+	/* Class 0 */
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.pulse_duration.oc1",
 		cls0_gpio.pulse_durations[0u]),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.pulse_duration.oc2",
@@ -137,12 +139,61 @@ static const struct attribute config_attr[] ROM = {
 		cls0_gpio.outputs_default),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.mask.telemetry_on_change",
 		cls0_gpio.telemetry_on_change),
+
+	/* Class 1 */
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pc0",
+		cls1_gpio.pulse_durations[0u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pc1",
+		cls1_gpio.pulse_durations[1u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pc2",
+		cls1_gpio.pulse_durations[2u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pc3",
+		cls1_gpio.pulse_durations[3u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pd0",
+		cls1_gpio.pulse_durations[4u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pd1",
+		cls1_gpio.pulse_durations[5u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pd2",
+		cls1_gpio.pulse_durations[6u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pd3",
+		cls1_gpio.pulse_durations[7u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei0",
+		cls1_gpio.pulse_durations[8u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei1",
+		cls1_gpio.pulse_durations[9u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei2",
+		cls1_gpio.pulse_durations[10u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei3",
+		cls1_gpio.pulse_durations[11u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei4",
+		cls1_gpio.pulse_durations[12u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei5",
+		cls1_gpio.pulse_durations[13u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei6",
+		cls1_gpio.pulse_durations[14u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pei7",
+		cls1_gpio.pulse_durations[15u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pb0",
+		cls1_gpio.pulse_durations[16u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pe0",
+		cls1_gpio.pulse_durations[17u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration.pe1",
+		cls1_gpio.pulse_durations[18u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.pulse_duration._reserved",
+		cls1_gpio.pulse_durations[19u]),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.directions",
+		cls1_gpio.directions),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.outputs_default",
+		cls1_gpio.outputs_default),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls1_gpio.mask.telemetry_on_change",
+		cls1_gpio.telemetry_on_change),
 };
 
 static const struct attr_section attr_sections[] ROM = {
 	SECTION(READONLY, "identification", identification_attr),
 	SECTION(VOLATILE, "system", system_attr),
 	SECTION(PERSISTENT, "configuration", config_attr),
+	/* TODO create more sections for class0, class1, etc ... */
 };
 
 static inline void arch_rom_cpy_byte(uint8_t *d, const uint8_t *p)

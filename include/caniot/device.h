@@ -96,8 +96,11 @@ struct caniot_config
 		char country[2];
 	} location;
 
-	struct caniot_class0_config cls0_gpio;
-	struct caniot_class1_config cls1_gpio;
+	/* TODO Use different structure to represent different classes */
+	union {
+		struct caniot_class0_config cls0_gpio;
+		struct caniot_class1_config cls1_gpio;
+	};
 	
 } __attribute__((packed));
 
@@ -115,6 +118,7 @@ struct caniot_device
 
 	struct {
 		uint8_t request_telemetry : 1;
+		uint8_t initialized: 1;
 	} flags;
 };
 

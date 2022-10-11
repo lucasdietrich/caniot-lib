@@ -133,27 +133,53 @@ struct caniot_blc0_command
 	uint16_t crl1 : 3u;
 	uint16_t crl2 : 3u;
 
-	uint8_t _unused : 4u;
-
-	uint8_t _unused9[5u];
+	uint8_t _unused: 4u;
 } __attribute__((packed));
 
 struct caniot_blc1_telemetry
 {
-	uint8_t _unused[8u];
+	uint8_t pcpd; 
+	uint8_t eio;
+	uint8_t pb0: 1;
+	uint8_t pe0: 1;
+	uint8_t pe1: 1;
+	uint8_t _unused: 5u;
+	uint32_t int_temperature : 10;
+	uint32_t ext_temperature : 10;
+	uint32_t ext_temperature2 : 10;
+	uint32_t ext_temperature3 : 10;
 } __attribute__((packed));
 
 struct caniot_blc1_command
 {
-	uint8_t _unused[7u];
-} __attribute__((packed));
+	uint64_t cpb0 : 3u;
+	uint64_t cpc0 : 3u;
+	uint64_t cpc1 : 3u;
+	uint64_t cpc2 : 3u;
+	uint64_t cpc3 : 3u;
+	uint64_t cpd0 : 3u;
+	uint64_t cpd1 : 3u;
+	uint64_t cpd2 : 3u;
+	uint64_t cpd3 : 3u;
+	uint64_t ceio0 : 3u;
+	uint64_t ceio1 : 3u;
+	uint64_t ceio2 : 3u;
+	uint64_t ceio3 : 3u;
+	uint64_t ceio4 : 3u;
+	uint64_t ceio5 : 3u;
+	uint64_t ceio6 : 3u;
+	uint64_t ceio7 : 3u;
+	uint64_t cpe0 : 3u;
+
+	uint64_t cpe1 : 2u;
+};
 
 struct caniot_blc_telemetry
 {
 	union {
 		struct caniot_blc0_telemetry blc0;
 		struct caniot_blc1_telemetry blc1;
-		uint8_t _unused[8u];
+		uint8_t payload[8u];
 	};
 } __attribute__((packed));
 
@@ -162,7 +188,7 @@ struct caniot_blc_command
 	union {
 		struct caniot_blc0_command blc0;
 		struct caniot_blc1_command blc1;
-		uint8_t _unused[7u];
+		uint8_t payload[7u];
 	};
 
 	struct caniot_blc_sys_command sys;
@@ -194,6 +220,9 @@ void caniot_blc0_command_init(struct caniot_blc0_command *cmd);
 #define AS_BLC_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc_command)
 #define AS_BLC0_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc0_command)
 #define AS_BLC0_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc0_telemetry)
+
+#define AS_BLC1_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc1_command)
+#define AS_BLC1_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc1_telemetry)
 
 int caniot_dt_endpoints_count(uint8_t cls);
 

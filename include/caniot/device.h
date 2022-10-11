@@ -57,6 +57,21 @@ struct caniot_class0_config
 	uint32_t telemetry_on_change;
 } __attribute__((packed));
 
+struct caniot_class1_config
+{
+	/* Duration in seconds of the pulse for all outputs. */
+	uint32_t pulse_durations[20u]; /* Last memory space is not used */
+
+	/* Directions */
+	uint32_t directions; /* 0 = input, 1 = output */
+
+	/* Output default values for OC1, OC2, RL1, RL2 respectively. */
+	uint32_t outputs_default;
+
+	/* The mask gpio to be used for notifications. */
+	uint32_t telemetry_on_change;
+} __attribute__((packed));
+
 struct caniot_config
 {
 	struct {
@@ -82,6 +97,7 @@ struct caniot_config
 	} location;
 
 	struct caniot_class0_config cls0_gpio;
+	struct caniot_class1_config cls1_gpio;
 	
 } __attribute__((packed));
 

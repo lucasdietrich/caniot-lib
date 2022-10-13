@@ -150,28 +150,35 @@ struct caniot_blc1_telemetry
 	uint32_t ext_temperature3 : 10;
 } __attribute__((packed));
 
+/* TODO remove bitfields*/
 struct caniot_blc1_command
 {
-	uint64_t cpb0 : 3u;
-	uint64_t cpc0 : 3u;
-	uint64_t cpc1 : 3u;
-	uint64_t cpc2 : 3u;
-	uint64_t cpc3 : 3u;
-	uint64_t cpd0 : 3u;
-	uint64_t cpd1 : 3u;
-	uint64_t cpd2 : 3u;
-	uint64_t cpd3 : 3u;
-	uint64_t ceio0 : 3u;
-	uint64_t ceio1 : 3u;
-	uint64_t ceio2 : 3u;
-	uint64_t ceio3 : 3u;
-	uint64_t ceio4 : 3u;
-	uint64_t ceio5 : 3u;
-	uint64_t ceio6 : 3u;
-	uint64_t ceio7 : 3u;
-	uint64_t cpe0 : 3u;
-
-	uint64_t cpe1 : 2u;
+	union {
+#if __AVR__
+		struct {
+			uint64_t cpb0 : 3u;
+			uint64_t cpc0 : 3u;
+			uint64_t cpc1 : 3u;
+			uint64_t cpc2 : 3u;
+			uint64_t cpc3 : 3u;
+			uint64_t cpd0 : 3u;
+			uint64_t cpd1 : 3u;
+			uint64_t cpd2 : 3u;
+			uint64_t cpd3 : 3u;
+			uint64_t ceio0 : 3u;
+			uint64_t ceio1 : 3u;
+			uint64_t ceio2 : 3u;
+			uint64_t ceio3 : 3u;
+			uint64_t ceio4 : 3u;
+			uint64_t ceio5 : 3u;
+			uint64_t ceio6 : 3u;
+			uint64_t ceio7 : 3u;
+			uint64_t cpe0 : 3u;
+			uint64_t cpe1 : 2u;
+		};
+#endif /* __AVR__ */
+		uint8_t data[7u];
+	};
 };
 
 struct caniot_blc_telemetry

@@ -5,6 +5,8 @@
 #include <caniot/device.h>
 #include <caniot/datatype.h>
 
+#define CANIOT_CLASS1_IO_COUNT 19u
+
 #define PC0_IDX 0u
 #define PC1_IDX 1u
 #define PC2_IDX 2u

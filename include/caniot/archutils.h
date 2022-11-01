@@ -26,7 +26,7 @@
 #	define Z_ASSERT(x)
 #elif defined(__ZEPHYR__)
 #	include <stdio.h>
-#	include <zephyr.h>
+#	include <zephyr/kernel.h>
 // #	define snprintf snprintf
 #	define strlen_P strlen
 #	define strncpy_P strncpy

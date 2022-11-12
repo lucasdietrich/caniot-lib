@@ -30,7 +30,7 @@ struct caniot_system
 		uint32_t write_attribute;
 		uint32_t command;
 		uint32_t request_telemetry;
-		uint32_t _unused2;
+		uint32_t ignored; /* Ignore because, not msg not addressed to the device*/
 		uint32_t _unused3;
 	} received;
 	struct {

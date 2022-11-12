@@ -39,4 +39,11 @@ config CANIOT_CTRL_DRIVERS_API
         default n
 	help
 	        Enable Drivers API for controller
+
+config CANIOT_DEBUG
+	bool "Enable debug"
+	default n
+	help
+	        Enable debug
+		
 endif

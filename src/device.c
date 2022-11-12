@@ -106,7 +106,7 @@ static const struct attribute system_attr[] ROM = {
 	ATTRIBUTE(struct caniot_system, READABLE, "received.write_attribute", received.write_attribute),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.command", received.command),
 	ATTRIBUTE(struct caniot_system, READABLE, "received.request_telemetry", received.request_telemetry),
-	ATTRIBUTE(struct caniot_system, DISABLED, "", received._unused2),
+	ATTRIBUTE(struct caniot_system, DISABLED, "received.ignored", received.ignored),
 	ATTRIBUTE(struct caniot_system, DISABLED, "", received._unused3),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.total", sent.total),
 	ATTRIBUTE(struct caniot_system, READABLE, "sent.telemetry", sent.telemetry),
@@ -964,6 +964,13 @@ int caniot_device_process(struct caniot_device *dev)
 
 	/* if we received a frame */
 	if (ret == 0) {
+#if CANIOT_DEBUG
+		if (!caniot_device_is_target(caniot_device_get_id(dev), &req)) {
+			dev->system.received.ignored++;
+			CANIOT_ERR(F("Unexpected frame id received: %u\n"));
+		}
+#endif
+
 		/* handle received frame */
 		ret = caniot_device_handle_rx_frame(dev, &req, &resp);
 

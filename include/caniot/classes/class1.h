@@ -13,10 +13,10 @@
 #define PC1_IDX 1u
 #define PC2_IDX 2u
 #define PC3_IDX 3u
-#define PD0_IDX 4u
-#define PD1_IDX 5u
-#define PD2_IDX 6u
-#define PD3_IDX 7u
+#define PD4_IDX 4u
+#define PD5_IDX 5u
+#define PD6_IDX 6u
+#define PD7_IDX 7u
 
 #define EIO0_IDX 8u
 #define EIO1_IDX 9u

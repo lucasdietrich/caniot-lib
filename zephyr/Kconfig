@@ -45,5 +45,11 @@ config CANIOT_DEBUG
 	default n
 	help
 	        Enable debug
+
+config CHECKS_ENABLED
+	bool "Enable checks"
+	default y
+	help
+	        Enable checks
 		
 endif

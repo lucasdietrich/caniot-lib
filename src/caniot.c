@@ -632,6 +632,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 			    uint8_t n,
 			    caniot_complex_digital_cmd_t xps)
 {
+#if CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
 		return -EINVAL;
 	}
@@ -639,6 +640,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 	if (n >= CANIOT_CLASS1_IO_COUNT) {
 		return -EINVAL;
 	}
+#endif
 
 	const uint8_t msb_index = n * 3u;
 	const uint8_t msb_offset = msb_index & 0x7u;
@@ -656,11 +658,42 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 
 int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
 {
+#if CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
 		return -EINVAL;
 	}
+#endif
 	
 	memset(cmd, 0, sizeof(struct caniot_blc1_command));
 
 	return 0;
+}
+
+caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(
+	struct caniot_blc1_command *cmd,
+	uint8_t n)
+{
+#if CANIOT_CHECKS_ENABLED
+	if (cmd == NULL) {
+		return -EINVAL;
+	}
+
+	if (n >= CANIOT_CLASS1_IO_COUNT) {
+		return -EINVAL;
+	}
+#endif
+	caniot_complex_digital_cmd_t xps = CANIOT_XPS_NONE;
+
+	const uint8_t msb_index = n * 3u;
+	const uint8_t msb_offset = msb_index & 0x7u;
+	const uint8_t msb_rem_size = 8u - msb_offset;
+
+	xps = (cmd->data[msb_index >> 3u] >> msb_offset) & 0x7u;
+
+	if (msb_rem_size < 3u) {
+		const uint8_t lsb_shift = 3u - msb_rem_size;
+		xps |= (cmd->data[(msb_index >> 3u) + 1u] << lsb_shift) & 0x7u;
+	}
+
+	return xps;
 }

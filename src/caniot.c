@@ -1,5 +1,9 @@
 #include <caniot/caniot.h>
 #include <caniot/archutils.h>
+#include <caniot/datatype.h>
+
+#include <caniot/classes/class0.h>
+#include <caniot/classes/class1.h>
 
 static const char cls_str[][3U] ROM = {
 	"C0",
@@ -617,4 +621,46 @@ caniot_error_t caniot_interpret_error(int err, bool *forwarded)
 	}
 
 	return (caniot_error_t)(err);
+}
+
+int caniot_cmd_blc1_init(struct caniot_blc1_command *cmd)
+{
+	return caniot_cmd_blc1_clear(cmd);
+}
+
+int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
+			    uint8_t n,
+			    caniot_complex_digital_cmd_t xps)
+{
+	if (cmd == NULL) {
+		return -EINVAL;
+	}
+
+	if (n >= CANIOT_CLASS1_IO_COUNT) {
+		return -EINVAL;
+	}
+
+	const uint8_t msb_index = n * 3u;
+	const uint8_t msb_offset = msb_index & 0x7u;
+	const uint8_t msb_rem_size = 8u - msb_offset;
+
+	cmd->data[msb_index >> 3u] |= ((xps & 0x7u) << msb_offset) & 0xffu;
+
+	if (msb_rem_size < 3u) {
+		const uint8_t lsb_shift = 3u - msb_rem_size;
+		cmd->data[(msb_index >> 3u) + 1u] |= ((xps & 0x7u) >> lsb_shift);
+	}
+
+	return 0;
+}
+
+int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
+{
+	if (cmd == NULL) {
+		return -EINVAL;
+	}
+	
+	memset(cmd, 0, sizeof(struct caniot_blc1_command));
+
+	return 0;
 }

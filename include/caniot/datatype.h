@@ -3,8 +3,6 @@
 
 #include "caniot.h"
 
-#include "classes/class0.h"
-#include "classes/class1.h"
 
 #include <stdint.h>
 

@@ -134,7 +134,7 @@ static const struct attribute config_attr[] ROM = {
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.pulse_duration.rl1",
 		cls0_gpio.pulse_durations[2u]),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.pulse_duration.rl2",
-		cls0_gpio.pulse_durations[2u]),
+		cls0_gpio.pulse_durations[3u]),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.outputs_default",
 		cls0_gpio.outputs_default),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "cls0_gpio.mask.telemetry_on_change",

@@ -65,7 +65,7 @@ struct caniot_class1_config
 	/* Directions */
 	uint32_t directions; /* 0 = input, 1 = output */
 
-	/* Output default values for OC1, OC2, RL1, RL2 respectively. */
+	/* Output default values for outputs */
 	uint32_t outputs_default;
 
 	/* The mask gpio to be used for notifications. */

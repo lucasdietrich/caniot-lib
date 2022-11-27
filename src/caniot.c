@@ -634,11 +634,11 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 {
 #if CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
-		return -EINVAL;
+		return -CANIOT_EINVAL;
 	}
 
 	if (n >= CANIOT_CLASS1_IO_COUNT) {
-		return -EINVAL;
+		return -CANIOT_EINVAL;
 	}
 #endif
 
@@ -659,7 +659,7 @@ int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
 {
 #if CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
-		return -EINVAL;
+		return -CANIOT_EINVAL;
 	}
 #endif
 	

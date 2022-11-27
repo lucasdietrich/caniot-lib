@@ -645,11 +645,12 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 	const uint8_t msb_index = n * 3u;
 	const uint8_t msb_offset = msb_index & 0x7u;
 	const uint8_t msb_rem_size = 8u - msb_offset;
+	const uint8_t byte_n = msb_index >> 3u;
 
-	cmd->data[msb_index >> 3u] |= ((xps & 0x7u) << msb_offset) & 0xffu;
+	cmd->data[byte_n] |= ((xps & 0x7u) << msb_offset) & 0xffu;
 
-	if (msb_rem_size < 3u) {
-		cmd->data[(msb_index >> 3u) + 1u] |= ((xps & 0x7u) >> msb_rem_size);
+	if ((msb_rem_size < 3u) && ((byte_n + 1u) <= 6u)) {
+		cmd->data[byte_n + 1u] |= ((xps & 0x7u) >> msb_rem_size);
 	}
 
 	return 0;
@@ -686,11 +687,12 @@ caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(
 	const uint8_t msb_index = n * 3u;
 	const uint8_t msb_offset = msb_index & 0x7u;
 	const uint8_t msb_rem_size = 8u - msb_offset;
+	const uint8_t byte_n = msb_index >> 3u;
 
-	xps = (cmd->data[msb_index >> 3u] >> msb_offset) & 0x7u;
+	xps = (cmd->data[byte_n] >> msb_offset) & 0x7u;
 
-	if (msb_rem_size < 3u) {
-		xps |= (cmd->data[(msb_index >> 3u) + 1u] << msb_rem_size) & 0x7u;
+	if ((msb_rem_size < 3u) && ((byte_n + 1u) <= 6u)) {
+		xps |= (cmd->data[byte_n + 1u] << msb_rem_size) & 0x7u;
 	}
 
 	return xps;

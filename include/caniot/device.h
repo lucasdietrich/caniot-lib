@@ -200,6 +200,7 @@ static inline uint16_t _si_caniot_device_get_filter(caniot_did_t did)
  */
 static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
 {
+	(void) did;
 	return CANIOT_ID(0U, CANIOT_QUERY, CANIOT_DID_CLS(CANIOT_DID_BROADCAST), 
 			 CANIOT_DID_SID(CANIOT_DID_BROADCAST), 0U);
 }

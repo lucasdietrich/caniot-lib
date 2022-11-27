@@ -649,8 +649,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 	cmd->data[msb_index >> 3u] |= ((xps & 0x7u) << msb_offset) & 0xffu;
 
 	if (msb_rem_size < 3u) {
-		const uint8_t lsb_shift = 3u - msb_rem_size;
-		cmd->data[(msb_index >> 3u) + 1u] |= ((xps & 0x7u) >> lsb_shift);
+		cmd->data[(msb_index >> 3u) + 1u] |= ((xps & 0x7u) >> msb_rem_size);
 	}
 
 	return 0;
@@ -691,8 +690,7 @@ caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(
 	xps = (cmd->data[msb_index >> 3u] >> msb_offset) & 0x7u;
 
 	if (msb_rem_size < 3u) {
-		const uint8_t lsb_shift = 3u - msb_rem_size;
-		xps |= (cmd->data[(msb_index >> 3u) + 1u] << lsb_shift) & 0x7u;
+		xps |= (cmd->data[(msb_index >> 3u) + 1u] << msb_rem_size) & 0x7u;
 	}
 
 	return xps;

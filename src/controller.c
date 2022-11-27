@@ -83,7 +83,7 @@ static void pendq_queue(struct caniot_controller *ctrl,
 
 	_pendq_queue(&ctrl->pendingq.timeout_queue, &pq->tie);
 
-	__DBG("pendq_queue(%p, %u)\n", pq, timeout);
+	__DBG("pendq_queue(%p, %u)\n", (void *)pq, timeout);
 }
 
 static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
@@ -122,7 +122,7 @@ static struct pendq *pendq_pop_expired(struct pqt **root)
 		pq = CONTAINER_OF(item, struct pendq, tie);
 	}
 
-	__DBG("pendq_pop_expired() -> %p\n", pq);
+	__DBG("pendq_pop_expired() -> %p\n", (void *)pq);
 	
 	return pq;
 }
@@ -136,7 +136,7 @@ static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
 		if (p_current == &pq->tie) {
-			__DBG("pendq_remove(%p) -> removed\n", pq);
+			__DBG("pendq_remove(%p) -> removed\n", (void *)pq);
 
 			*prev_next_p = p_current->next;
 			if (p_current->next != NULL) {
@@ -149,7 +149,7 @@ static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 		prev_next_p = &(p_current->next);
 	}
 
-	__DBG("pendq_remove(%p) -> not found\n", pq);
+	__DBG("pendq_remove(%p) -> not found\n", (void *)pq);
 }
 
 static void pendq_init_queue(struct caniot_controller *ctrl)
@@ -174,7 +174,7 @@ static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
 
 	struct pendq *p = ctrl->pendingq.free_list;
 	if (p != NULL) {
-		__DBG("pendq_alloc() -> %p\n", p);
+		__DBG("pendq_alloc() -> %p\n", (void *)p);
 
 		ctrl->pendingq.free_list = p->next;
 	} else {
@@ -188,7 +188,7 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 	ASSERT(ctrl != NULL);
 
 	if (p != NULL) {
-		__DBG("pendq_free(%p)\n", p);
+		__DBG("pendq_free(%p)\n", (void *)p);
 
 		p->next = ctrl->pendingq.free_list;
 		p->handle = INVALID_HANDLE;
@@ -214,7 +214,7 @@ static struct pendq *pendq_get_by_did(struct caniot_controller *ctrl,
 		}
 	}
 
-	__DBG("pendq_get_by_did(%u) -> %p\n", did, retpq);
+	__DBG("pendq_get_by_did(%u) -> %p\n", did, (void *)retpq);
 
 	return retpq;
 }
@@ -234,7 +234,7 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl,
 		}
 	}
 
-	__DBG("pendq_get_by_handle(%u) -> %p\n", handle, pq);
+	__DBG("pendq_get_by_handle(%u) -> %p\n", handle, (void *)pq);
 
 	return pq;
 }
@@ -264,7 +264,7 @@ static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
 		pq = pendq_get_by_did(ctrl, did);
 	}
 
-	__DBG("peek_pending_query(%u) -> %p\n", did, pq);
+	__DBG("peek_pending_query(%u) -> %p\n", did, (void *)pq);
 
 	return pq;
 }
@@ -349,8 +349,8 @@ static bool user_event(struct caniot_controller *ctrl,
 	ASSERT(ctrl->event_cb != NULL);
 
 	__DBG("user_event(%p) -> x=%u s=%u t=%u did=%u h=%u resp=%p\n", 
-	      ev, ev->context, ev->status, ev->terminated, 
-	      ev->did, ev->handle, ev->response);
+	      (void *)ev, ev->context, ev->status, ev->terminated, 
+	      ev->did, ev->handle, (void *)ev->response);
 
 	return ctrl->event_cb(ev, ctrl->user_data);
 }
@@ -558,7 +558,7 @@ static int query(struct caniot_controller *ctrl,
 
 exit:
 	__DBG("query(%u, %p, %u, %u) -> %d\n",
-	      did, frame, timeout, (uint32_t) driv_send, ret);
+	      did, (void *)frame, timeout, (uint32_t) driv_send, ret);
 
 	return ret;
 }
@@ -571,7 +571,7 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 	int ret = query(ctrl, did, frame, timeout, false);
 
 	__DBG("caniot_controller_query_register(%u, %p, %u) -> %d\n",
-	      did, frame, timeout, ret);
+	      did, (void *)frame, timeout, ret);
 
 	return ret;
 }
@@ -666,7 +666,7 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 	pendq_call_expired(ctrl);
 
 	__DBG("caniot_controller_process_single(%u, %p) -> 0\n", 
-	      time_passed, frame);
+	      time_passed, (void *)frame);
 
 	return 0U;
 }
@@ -696,7 +696,7 @@ int caniot_controller_query(struct caniot_controller *ctrl,
 	int ret = query(ctrl, did, frame, timeout, true);
 
 	__DBG("caniot_controller_query(%u, %p, %u) -> %d\n",
-	      did, frame, timeout, ret);
+	      did, (void *)frame, timeout, ret);
 
 	return ret;
 }

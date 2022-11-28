@@ -210,6 +210,11 @@ struct caniot_heating_control
 	uint8_t shutters_openness[4u];
 };
 
+struct caniot_shutters_control
+{
+	uint8_t shutters_openness[4u];
+};
+
 void caniot_blc0_command_init(struct caniot_blc0_command *cmd);
 
 #define CANIOT_INTERPRET(buf, s) \

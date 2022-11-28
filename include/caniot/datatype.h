@@ -215,7 +215,12 @@ struct caniot_shutters_control
 	uint8_t shutters_openness[4u];
 };
 
+void caniot_blc_command_init(struct caniot_blc_command *cmd);
 void caniot_blc0_command_init(struct caniot_blc0_command *cmd);
+void caniot_blc1_command_init(struct caniot_blc1_command *cmd);
+
+void caniot_blc_sys_req_reboot(struct caniot_blc_sys_command *sysc);
+void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc);
 
 #define CANIOT_INTERPRET(buf, s) \
 	((struct s *)buf)

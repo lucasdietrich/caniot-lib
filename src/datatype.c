@@ -60,9 +60,37 @@ int16_t caniot_dt_T10_to_T16(uint16_t T)
 	return ((int16_t)T * 10) - 2800;
 }
 
+void caniot_blc_command_init(struct caniot_blc_command *cmd)
+{
+	ASSERT(cmd != NULL);
+
+	memset(cmd, 0, sizeof(*cmd));
+}
+
 void caniot_blc0_command_init(struct caniot_blc0_command *cmd)
 {
 	ASSERT(cmd != NULL);
 
 	memset(cmd, 0x00U, sizeof(struct caniot_blc0_command));
+}
+
+void caniot_blc1_command_init(struct caniot_blc1_command *cmd)
+{
+	ASSERT(cmd != NULL);
+
+	memset(cmd, 0x00U, sizeof(struct caniot_blc1_command));
+}
+
+void caniot_blc_sys_req_reboot(struct caniot_blc_sys_command *sysc)
+{
+	ASSERT(cmd != NULL);
+
+	sysc->reset = 1u;
+}
+
+void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc)
+{
+	ASSERT(cmd != NULL);
+
+	sysc->config_reset = 1u;
 }

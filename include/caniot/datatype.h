@@ -206,8 +206,6 @@ struct caniot_heating_control
 	caniot_heating_status_t heater2_cmd: 4u;
 	caniot_heating_status_t heater3_cmd: 4u;
 	caniot_heating_status_t heater4_cmd: 4u;
-
-	uint8_t shutters_openness[4u];
 };
 
 struct caniot_shutters_control

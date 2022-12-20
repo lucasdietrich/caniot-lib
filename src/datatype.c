@@ -83,14 +83,14 @@ void caniot_blc1_command_init(struct caniot_blc1_command *cmd)
 
 void caniot_blc_sys_req_reboot(struct caniot_blc_sys_command *sysc)
 {
-	ASSERT(cmd != NULL);
+	ASSERT(sysc != NULL);
 
 	sysc->reset = 1u;
 }
 
 void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc)
 {
-	ASSERT(cmd != NULL);
+	ASSERT(sysc != NULL);
 
 	sysc->config_reset = 1u;
 }

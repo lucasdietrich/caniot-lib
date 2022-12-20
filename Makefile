@@ -1,10 +1,10 @@
 .SILENT:
 
-.PHONY: all no_test programs lib tests install uninstall clean test check covtest lcov apidoc apidoc_clean
+.PHONY: build
 
-all: build-all run
+all: build-all
 
-./build:
+build:
 	mkdir -p build
 	cmake -B build
 

@@ -13,7 +13,7 @@ static bool is_query_pending_for(struct caniot_controller *ctrl,
 {
 	ASSERT(ctrl != NULL);
 
-	const bool result = ctrl->pendingq.pending_devices_bf & (1LLU << did);
+	const bool result = ctrl->pendingq.pending_devices_bf & (1llu << did);
 
 	__DBG("is_query_pending_for(%u) -> %u\n", did, (uint32_t)result);
 
@@ -29,9 +29,9 @@ static void mark_query_pending_for(struct caniot_controller *ctrl,
 	__DBG("mark_query_pending_for(%u, %u)\n", did, status);
 
 	if (status == true) {
-		ctrl->pendingq.pending_devices_bf |= (1LLU << did);
+		ctrl->pendingq.pending_devices_bf |= (1llu << did);
 	} else {
-		ctrl->pendingq.pending_devices_bf &= ~(1LLU << did);
+		ctrl->pendingq.pending_devices_bf &= ~(1llu << did);
 	}
 }
 
@@ -127,7 +127,7 @@ static struct pendq *pendq_pop_expired(struct pqt **root)
 	return pq;
 }
 
-static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
+static void pendq_tqueue_remove(struct caniot_controller *ctrl, struct pendq *pq)
 {
 	ASSERT(ctrl != NULL);
 	ASSERT(pq != NULL);
@@ -136,7 +136,7 @@ static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
 		if (p_current == &pq->tie) {
-			__DBG("pendq_remove(%p) -> removed\n", (void *)pq);
+			__DBG("pendq_tqueue_remove(%p) -> removed\n", (void *)pq);
 
 			*prev_next_p = p_current->next;
 			if (p_current->next != NULL) {
@@ -149,23 +149,7 @@ static void pendq_remove(struct caniot_controller *ctrl, struct pendq *pq)
 		prev_next_p = &(p_current->next);
 	}
 
-	__DBG("pendq_remove(%p) -> not found\n", (void *)pq);
-}
-
-static void pendq_init_queue(struct caniot_controller *ctrl)
-{
-	ASSERT(ctrl != NULL);
-
-	/* init free list */
-	for (struct pendq *cur = ctrl->pendingq.pool;
-	     cur < ctrl->pendingq.pool + (CANIOT_MAX_PENDING_QUERIES - 1U); cur++) {
-		cur->next = cur + 1;
-		cur->handle = INVALID_HANDLE;
-	}
-	ctrl->pendingq.pool[CANIOT_MAX_PENDING_QUERIES - 1U].next = NULL;
-
-	ctrl->pendingq.free_list = ctrl->pendingq.pool;
-	ctrl->pendingq.timeout_queue = NULL;
+	__DBG("pendq_tqueue_remove(%p) -> not found\n", (void *)pq);
 }
 
 static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
@@ -196,6 +180,21 @@ static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
 	} else {
 		__DBG("pendq_free(NULL)\n");
 	}
+}
+
+static void pendq_init_queue(struct caniot_controller *ctrl)
+{
+	ASSERT(ctrl != NULL);
+
+	/* init free list */
+	ctrl->pendingq.free_list = NULL;
+	struct pendq *cur = ctrl->pendingq.pool;
+	while (cur < ctrl->pendingq.pool + CANIOT_MAX_PENDING_QUERIES) {
+		pendq_free(ctrl, cur++);
+	}
+
+	/* init timeout queue */
+	ctrl->pendingq.timeout_queue = NULL;
 }
 
 static struct pendq *pendq_get_by_did(struct caniot_controller *ctrl,
@@ -262,11 +261,30 @@ static struct pendq *peek_pending_query(struct caniot_controller *ctrl,
 	struct pendq *pq = NULL;
 	if (is_query_pending_for(ctrl, did)) {
 		pq = pendq_get_by_did(ctrl, did);
+	} else if (is_query_pending_for(ctrl, CANIOT_DID_BROADCAST)) {
+		pq = pendq_get_by_did(ctrl, CANIOT_DID_BROADCAST);
 	}
 
 	__DBG("peek_pending_query(%u) -> %p\n", did, (void *)pq);
 
 	return pq;
+}
+
+/**
+ * @brief Remove a pending query from the list of tracked queries.
+ * 
+ * @param ctrl Controller instance
+ * @param pq Pending query to remove
+ */
+static void pendq_remove(struct caniot_controller *ctrl,
+			 struct pendq *pq)
+{
+	ASSERT(ctrl != NULL);
+	ASSERT(pq != NULL);
+
+	mark_query_pending_for(ctrl, pq->did, false);
+	pendq_tqueue_remove(ctrl, pq);
+	pendq_free(ctrl, pq);
 }
 
 // Initialize ctrl structure
@@ -348,9 +366,9 @@ static bool user_event(struct caniot_controller *ctrl,
 	ASSERT(ev != NULL);
 	ASSERT(ctrl->event_cb != NULL);
 
-	__DBG("user_event(%p) -> x=%u s=%u t=%u did=%u h=%u resp=%p\n", 
-	      (void *)ev, ev->context, ev->status, ev->terminated, 
-	      ev->did, ev->handle, (void *)ev->response);
+	__DBG("user_event(%p) -> did=%u handle=%u ctx=%u status=%u term=%u resp=%p\n",
+	      (void *)ev, ev->did, ev->handle, ev->context, ev->status,
+	      ev->terminated, (void *)ev->response);
 
 	return ctrl->event_cb(ev, ctrl->user_data);
 }
@@ -387,7 +405,10 @@ static void resp_query_event(struct caniot_controller *ctrl,
 {
 	ASSERT(pq != NULL);
 
-	const bool terminated = caniot_is_broadcast(pq->did) == false;
+	/* If response match pending query, mark it as "terminated" and release
+	 * the pq context
+	 */
+	const bool release_pq = caniot_is_broadcast(pq->did) == false;
 
 	const caniot_controller_event_t ev = {
 		.controller = ctrl,
@@ -398,24 +419,25 @@ static void resp_query_event(struct caniot_controller *ctrl,
 
 		.did = CANIOT_DID(response->id.cls, response->id.sid),
 
-		.terminated = terminated,
+		.terminated = release_pq,
 		.handle = pq->handle,
 
 		.response = response,
 		.user_data = pq->user_data,
 	};
 
-	if (terminated) {
-		mark_query_pending_for(ctrl, pq->did, false);
+	/* Release context before callback call in case the use wants to perform
+	 * operations on a pq which will no longer live
+	 */
+	if (release_pq)
 		pendq_remove(ctrl, pq);
-		pendq_free(ctrl, pq);
-	}	
 
-	if ((user_event(ctrl, &ev) == false) && 
-	    (terminated == false)) { /* only unregister if not previously terminated */
-		mark_query_pending_for(ctrl, pq->did, false);
+	const bool terminate_pq = user_event(ctrl, &ev) != true;
+
+	/* If user decided to terminate current pq, and it was not already
+	 * released */
+	if (terminate_pq && !release_pq) {
 		pendq_remove(ctrl, pq);
-		pendq_free(ctrl, pq);
 	}
 }
 
@@ -438,9 +460,7 @@ static void cancelled_query_event(struct caniot_controller *ctrl,
 		.user_data = pq->user_data
 	};
 
-	mark_query_pending_for(ctrl, pq->did, false);
 	pendq_remove(ctrl, pq);
-	pendq_free(ctrl, pq);
 
 	user_event(ctrl, &ev);
 }

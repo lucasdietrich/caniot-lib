@@ -89,21 +89,24 @@ int main(void)
 	caniot_clear_frame(&frame);
 
 	// ctrl_Q(0U, CANIOT_DID(CANIOT_CLASS_BROADCAST, CANIOT_SUBID_BROADCAST), &qtelemetry, 1000U);
-	ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), &qwrite_attr, 1000U);
-
-	can_send(&fake_telem_resp, 0U);
+	ctrl_Q(0U, CANIOT_DID_BROADCAST, &qtelemetry, 400u);
+	
+	// can_send(&fake_telem_resp, 0U);
 
 	// ctrl_C(0U, handle, false);
 	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID3), &qtelemetry, 650U);
 	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID4), &qwrite_attr, 550U);
 
+	uint64_t last_time = 0u;
+
 	while (1) {
-		/* queue delayed frames */
+		/* Get current time */
 		uint32_t sec;
 		uint16_t ms;
 		vtime_get(&sec, &ms);
 		const uint64_t now = (uint64_t)sec * 1000U + ms;
 
+		/* Send schedulded frames */
 		for (struct timed_frame *tf = timed_frames;
 		     tf < timed_frames + ARRAY_SIZE(timed_frames); tf++) {
 			
@@ -112,6 +115,14 @@ int main(void)
 			}
 		}
 
+		/* Compute time delta */
+		if (last_time == 0u) {
+			last_time = now;
+		}
+		const uint64_t delta = now - last_time;
+		last_time = now;
+
+		/* Process a single frame */
 		ret = can_recv(&frame);
 		if (ret == 0U) {
 			// caniot_show_frame(&frame);
@@ -119,13 +130,12 @@ int main(void)
 			printf("\n");
 
 			if (caniot_controller_is_target(&frame)) {
-				controllers_process(&frame);
+				controllers_process(&frame, delta);
 			} else {
 				devices_process(&frame);
 			}
 		} else if (ret == -CANIOT_EAGAIN) {
-			controllers_process(NULL);
-			vtime_inc(1000U);
+			controllers_process(NULL, delta);
 			sleep(1);
 		} else {
 			printf("Error on can_recv\n");

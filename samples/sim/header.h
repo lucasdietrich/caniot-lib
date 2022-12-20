@@ -11,7 +11,7 @@
 void init_controllers(void);
 void init_devices(void);
 
-void controllers_process(const struct caniot_frame *frame);
+void controllers_process(const struct caniot_frame *frame, uint32_t time_passed);
 void devices_process(const struct caniot_frame *frame);
 
 int ctrl_Q(uint32_t ctrlid,

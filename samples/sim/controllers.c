@@ -28,7 +28,7 @@ extern caniot_frame_t qtelemetry;
 bool ctrl_event_cb(const caniot_controller_event_t *ev,
 		   void *user_data)
 {
-	printf("[CTRL EV] did=%u, handle=%u ctx=%u status=%u term=%u resp=%p\n",
+	printf("[CTRL EV] did=%u handle=%u ctx=%u status=%u term=%u resp=%p\n",
 	       ev->did, ev->handle, ev->context, ev->status, ev->terminated,
 	       ev->response);
 
@@ -62,12 +62,12 @@ void init_controllers(void)
 	}
 }
 
-void controllers_process(const struct caniot_frame *frame)
+void controllers_process(const struct caniot_frame *frame, uint32_t time_passed)
 {
 	struct caniot_controller *ctrl;
 
 	for (ctrl = controllers; ctrl < controllers + ARRAY_SIZE(controllers); ctrl++) {
-		caniot_controller_process_single(ctrl, 100U, frame);
+		caniot_controller_process_single(ctrl, time_passed, frame);
 	}
 }
 

@@ -54,8 +54,8 @@ struct caniot_pendq
 struct caniot_controller;
 
 typedef enum {
-	CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN = 0U, 	/* pq not set */
-	CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY, 		/* pq is set */
+	CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN = 0U, 	 /* pq not set */
+	CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY, 		 /* pq is set */
 } caniot_controller_event_context_t;
 
 typedef enum {

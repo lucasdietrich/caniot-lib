@@ -17,5 +17,6 @@
         "header.h": "c",
         "cstdlib": "c",
         "phys.h": "c"
-    }
+    },
+    "editor.rulers": [80]
 }

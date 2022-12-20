@@ -65,8 +65,8 @@ static int (cb_telemetry_handler)(struct caniot_device *dev,
 {
 	*len = 0U;
 
-	printf("[DEV CB] cb_telemetry_handler dev=%p ep=%hhu buf=%p [*len = %p]\n",
-	       dev, ep, buf, len);
+	printf("[DEV CB] cb_telemetry_handler dev=%p ep=%hhu buf=%p [&len=%p len=%hhu]\n",
+	       dev, ep, buf, len, *len);
 
 	vtime_inc_const();
 

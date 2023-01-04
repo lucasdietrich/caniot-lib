@@ -28,6 +28,14 @@ target_include_directories(caniotlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 
 ####################################################################
 
+set(CONFIG_CANIOT_SAMPLES OFF CACHE BOOL "Enable CANIOT samples")
+set(CONFIG_CANIOT_TESTS OFF CACHE BOOL "Enable CANIOT tests")
+
 # foreach directory in "samples" include CMakeLists.txt
-add_subdirectory(samples/sim)
-add_subdirectory(tests)
+if (CONFIG_CANIOT_SAMPLES)
+    add_subdirectory(samples)
+endif()
+
+if (CONFIG_CANIOT_TESTS)
+    add_subdirectory(tests)
+endif()

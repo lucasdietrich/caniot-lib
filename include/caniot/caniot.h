@@ -296,8 +296,6 @@ bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt);
 
 bool caniot_endpoint_valid(caniot_endpoint_t endpoint);
 
-bool caniot_attr_key_valid(uint16_t key);
-
 typedef enum {
 	CANIOT_IS_RESPONSE = 0,
 	CANIOT_IS_ERROR,

@@ -394,7 +394,9 @@ bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 
 bool caniot_is_error(int cterr)
 {
-	return ((-cterr >= CANIOT_ERROR_BASE) && (-cterr <= CANIOT_ERROR_MAX));
+	return (cterr < 0) &&
+		((uint32_t)cterr < CANIOT_ERROR_MAX) &&
+		((uint32_t)cterr > CANIOT_ERROR_BASE);
 }
 
 bool caniot_device_is_target(caniot_did_t did,
@@ -461,11 +463,6 @@ bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt)
 bool caniot_endpoint_valid(caniot_endpoint_t endpoint)
 {
 	return (endpoint <= CANIOT_ENDPOINT_BOARD_CONTROL);
-}
-
-bool caniot_attr_key_valid(uint16_t key)
-{
-	return (key <= 0xFFFFLU);
 }
 
 uint16_t caniot_id_to_canid(caniot_id_t id)
@@ -607,7 +604,7 @@ caniot_error_t caniot_interpret_error(int err, bool *forwarded)
 {
 	bool zforwarded = false;
 
-	if ((-err >= CANIOT_ERROR_BASE) && (-err <= CANIOT_ERROR_MAX)) {
+	if (caniot_is_error(err)) {
 		err = -err - CANIOT_ERROR_BASE;
 
 		if ((err & CANIOT_ERROR_DEVICE_MASK) != 0) {

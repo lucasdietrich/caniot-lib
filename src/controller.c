@@ -496,8 +496,7 @@ static void pendq_call_expired(struct caniot_controller *ctrl)
 
 static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 					     caniot_did_t did,
-					     caniot_frame_type_t query_type,
-					     uint32_t timeout)
+					     caniot_frame_type_t query_type)
 {
 	/* allocate */
 	struct pendq *pq = pendq_alloc(ctrl);
@@ -542,7 +541,7 @@ static int query(struct caniot_controller *ctrl,
 			goto exit;
 		}
 
-		pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type, timeout);
+		pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type);
 		if (pq == NULL) {
 			ret = -CANIOT_EPQALLOC;
 			goto exit;

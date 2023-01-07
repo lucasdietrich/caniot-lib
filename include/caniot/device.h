@@ -19,11 +19,11 @@ struct caniot_identification
 
 struct caniot_system
 {
-	uint32_t uptime_synced;
-	uint32_t time;
-	uint32_t uptime;
-	uint32_t start_time;
-	uint32_t last_telemetry;
+	uint32_t uptime_synced; /* s */
+	uint32_t time; /* s */
+	uint32_t uptime; /* s */
+	uint32_t start_time; /* s */
+	uint32_t last_telemetry; /* ms */
 	struct {
 		uint32_t total;
 		uint32_t read_attribute;
@@ -237,7 +237,7 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_CONFIG_DEFAULT_INIT() \
 { \
 	.telemetry = { \
-		.period = CANIOT_TELEMETRY_PERIOD_DEFAULT,  \
+		.period = CANIOT_TELEMETRY_PERIOD_DEFAULT_MS,  \
 		.delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT,  \
 		.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT,  \
 	},  \

@@ -118,10 +118,10 @@ static const struct attribute system_attr[] ROM = {
 };
 
 static const struct attribute config_attr[] ROM = {
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.period", telemetry.period),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay", telemetry.delay),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay_min", telemetry.delay_min),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay_max", telemetry.delay_max),
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.period", telemetry.period), /* ms */
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay", telemetry.delay), /* ms */
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay_min", telemetry.delay_min), /* ms */
+	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "telemetry.delay_max", telemetry.delay_max), /* ms */
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "flags", flags),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "timezone", timezone),
 	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "location", location),
@@ -443,8 +443,9 @@ static int config_written(struct caniot_device *dev)
 		/* we update the last telemetry time which could
 		 * have changed if the timezone changed
 		 */
-		uint32_t prev, new;
-		dev->driv->get_time(&prev, NULL);
+		uint32_t prev_sec, new_sec;
+		uint16_t prev_msec, new_msec;
+		dev->driv->get_time(&prev_sec, &prev_msec);
 #endif /* CANIOT_DRIVERS_API */
 
 		/* call application callback to apply the new configuration */
@@ -452,16 +453,16 @@ static int config_written(struct caniot_device *dev)
 
 #if CANIOT_DRIVERS_API
 		/* do adjustement if needed */
-		dev->driv->get_time(&new, NULL);
-		if (new != prev) {
-			const int32_t diff = new - prev;
+		dev->driv->get_time(&new_sec, &new_msec);
 
-			/* adjust last_telemetry time,
-			 * in order to not trigger it on time update
-			 */
-			dev->system.last_telemetry += diff;
-			dev->system.start_time += diff;
-		}
+		const int32_t diff_sec = new_sec - prev_sec;
+		const int32_t diff_msec = diff_sec * 1000u + new_msec - prev_msec;
+
+		/* adjust last_telemetry time,
+		 * in order to not trigger it on time update
+		 */
+		dev->system.last_telemetry += diff_msec;
+		dev->system.start_time += diff_sec;
 #endif /* CANIOT_DRIVERS_API */
 	}
 
@@ -636,16 +637,17 @@ static int write_system_attr(struct caniot_device *dev,
 	ASSERT(attr != NULL);
 
 #if CANIOT_DRIVERS_API
-	if (attr->key == 0x1010U) {
-		uint32_t prev;
-		dev->driv->get_time(&prev, NULL);
+	if (attr->key == 0x1010U) { /* time */
+		uint32_t prev_sec;
+		uint16_t prev_msec;
+		dev->driv->get_time(&prev_sec, &prev_msec);
 		dev->driv->set_time(attr->u32);
 
 		/* adjust last_telemetry time,
 		 * in order to not trigger it on time update
 		 */
-		dev->system.last_telemetry += attr->u32 - prev;
-		dev->system.start_time += attr->u32 - prev;
+		dev->system.last_telemetry += attr->u32 - prev_sec*1000u - prev_msec;
+		dev->system.start_time += attr->u32 - prev_sec;
 
 		/* sets the system time for the current loop,
 		 * the response to reading an attribute will
@@ -874,16 +876,20 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 	ASSERT(dev != NULL);
 
 	if (prepare_config_read(dev) == 0) {
-		uint32_t now;
-		dev->driv->get_time(&now, NULL);
+		uint32_t sec;
+		uint16_t msec;
+		dev->driv->get_time(&sec, &msec);
 
-		CANIOT_DBG(F("now = %u last_telemetry = %u\n"), now, dev->system.last_telemetry);
+		const uint32_t now = sec * 1000 + msec;
 
-		uint32_t diff = now - dev->system.last_telemetry;
+		CANIOT_DBG(F("now=%u ms last_telemetry = %u ms\n"),
+			   now, dev->system.last_telemetry);
+
+		const uint32_t diff = now - dev->system.last_telemetry;
 		if (dev->config->telemetry.period <= diff) {
 			return 0;
 		} else {
-			return (dev->config->telemetry.period - diff) * 1000;
+			return dev->config->telemetry.period - diff;
 		}
 	}
 
@@ -943,13 +949,15 @@ int caniot_device_process(struct caniot_device *dev)
 	struct caniot_frame req, resp;
 
 	/* get current time */
-	dev->driv->get_time(&dev->system.time, NULL);
+	uint16_t msec;
+	dev->driv->get_time(&dev->system.time, &msec);
 	dev->system.uptime = dev->system.time - dev->system.start_time;
 
 	/* check if we need to send telemetry (calculated in seconds) */
 	prepare_config_read(dev);
-	if (dev->system.time - dev->system.last_telemetry >=
-	    dev->config->telemetry.period) {
+	const uint32_t now = dev->system.time * 1000 + msec;
+	const uint32_t ellapsed_ms =now - dev->system.last_telemetry;
+	if (ellapsed_ms >= dev->config->telemetry.period) {
 		dev->flags.request_telemetry = 1;
 
 		CANIOT_DBG(F("Requesting telemetry\n"));
@@ -1002,7 +1010,7 @@ int caniot_device_process(struct caniot_device *dev)
 		dev->system.sent.total++;
 
 		if (is_telemetry_response(&resp) == true) {
-			dev->system.last_telemetry = dev->system.time;
+			dev->system.last_telemetry = now;
 			dev->flags.request_telemetry = 0;
 		}
 	}

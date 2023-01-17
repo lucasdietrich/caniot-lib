@@ -3,7 +3,6 @@
 
 #include "caniot.h"
 
-
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -12,14 +11,12 @@ extern "C" {
 
 /* Data types */
 
-typedef enum
-{
+typedef enum {
 	CANIOT_STATE_OFF = 0,
 	CANIOT_STATE_ON
 } caniot_state_t;
 
-typedef enum
-{
+typedef enum {
 	CANIOT_SS_CMD_RESET = 0,
 	CANIOT_SS_CMD_SET
 } caniot_onestate_cmd_t;
@@ -29,16 +26,14 @@ typedef enum
  *
  * Note: TS stands for "TwoState"
  */
-typedef enum
-{
+typedef enum {
 	CANIOT_TS_CMD_NONE = 0,
 	CANIOT_TS_CMD_ON,
 	CANIOT_TS_CMD_OFF,
 	CANIOT_TS_CMD_TOGGLE,
 } caniot_twostate_cmd_t;
 
-typedef enum
-{
+typedef enum {
 	CANIOT_LIGHT_CMD_NONE = 0,
 	CANIOT_LIGHT_CMD_ON,
 	CANIOT_LIGHT_CMD_OFF,
@@ -77,22 +72,21 @@ typedef enum {
 	CANIOT_HEATER_OFF
 } caniot_heating_status_t;
 
-#define CANIOT_SHUTTER_CMD_NONE 0xFFu
+#define CANIOT_SHUTTER_CMD_NONE	       0xFFu
 #define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
-#define CANIOT_SHUTTER_CMD_OPEN (100u)
-#define CANIOT_SHUTTER_CMD_CLOSE (0u)
+#define CANIOT_SHUTTER_CMD_OPEN	       (100u)
+#define CANIOT_SHUTTER_CMD_CLOSE       (0u)
 
 #define CANIOT_BLT_SIZE sizeof(struct caniot_blc0_telemetry)
 
-struct caniot_blc_sys_command
-{
+struct caniot_blc_sys_command {
 	/* in the case of the AVR, proper software reset should use the watchdog :
-	* https://www.avrfreaks.net/comment/178013#comment-178013
-	*/
+	 * https://www.avrfreaks.net/comment/178013#comment-178013
+	 */
 
 	/* Default reset function (Recommended). Can be linked to Watchdog reset if
-	* using the watchdog is recommanded for a proper MCU reset.
-	*/
+	 * using the watchdog is recommanded for a proper MCU reset.
+	 */
 	caniot_onestate_cmd_t reset : 1;
 
 	/* Software reset by calling reset vector */
@@ -110,10 +104,8 @@ struct caniot_blc_sys_command
 	uint8_t _unused10 : 2;
 } __attribute__((packed));
 
-
 /* is the same as board level telemetry (blt) */
-struct caniot_blc0_telemetry
-{
+struct caniot_blc0_telemetry {
 	uint8_t dio;
 	uint8_t pdio : 4;
 	uint8_t _unused : 4;
@@ -124,24 +116,22 @@ struct caniot_blc0_telemetry
 } __attribute__((packed));
 
 /* Board level control (blc) command */
-struct caniot_blc0_command
-{
+struct caniot_blc0_command {
 	uint16_t coc1 : 3u;
 	uint16_t coc2 : 3u;
 	uint16_t crl1 : 3u;
 	uint16_t crl2 : 3u;
 
-	uint8_t _unused: 4u;
+	uint8_t _unused : 4u;
 } __attribute__((packed));
 
-struct caniot_blc1_telemetry
-{
-	uint8_t pcpd; 
+struct caniot_blc1_telemetry {
+	uint8_t pcpd;
 	uint8_t eio;
-	uint8_t pb0: 1;
-	uint8_t pe0: 1;
-	uint8_t pe1: 1;
-	uint8_t _unused: 5u;
+	uint8_t pb0 : 1;
+	uint8_t pe0 : 1;
+	uint8_t pe1 : 1;
+	uint8_t _unused : 5u;
 	uint32_t int_temperature : 10;
 	uint32_t ext_temperature : 10;
 	uint32_t ext_temperature2 : 10;
@@ -149,8 +139,7 @@ struct caniot_blc1_telemetry
 } __attribute__((packed));
 
 /* TODO remove bitfields*/
-struct caniot_blc1_command
-{
+struct caniot_blc1_command {
 	union {
 #if __AVR__
 		struct {
@@ -179,8 +168,7 @@ struct caniot_blc1_command
 	};
 };
 
-struct caniot_blc_telemetry
-{
+struct caniot_blc_telemetry {
 	union {
 		struct caniot_blc0_telemetry blc0;
 		struct caniot_blc1_telemetry blc1;
@@ -188,8 +176,7 @@ struct caniot_blc_telemetry
 	};
 } __attribute__((packed));
 
-struct caniot_blc_command
-{
+struct caniot_blc_command {
 	union {
 		struct caniot_blc0_command blc0;
 		struct caniot_blc1_command blc1;
@@ -200,16 +187,14 @@ struct caniot_blc_command
 } __attribute__((packed));
 
 /* Same for command and telemetry */
-struct caniot_heating_control
-{
-	caniot_heating_status_t heater1_cmd: 4u;
-	caniot_heating_status_t heater2_cmd: 4u;
-	caniot_heating_status_t heater3_cmd: 4u;
-	caniot_heating_status_t heater4_cmd: 4u;
+struct caniot_heating_control {
+	caniot_heating_status_t heater1_cmd : 4u;
+	caniot_heating_status_t heater2_cmd : 4u;
+	caniot_heating_status_t heater3_cmd : 4u;
+	caniot_heating_status_t heater4_cmd : 4u;
 };
 
-struct caniot_shutters_control
-{
+struct caniot_shutters_control {
 	uint8_t shutters_openness[4u];
 };
 
@@ -220,16 +205,15 @@ void caniot_blc1_command_init(struct caniot_blc1_command *cmd);
 void caniot_blc_sys_req_reboot(struct caniot_blc_sys_command *sysc);
 void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc);
 
-#define CANIOT_INTERPRET(buf, s) \
-	((struct s *)buf)
+#define CANIOT_INTERPRET(buf, s) ((struct s *)buf)
 
 #define AS(buf, s) CANIOT_INTERPRET(buf, s)
 
-#define AS_BLC_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc_command)
-#define AS_BLC0_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc0_command)
+#define AS_BLC_COMMAND(buf)    CANIOT_INTERPRET(buf, caniot_blc_command)
+#define AS_BLC0_COMMAND(buf)   CANIOT_INTERPRET(buf, caniot_blc0_command)
 #define AS_BLC0_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc0_telemetry)
 
-#define AS_BLC1_COMMAND(buf) CANIOT_INTERPRET(buf, caniot_blc1_command)
+#define AS_BLC1_COMMAND(buf)   CANIOT_INTERPRET(buf, caniot_blc1_command)
 #define AS_BLC1_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc1_telemetry)
 
 int caniot_dt_endpoints_count(uint8_t cls);
@@ -242,11 +226,10 @@ uint16_t caniot_dt_T16_to_T10(int16_t T16);
 
 int16_t caniot_dt_T10_to_T16(uint16_t T);
 
-
 /* constants */
-#define CANIOT_DT_T16_INVALID ((int16_t) INT16_MAX)
-#define CANIOT_DT_T10_INVALID ((uint16_t) 0x3FFU)
-#define CANIOT_DT_T8_INVALID ((uint8_t) 0xFFU)
+#define CANIOT_DT_T16_INVALID ((int16_t)INT16_MAX)
+#define CANIOT_DT_T10_INVALID ((uint16_t)0x3FFU)
+#define CANIOT_DT_T8_INVALID  ((uint8_t)0xFFU)
 
 #define CANIOT_DT_VALID_T16_TEMP(temp) ((temp) != CANIOT_DT_T16_INVALID)
 #define CANIOT_DT_VALID_T10_TEMP(temp) ((temp) != CANIOT_DT_T10_INVALID)

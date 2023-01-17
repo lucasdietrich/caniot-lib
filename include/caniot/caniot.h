@@ -1,54 +1,44 @@
 #ifndef _CANIOT_H
 #define _CANIOT_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <string.h>
 
-#include <caniot/errors.h>
+#include "errors.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_CANIOT_CHECKS
-#define CANIOT_CHECKS_ENABLED CONFIG_CANIOT_CHECKS
-#else
-#define CANIOT_CHECKS_ENABLED 0
+#ifndef CONFIG_CANIOT_CHECKS
+#define CONFIG_CANIOT_CHECKS_ENABLED 0
 #endif
 
-#ifdef CONFIG_CANIOT_DRIVERS_API
-#define CANIOT_DRIVERS_API CONFIG_CANIOT_DRIVERS_API
-#else
-#define CANIOT_DRIVERS_API 0
-#endif /* CONFIG_CANIOT_DRIVERS_API */
+#ifndef CONFIG_CANIOT_DRIVERS_API
+#define CONFIG_CANIOT_DRIVERS_API 0
+#endif
 
-#ifdef CONFIG_CANIOT_CTRL_DRIVERS_API
-#define CANIOT_CTRL_DRIVERS_API CONFIG_CANIOT_CTRL_DRIVERS_API
-#else
-#define CANIOT_CTRL_DRIVERS_API 0
-#endif /* CONFIG_CANIOT_CTRL_DRIVERS_API */
+#ifndef CONFIG_CANIOT_CTRL_DRIVERS_API
+#define CONFIG_CANIOT_CTRL_DRIVERS_API 0
+#endif
 
-#ifdef CONFIG_CANIOT_DEBUG
-#define CANIOT_DEBUG CONFIG_CANIOT_DEBUG
-#else
-#define CANIOT_DEBUG 0
-#endif /* CONFIG_CANIOT_DEBUG */
+#ifndef CONFIG_CANIOT_DEBUG
+#define CONFIG_CANIOT_DEBUG 0
+#endif
 
-
-#ifdef CONFIG_CANIOT_MAX_PENDING_QUERIES
-#define CANIOT_MAX_PENDING_QUERIES CONFIG_CANIOT_MAX_PENDING_QUERIES
-#else
-#define CANIOT_MAX_PENDING_QUERIES 4U
+#ifndef CONFIG_CANIOT_MAX_PENDING_QUERIES
+#define CONFIG_CANIOT_MAX_PENDING_QUERIES 4U
 #endif /* CONFIG_CANIOT_MAX_PENDING_QUERIES */
 
-#define CANIOT_VERSION1	1
+#define CANIOT_VERSION1 1
 #define CANIOT_VERSION2 2
-#define CANIOT_VERSION 	CANIOT_VERSION2
+#define CANIOT_VERSION	CANIOT_VERSION2
 
-#define CANIOT_ID(t, q, c, d, e) ((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) | ((e & 0x3U) << 9U))
-
+#define CANIOT_ID(t, q, c, d, e)                                                         \
+	((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) |     \
+	 ((e & 0x3U) << 9U))
 
 #define CANIOT_CLASS_BROADCAST (0x7U)
 #define CANIOT_SUBID_BROADCAST (0x7U)
@@ -56,45 +46,51 @@ extern "C" {
 #define CANIOT_DID_MAX_VALUE CANIOT_DID_BROADCAST
 #define CANIOT_DID_MIN_VALUE (0x00U)
 
-#define CANIOT_DID(class_id, sub_id)	((caniot_did_t) ((class_id) & 0x7U) | (((sub_id) & 0x7U) << 3U))
-#define CANIOT_DID_FROM_RAW(raw) ((raw) & CANIOT_DID_BROADCAST)
-#define CANIOT_DID_CLS(did) ((caniot_device_class_t) ((did) & 0x7U))
-#define CANIOT_DID_SID(did) ((caniot_device_subid_t) (((did) >> 3U) & 0x7U))
+#define CANIOT_DID(class_id, sub_id)                                                     \
+	((caniot_did_t)((class_id)&0x7U) | (((sub_id)&0x7U) << 3U))
+#define CANIOT_DID_FROM_RAW(raw) ((raw)&CANIOT_DID_BROADCAST)
+#define CANIOT_DID_CLS(did)	 ((caniot_device_class_t)((did)&0x7U))
+#define CANIOT_DID_SID(did)	 ((caniot_device_subid_t)(((did) >> 3U) & 0x7U))
 
 #define CANIOT_DID_BROADCAST CANIOT_DID(CANIOT_CLASS_BROADCAST, 0x7U)
 
-#define CANIOT_DID_EQ(did1, did2) (((did1) & CANIOT_DID_MAX_VALUE) == ((did2) & CANIOT_DID_MAX_VALUE))
+#define CANIOT_DID_EQ(did1, did2)                                                        \
+	(((did1)&CANIOT_DID_MAX_VALUE) == ((did2)&CANIOT_DID_MAX_VALUE))
 
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DID_EQ(did, CANIOT_DID_BROADCAST)
 
 /* milliseconds */
-#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT	0U
-#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT	100U
+#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT 0U
+#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT 100U
 
 /* seconds */
-#define CANIOT_TELEMETRY_PERIOD_DEFAULT_MS	60000u
+#define CANIOT_TELEMETRY_PERIOD_DEFAULT_MS 60000u
 
-#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT	CANIOT_ENDPOINT_BOARD_CONTROL
+#define CANIOT_TELEMETRY_ENDPOINT_DEFAULT CANIOT_ENDPOINT_BOARD_CONTROL
 
-#define CANIOT_TIMEZONE_DEFAULT			3600U
-#define CANIOT_LOCATION_REGION_DEFAULT		{'E', 'U'}
-#define CANIOT_LOCATION_COUNTRY_DEFAULT		{'F', 'R'}
+#define CANIOT_TIMEZONE_DEFAULT 3600U
+#define CANIOT_LOCATION_REGION_DEFAULT                                                   \
+	{                                                                                \
+		'E', 'U'                                                                 \
+	}
+#define CANIOT_LOCATION_COUNTRY_DEFAULT                                                  \
+	{                                                                                \
+		'F', 'R'                                                                 \
+	}
 
-#define CANIOT_ID_GET_TYPE(id) ((caniot_frame_type_t) (id & 0x3U))
-#define CANIOT_ID_GET_QUERY(id) ((caniot_frame_dir_t) ((id >> 2U) & 0x1U))
-#define CANIOT_ID_GET_CLASS(id) ((caniot_device_class_t) ((id >> 3U) & 0x7U))
-#define CANIOT_ID_GET_SUBID(id) ((caniot_device_subid_t) ((id >> 6U) & 0x7U))
-#define CANIOT_ID_GET_ENDPOINT(id) ((caniot_endpoint_t) ((id >> 9U) & 0x3U))
+#define CANIOT_ID_GET_TYPE(id)	   ((caniot_frame_type_t)(id & 0x3U))
+#define CANIOT_ID_GET_QUERY(id)	   ((caniot_frame_dir_t)((id >> 2U) & 0x1U))
+#define CANIOT_ID_GET_CLASS(id)	   ((caniot_device_class_t)((id >> 3U) & 0x7U))
+#define CANIOT_ID_GET_SUBID(id)	   ((caniot_device_subid_t)((id >> 6U) & 0x7U))
+#define CANIOT_ID_GET_ENDPOINT(id) ((caniot_endpoint_t)((id >> 9U) & 0x3U))
 
 #define CANIOT_ADDR_LEN sizeof("0x3f")
 
 /* Defines for emulated devices */
-#define CANIOT_EMU_CLASS 0x7u
+#define CANIOT_EMU_CLASS	0x7u
 #define CNAIOT_MAGIC_NUMBER_EMU 0xFFFFFFFFu
 
-
-typedef enum
-{
+typedef enum {
 	CANIOT_DEVICE_CLASS0 = 0,
 	CANIOT_DEVICE_CLASS1,
 	CANIOT_DEVICE_CLASS2,
@@ -105,8 +101,7 @@ typedef enum
 	CANIOT_DEVICE_CLASS7,
 } caniot_device_class_t;
 
-typedef enum
-{
+typedef enum {
 	CANIOT_DEVICE_SID0 = 0,
 	CANIOT_DEVICE_SID1,
 	CANIOT_DEVICE_SID2,
@@ -117,38 +112,37 @@ typedef enum
 	CANIOT_DEVICE_SID7,
 } caniot_device_subid_t;
 
-typedef enum
-{
-	CANIOT_FRAME_TYPE_COMMAND = 0,
-	CANIOT_FRAME_TYPE_TELEMETRY = 1,
+typedef enum {
+	CANIOT_FRAME_TYPE_COMMAND	  = 0,
+	CANIOT_FRAME_TYPE_TELEMETRY	  = 1,
 	CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE = 2,
-	CANIOT_FRAME_TYPE_READ_ATTRIBUTE = 3,
+	CANIOT_FRAME_TYPE_READ_ATTRIBUTE  = 3,
 } caniot_frame_type_t;
 
-typedef enum
-{
-	CANIOT_QUERY = 0,
+typedef enum {
+	CANIOT_QUERY	= 0,
 	CANIOT_RESPONSE = 1,
 } caniot_frame_dir_t;
 
 typedef enum {
-	CANIOT_ENDPOINT_APP = 0,
-	CANIOT_ENDPOINT_1 = 1,
-	CANIOT_ENDPOINT_2 = 2,
+	CANIOT_ENDPOINT_APP	      = 0,
+	CANIOT_ENDPOINT_1	      = 1,
+	CANIOT_ENDPOINT_2	      = 2,
 	CANIOT_ENDPOINT_BOARD_CONTROL = 3,
 } caniot_endpoint_t;
 
 typedef uint8_t caniot_did_t;
 
-/* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures */
+/* https://stackoverflow.com/questions/7957363/effects-of-attribute-packed-on-nested-array-of-structures
+ */
 typedef struct {
 	caniot_frame_type_t type : 2U;
 	caniot_frame_dir_t query : 1U;
 	caniot_device_class_t cls : 3U;
 	caniot_device_subid_t sid : 3U;
 	caniot_endpoint_t endpoint : 2U;
-	
-	/* TODO query id 
+
+	/* TODO query id
 	 0: not in a query context
 	 1 -> 7: query id
 
@@ -158,8 +152,7 @@ typedef struct {
 	 */
 } caniot_id_t;
 
-struct caniot_attribute
-{
+struct caniot_attribute {
 	union {
 		uint16_t key;
 		struct {
@@ -196,8 +189,8 @@ struct caniot_drivers_api {
 
 	/**
 	 * @brief Send a CANIOT frame
-	 * 
-	 * Note: 
+	 *
+	 * Note:
 	 * 	- Should not block.
 	 * 	- Should be thread safe (in a multi-threaded environment).
 	 *
@@ -207,7 +200,7 @@ struct caniot_drivers_api {
 
 	/**
 	 * @brief Receive a CANIOT frame.
-	 * 
+	 *
 	 * Note:
 	 * 	- Should not block.
 	 * 	- Should be thread safe (in a multi-threaded environment).
@@ -223,8 +216,7 @@ static inline bool caniot_is_broadcast(caniot_did_t id)
 	return CANIOT_DEVICE_IS_BROADCAST(id);
 }
 
-bool caniot_device_is_target(caniot_did_t did,
-			     const struct caniot_frame *frame);
+bool caniot_device_is_target(caniot_did_t did, const struct caniot_frame *frame);
 
 bool caniot_controller_is_target(const struct caniot_frame *frame);
 
@@ -260,16 +252,14 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 /*____________________________________________________________________________*/
 
-int caniot_build_query_telemetry(struct caniot_frame *frame,
-				 uint8_t endpoint);
+int caniot_build_query_telemetry(struct caniot_frame *frame, uint8_t endpoint);
 
 int caniot_build_query_command(struct caniot_frame *frame,
 			       uint8_t endpoint,
 			       const uint8_t *buf,
 			       uint8_t size);
 
-int caniot_build_query_read_attribute(struct caniot_frame *frame,
-				      uint16_t key);
+int caniot_build_query_read_attribute(struct caniot_frame *frame, uint16_t key);
 
 int caniot_build_query_write_attribute(struct caniot_frame *frame,
 				       uint16_t key,
@@ -277,8 +267,7 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 
 caniot_did_t caniot_frame_get_did(struct caniot_frame *frame);
 
-void caniot_frame_set_did(struct caniot_frame *frame,
-			  caniot_did_t did);
+void caniot_frame_set_did(struct caniot_frame *frame, caniot_did_t did);
 
 /*____________________________________________________________________________*/
 
@@ -314,7 +303,6 @@ bool caniot_type_is_response_of(caniot_frame_type_t resp,
 				bool *iserror);
 
 caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query);
-
 
 /**
  * @brief Compare CANIOT device addresses

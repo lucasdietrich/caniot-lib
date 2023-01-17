@@ -1,11 +1,9 @@
-#include <caniot/phys.h>
-#include <caniot/errors.h>
-
 #include <stddef.h>
 
-int caniot_phys_hysteresis_init(caniot_phys_hysteresis_t *hysteresis,
-				int low,
-				int high)
+#include <caniot/errors.h>
+#include <caniot/phys.h>
+
+int caniot_phys_hysteresis_init(caniot_phys_hysteresis_t *hysteresis, int low, int high)
 {
 	if (hysteresis == NULL) {
 		return -CANIOT_EINVAL;
@@ -16,15 +14,14 @@ int caniot_phys_hysteresis_init(caniot_phys_hysteresis_t *hysteresis,
 	}
 
 	hysteresis->state = CANIOT_PHYS_HYSTERESIS_UNDEF;
-	hysteresis->low = low;
-	hysteresis->high = high;
+	hysteresis->low	  = low;
+	hysteresis->high  = high;
 
 	return 0;
 }
 
-caniot_phys_hysteresis_state_t caniot_phys_hysteresis_update(
-	caniot_phys_hysteresis_t *hyst,
-	int val)
+caniot_phys_hysteresis_state_t
+caniot_phys_hysteresis_update(caniot_phys_hysteresis_t *hyst, int val)
 {
 	if (val <= hyst->low) {
 		hyst->state = CANIOT_PHYS_HYSTERESIS_LOW;

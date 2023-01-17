@@ -1,9 +1,8 @@
-#include <caniot/caniot.h>
 #include <caniot/archutils.h>
-#include <caniot/datatype.h>
-
+#include <caniot/caniot.h>
 #include <caniot/classes/class0.h>
 #include <caniot/classes/class1.h>
+#include <caniot/datatype.h>
 
 static const char cls_str[][3U] ROM = {
 	"C0",
@@ -94,18 +93,14 @@ static const char *get_sid_str(caniot_device_subid_t sid)
 	return sid_str[sid];
 }
 
-static void cpy_str(char *dst,
-		    const char *flash_str,
-		    size_t len)
+static void cpy_str(char *dst, const char *flash_str, size_t len)
 {
 	const size_t copy_len = MIN(strlen_P(flash_str), len - 1);
 	strncpy_P(dst, flash_str, copy_len);
 	dst[copy_len] = '\0';
 }
 
-static inline void cpy_class_str(caniot_device_class_t class,
-				 char *buf,
-				 size_t len)
+static inline void cpy_class_str(caniot_device_class_t class, char *buf, size_t len)
 {
 	cpy_str(buf, get_class_str(class), len);
 }
@@ -140,11 +135,13 @@ void caniot_show_deviceid(caniot_did_t did)
 		cpy_class_str(CANIOT_DID_CLS(did), cls_str, sizeof(cls_str));
 		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
-		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did, did, cls_str, sid_str);
+		CANIOT_INF(
+			F("[%hhd] 0x%02x (cls=%s sid=%s)"), did, did, cls_str, sid_str);
 #else
 		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did, did, get_class_str(CANIOT_DID_CLS(did)),
+			   did,
+			   did,
+			   get_class_str(CANIOT_DID_CLS(did)),
 			   get_sid_str(CANIOT_DID_SID(did)));
 #endif
 	}
@@ -152,10 +149,17 @@ void caniot_show_deviceid(caniot_did_t did)
 
 void caniot_show_frame(const struct caniot_frame *frame)
 {
-	CANIOT_INF(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len = %d"),
-		   caniot_id_to_canid(frame->id), (uint8_t)frame->buf[0], (uint8_t)frame->buf[1],
-		   (uint8_t)frame->buf[2], (uint8_t)frame->buf[3], (uint8_t)frame->buf[4],
-		   (uint8_t)frame->buf[5], (uint8_t)frame->buf[6], (uint8_t)frame->buf[7],
+	CANIOT_INF(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len "
+		     "= %d"),
+		   caniot_id_to_canid(frame->id),
+		   (uint8_t)frame->buf[0],
+		   (uint8_t)frame->buf[1],
+		   (uint8_t)frame->buf[2],
+		   (uint8_t)frame->buf[3],
+		   (uint8_t)frame->buf[4],
+		   (uint8_t)frame->buf[5],
+		   (uint8_t)frame->buf[6],
+		   (uint8_t)frame->buf[7],
 		   (uint8_t)frame->len);
 }
 
@@ -202,8 +206,10 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"), frame->len,
-			   frame->attr.key, frame->attr.val);
+		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"),
+			   frame->len,
+			   frame->attr.key,
+			   frame->attr.val);
 	}
 }
 
@@ -226,8 +232,11 @@ int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len)
 	if (caniot_is_error_frame(id) == true) {
 		ret = snprintf(buf, len, "Error frame ");
 	} else {
-		ret = snprintf(buf, len, "%s %s ",
-			       get_type_str(id.type), get_query_str(id.query));
+		ret = snprintf(buf,
+			       len,
+			       "%s %s ",
+			       get_type_str(id.type),
+			       get_query_str(id.query));
 	}
 
 	if (ret < 0) {
@@ -262,8 +271,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 		len -= ret;
 	} else if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
 		   (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
-		ret = snprintf(buf, len, "ep : %s",
-			       get_endpoint_str(frame->id.endpoint));
+		ret = snprintf(buf, len, "ep : %s", get_endpoint_str(frame->id.endpoint));
 		if (ret > (int)len || ret < 0) {
 			return ret;
 		}
@@ -273,7 +281,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 		for (int i = 0; i < frame->len; i++) {
 			ret = snprintf(buf, len, " %02hhx", (uint8_t)frame->buf[i]);
-			if (ret > (int) len || ret < 0) {
+			if (ret > (int)len || ret < 0) {
 				return ret;
 			}
 			total += ret;
@@ -281,9 +289,13 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 			len -= ret;
 		}
 	} else {
-		ret = snprintf(buf, len, "LEN = %d, key = %02x val = %04x",
-			       frame->len, frame->attr.key, frame->attr.val);
-		if (ret > (int) len || ret < 0) {
+		ret = snprintf(buf,
+			       len,
+			       "LEN = %d, key = %02x val = %04x",
+			       frame->len,
+			       frame->attr.key,
+			       frame->attr.val);
+		if (ret > (int)len || ret < 0) {
 			return ret;
 		}
 		total += ret;
@@ -311,8 +323,7 @@ caniot_did_t caniot_frame_get_did(struct caniot_frame *frame)
 	return CANIOT_DID(frame->id.cls, frame->id.sid);
 }
 
-void caniot_frame_set_did(struct caniot_frame *frame,
-			  caniot_did_t did)
+void caniot_frame_set_did(struct caniot_frame *frame, caniot_did_t did)
 {
 	ASSERT(frame != NULL);
 	ASSERT(caniot_deviceid_valid(did) == true);
@@ -321,18 +332,17 @@ void caniot_frame_set_did(struct caniot_frame *frame,
 	frame->id.sid = CANIOT_DID_SID(did);
 }
 
-int caniot_build_query_telemetry(struct caniot_frame *frame,
-				 uint8_t endpoint)
+int caniot_build_query_telemetry(struct caniot_frame *frame, uint8_t endpoint)
 {
 	ASSERT(frame);
 
 	int ret = -CANIOT_EINVAL;
 	if (caniot_endpoint_valid(endpoint) == true) {
-		frame->id.type = CANIOT_FRAME_TYPE_TELEMETRY;
-		frame->id.query = CANIOT_QUERY;
+		frame->id.type	   = CANIOT_FRAME_TYPE_TELEMETRY;
+		frame->id.query	   = CANIOT_QUERY;
 		frame->id.endpoint = endpoint;
-		frame->len = 0U;
-		ret = 0;
+		frame->len	   = 0U;
+		ret		   = 0;
 	}
 	return ret;
 }
@@ -347,24 +357,23 @@ int caniot_build_query_command(struct caniot_frame *frame,
 
 	int ret = -CANIOT_EINVAL;
 	if (caniot_endpoint_valid(endpoint) == true) {
-		frame->id.type = CANIOT_FRAME_TYPE_COMMAND;
-		frame->id.query = CANIOT_QUERY;
+		frame->id.type	   = CANIOT_FRAME_TYPE_COMMAND;
+		frame->id.query	   = CANIOT_QUERY;
 		frame->id.endpoint = endpoint;
-		frame->len = MIN(size, sizeof(frame->buf));
+		frame->len	   = MIN(size, sizeof(frame->buf));
 		memcpy(frame->buf, buf, frame->len);
 		ret = 0;
 	}
 	return ret;
 }
 
-int caniot_build_query_read_attribute(struct caniot_frame *frame,
-				      uint16_t key)
+int caniot_build_query_read_attribute(struct caniot_frame *frame, uint16_t key)
 {
 	ASSERT(frame);
 
-	frame->id.type = CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
+	frame->id.type	= CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
 	frame->id.query = CANIOT_QUERY;
-	frame->len = 2u;
+	frame->len	= 2u;
 	frame->attr.key = key;
 
 	return 0;
@@ -376,8 +385,8 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 {
 	ASSERT(frame);
 
-	frame->id.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
-	frame->len = 6u;
+	frame->id.type	= CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
+	frame->len	= 6u;
 	frame->attr.key = key;
 	frame->attr.val = value;
 
@@ -388,25 +397,22 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 
 bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 {
-	return api->entropy && api->get_time &&
-		api->send && api->recv;
+	return api->entropy && api->get_time && api->send && api->recv;
 }
 
 bool caniot_is_error(int cterr)
 {
-	return (cterr < 0) &&
-		((uint32_t)cterr < CANIOT_ERROR_MAX) &&
-		((uint32_t)cterr > CANIOT_ERROR_BASE);
+	return (cterr < 0) && ((uint32_t)cterr < CANIOT_ERROR_MAX) &&
+	       ((uint32_t)cterr > CANIOT_ERROR_BASE);
 }
 
-bool caniot_device_is_target(caniot_did_t did,
-			     const struct caniot_frame *frame)
+bool caniot_device_is_target(caniot_did_t did, const struct caniot_frame *frame)
 {
 	return (frame->id.query == CANIOT_QUERY) &&
-		(((frame->id.cls == CANIOT_DID_CLS(did)) &&
-		  (frame->id.sid == CANIOT_DID_SID(did))) ||
-		 ((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
-		  (frame->id.sid == CANIOT_SUBID_BROADCAST)));
+	       (((frame->id.cls == CANIOT_DID_CLS(did)) &&
+		 (frame->id.sid == CANIOT_DID_SID(did))) ||
+		((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
+		 (frame->id.sid == CANIOT_SUBID_BROADCAST)));
 }
 
 bool caniot_controller_is_target(const struct caniot_frame *frame)
@@ -436,7 +442,7 @@ int caniot_encode_deviceid(caniot_did_t did, uint8_t *buf, size_t len)
 	return snprintf((char *)buf, len, F("0x%02hhx"), did);
 }
 
-#endif 
+#endif
 
 int caniot_deviceid_cmp(caniot_did_t a, caniot_did_t b)
 {
@@ -455,9 +461,7 @@ bool caniot_deviceid_valid(caniot_did_t did)
 
 bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt)
 {
-	return
-		caniot_is_broadcast(pkt) ||
-		caniot_deviceid_equal(dev, pkt);
+	return caniot_is_broadcast(pkt) || caniot_deviceid_equal(dev, pkt);
 }
 
 bool caniot_endpoint_valid(caniot_endpoint_t endpoint)
@@ -473,10 +477,10 @@ uint16_t caniot_id_to_canid(caniot_id_t id)
 caniot_id_t caniot_canid_to_id(uint16_t canid)
 {
 	caniot_id_t id = {
-		.type = CANIOT_ID_GET_TYPE(canid),
-		.query = CANIOT_ID_GET_QUERY(canid),
-		.cls = CANIOT_ID_GET_CLASS(canid),
-		.sid = CANIOT_ID_GET_SUBID(canid),
+		.type	  = CANIOT_ID_GET_TYPE(canid),
+		.query	  = CANIOT_ID_GET_QUERY(canid),
+		.cls	  = CANIOT_ID_GET_CLASS(canid),
+		.sid	  = CANIOT_ID_GET_SUBID(canid),
 		.endpoint = CANIOT_ID_GET_ENDPOINT(canid),
 	};
 
@@ -485,20 +489,18 @@ caniot_id_t caniot_canid_to_id(uint16_t canid)
 
 bool caniot_is_error_frame(caniot_id_t id)
 {
-	return id.query == CANIOT_RESPONSE && (
-		id.type == CANIOT_FRAME_TYPE_COMMAND ||
-		id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE
-		);
+	return id.query == CANIOT_RESPONSE &&
+	       (id.type == CANIOT_FRAME_TYPE_COMMAND ||
+		id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
 }
 
 bool is_telemetry_response(struct caniot_frame *frame)
 {
 	return (frame->id.query == CANIOT_RESPONSE) &&
-		(frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
+	       (frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
 }
 
-bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
-				      caniot_frame_type_t query)
+bool caniot_type_is_valid_response_of(caniot_frame_type_t resp, caniot_frame_type_t query)
 {
 	switch (query) {
 	case CANIOT_FRAME_TYPE_COMMAND:
@@ -537,16 +539,13 @@ caniot_query_response_type_t caniot_type_what_response_of(caniot_frame_type_t re
 	 * 	3: CANIOT_IS_OTHER_ERROR
 	 */
 
-	const bool is_error =
-		(resp == CANIOT_FRAME_TYPE_COMMAND) ||
-		(resp == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
+	const bool is_error = (resp == CANIOT_FRAME_TYPE_COMMAND) ||
+			      (resp == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
 
 	const bool is_response_of = ((resp ^ query) & 2) == 0;
 
-	return (caniot_query_response_type_t)(
-		(is_error ? 1 : 0) |
-		(is_response_of ? 0 : 2)
-		);
+	return (caniot_query_response_type_t)((is_error ? 1 : 0) |
+					      (is_response_of ? 0 : 2));
 }
 
 bool caniot_type_is_response_of(caniot_frame_type_t resp,
@@ -555,20 +554,20 @@ bool caniot_type_is_response_of(caniot_frame_type_t resp,
 {
 	/* VARIANT 2 */
 
-	bool match = false;
+	bool match		    = false;
 	caniot_frame_type_t errtype = CANIOT_FRAME_TYPE_COMMAND;
 
 	switch (query) {
 	case CANIOT_FRAME_TYPE_COMMAND:
 	case CANIOT_FRAME_TYPE_TELEMETRY:
 		errtype = CANIOT_FRAME_TYPE_COMMAND;
-		match = resp == CANIOT_FRAME_TYPE_TELEMETRY;
+		match	= resp == CANIOT_FRAME_TYPE_TELEMETRY;
 		break;
 
 	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
 	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
 		errtype = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
-		match = resp == CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
+		match	= resp == CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
 		break;
 	default:
 		break;
@@ -629,7 +628,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 			    uint8_t n,
 			    caniot_complex_digital_cmd_t xps)
 {
-#if CANIOT_CHECKS_ENABLED
+#if CONFIG_CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
 		return -CANIOT_EINVAL;
 	}
@@ -639,10 +638,10 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 	}
 #endif
 
-	const uint8_t msb_index = n * 3u;
-	const uint8_t msb_offset = msb_index & 0x7u;
+	const uint8_t msb_index	   = n * 3u;
+	const uint8_t msb_offset   = msb_index & 0x7u;
 	const uint8_t msb_rem_size = 8u - msb_offset;
-	const uint8_t byte_n = msb_index >> 3u;
+	const uint8_t byte_n	   = msb_index >> 3u;
 
 	cmd->data[byte_n] |= ((xps & 0x7u) << msb_offset) & 0xffu;
 
@@ -655,22 +654,21 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 
 int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
 {
-#if CANIOT_CHECKS_ENABLED
+#if CONFIG_CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
 		return -CANIOT_EINVAL;
 	}
 #endif
-	
+
 	memset(cmd, 0, sizeof(struct caniot_blc1_command));
 
 	return 0;
 }
 
-caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(
-	struct caniot_blc1_command *cmd,
-	uint8_t n)
+caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(struct caniot_blc1_command *cmd,
+						       uint8_t n)
 {
-#if CANIOT_CHECKS_ENABLED
+#if CONFIG_CANIOT_CHECKS_ENABLED
 	if (cmd == NULL) {
 		return -EINVAL;
 	}
@@ -681,10 +679,10 @@ caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(
 #endif
 	caniot_complex_digital_cmd_t xps = CANIOT_XPS_NONE;
 
-	const uint8_t msb_index = n * 3u;
-	const uint8_t msb_offset = msb_index & 0x7u;
+	const uint8_t msb_index	   = n * 3u;
+	const uint8_t msb_offset   = msb_index & 0x7u;
 	const uint8_t msb_rem_size = 8u - msb_offset;
-	const uint8_t byte_n = msb_index >> 3u;
+	const uint8_t byte_n	   = msb_index >> 3u;
 
 	xps = (cmd->data[byte_n] >> msb_offset) & 0x7u;
 

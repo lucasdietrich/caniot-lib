@@ -16,3 +16,7 @@ run: build-all
 
 clean:
 	rm -rf build
+
+format:
+	find src -iname *.h -o -iname *.c -o -iname *.cpp | xargs clang-format -i
+	find include -iname *.h -o -iname *.c -o -iname *.cpp | xargs clang-format -i

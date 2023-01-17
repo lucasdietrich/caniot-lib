@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #include <caniot/caniot.h>
-#include <caniot/device.h>
 #include <caniot/datatype.h>
+#include <caniot/device.h>
 
 #define CANIOT_CLASS1_IO_COUNT 19u
 
@@ -47,8 +47,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 
 int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd);
 
-caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(
-	struct caniot_blc1_command *cmd,
-	uint8_t n);
+caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(struct caniot_blc1_command *cmd,
+						       uint8_t n);
 
 #endif /* _DEV_CANIOT_CLASS1_H_ */

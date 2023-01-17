@@ -1,7 +1,7 @@
-#include <caniot/datatype.h>
-#include <caniot/archutils.h>
-
 #include <stdbool.h>
+
+#include <caniot/archutils.h>
+#include <caniot/datatype.h>
 
 _Static_assert(sizeof(struct caniot_blc_command) == 8u, "Invalid size");
 
@@ -39,8 +39,7 @@ bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint)
 	int ret;
 
 	ret = caniot_dt_endpoints_count(cls);
-	if (ret < 0)
-		return false;
+	if (ret < 0) return false;
 
 	return endpoint < ret;
 }

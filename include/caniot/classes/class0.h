@@ -2,8 +2,8 @@
 #define _DEV_CANIOT_CLASS0_H_
 
 #include <caniot/caniot.h>
-#include <caniot/device.h>
 #include <caniot/datatype.h>
+#include <caniot/device.h>
 
 #define OC1_IDX 0u
 #define OC2_IDX 1u

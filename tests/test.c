@@ -8,7 +8,7 @@
 
 #include <caniot/device.h>
 #include <caniot/controller.h>
-#include <caniot/archutils.h>
+#include <caniot/caniot_private.h>
 
 #define SEED 0
 

@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-#include <caniot/archutils.h>
+#include <caniot/caniot_private.h>
 #include <caniot/datatype.h>
 
 _Static_assert(sizeof(struct caniot_blc_command) == 8u, "Invalid size");

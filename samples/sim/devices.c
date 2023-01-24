@@ -1,4 +1,4 @@
-#include <caniot/archutils.h>
+#include <caniot/caniot_private.h>
 #include <caniot/caniot.h>
 #include <caniot/device.h>
 

@@ -234,6 +234,14 @@ int16_t caniot_dt_T10_to_T16(uint16_t T);
 #define CANIOT_DT_VALID_T16_TEMP(temp) ((temp) != CANIOT_DT_T16_INVALID)
 #define CANIOT_DT_VALID_T10_TEMP(temp) ((temp) != CANIOT_DT_T10_INVALID)
 
+static inline int caniot_build_query_blc_command(struct caniot_frame *frame,
+						 uint8_t endpoint,
+						 struct caniot_blc_command *blc)
+{
+	return caniot_build_query_command(
+		frame, endpoint, (uint8_t *)blc, sizeof(struct caniot_blc_command));
+}
+
 #ifdef __cplusplus
 }
 #endif

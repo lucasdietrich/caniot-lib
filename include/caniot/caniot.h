@@ -1,12 +1,12 @@
 #ifndef _CANIOT_H
 #define _CANIOT_H
 
+#include "errors.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include "errors.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include <caniot/archutils.h>
+#include <caniot/caniot_private.h>
 #include <caniot/device.h>
 
 #define ATTR_IDENTIFICATION 0
@@ -399,23 +399,27 @@ static const struct attribute *attr_get(attr_key_t key,
 
 static int attr_resolve(attr_key_t key, struct attr_ref *ref)
 {
-	const struct attr_section *section = attr_get_section(key);
+	const struct attr_section *section;
+	const struct attribute *attr;
+	uint8_t attr_size ;
+
+	section = attr_get_section(key);
 	if (!section) {
 		return -CANIOT_EKEYSECTION;
 	}
 
-	const struct attribute *attr = attr_get(key, section);
+	attr = attr_get(key, section);
 	if (!attr) {
 		return -CANIOT_EKEYATTR;
 	}
 
-	uint8_t attr_size = attr_get_size(attr);
+	attr_size = attr_get_size(attr);
 	if (ATTR_KEY_OFFSET(key) >= attr_size) {
 		return -CANIOT_EKEYPART;
 	}
 
 	ref->section	    = ATTR_KEY_SECTION(key);
-	ref->size	    = attr_size > 4u ? 4u : attr_size;
+	ref->size	    = MIN(attr_size, 4u);
 	ref->offset	    = ATTR_KEY_OFFSET(key) + attr_get_offset(attr);
 	ref->option	    = attr_get_option(attr);
 	ref->section_option = attr_get_section_option(section);
@@ -672,16 +676,13 @@ static int handle_read_attribute(struct caniot_device *dev,
 	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), attr->key);
 
 	ret = attr_resolve(attr->key, &ref);
-	if (ret != 0 && ret != -EINVAL) {
-		goto exit;
-	}
 
 	prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
 
 	if (ret == 0) {
-		/* if standart attribute */
+		/* if standard attribute */
 		ret = attribute_read(dev, &ref, &resp->attr);
-	} else if (ret == -EINVAL) { /* if custom attribute */
+	} else { /* if custom attribute */
 		if (dev->api->custom_attr.read != NULL) {
 			/* temp variable to avoid `-Waddress-of-packed-member` warning */
 			uint32_t tval = (uint32_t)-1;
@@ -690,7 +691,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 				resp->attr.val = tval;
 			}
 		} else {
-			ret = -CANIOT_ENOTSUP; /* not supported attribute */
+			ret = -CANIOT_ENOATTR; /* unsupported custom attribute */
 		}
 	}
 
@@ -700,7 +701,6 @@ static int handle_read_attribute(struct caniot_device *dev,
 		resp->attr.key = attr->key;
 	}
 
-exit:
 	return ret;
 }
 
@@ -792,22 +792,18 @@ static int handle_write_attribute(struct caniot_device *dev,
 	struct attr_ref ref;
 
 	ret = attr_resolve(attr->key, &ref);
-	if (ret != 0 && ret != -EINVAL) {
-		goto exit;
-	}
 
 	if (ret == 0) {
 		/* if standart attribute */
 		ret = attribute_write(dev, &ref, &req->attr);
-	} else if (ret == -EINVAL) { /* if custom attribute */
+	} else { /* if custom attribute */
 		if (dev->api->custom_attr.read != NULL) {
 			ret = dev->api->custom_attr.write(dev, attr->key, req->attr.val);
 		} else {
-			ret = -CANIOT_ENOTSUP; /* not supported attribute */
+			ret = -CANIOT_ENOATTR; /* unsupported custom attribute */
 		}
 	}
 
-exit:
 	return ret;
 }
 

@@ -1,8 +1,8 @@
-#include <caniot/archutils.h>
+#include <caniot/caniot_private.h>
 #include <caniot/controller.h>
 
 #define pendq caniot_pendq
-#define pqt   caniot_pqt
+#define pqt   caniot_pendq_time_handle
 
 #define __DBG(fmt, ...) CANIOT_DBG("-- " fmt, ##__VA_ARGS__)
 
@@ -221,6 +221,8 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl, uint8_t
 	if ((handle != INVALID_HANDLE) && (handle <= CONFIG_CANIOT_MAX_PENDING_QUERIES)) {
 		struct pendq *const tmp = &ctrl->pendingq.pool[handle - 1U];
 
+		/* if handle is not exactly the same as the index,
+		 * the pq is not allocated */
 		if (tmp->handle == handle) {
 			pq = tmp;
 		}
@@ -231,7 +233,7 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl, uint8_t
 	return pq;
 }
 
-int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
+int caniot_controller_handle_user_data_set(struct caniot_controller *ctrl,
 					   uint8_t handle,
 					   void *user_data)
 {
@@ -244,6 +246,19 @@ int caniot_controller_handle_set_user_data(struct caniot_controller *ctrl,
 	}
 
 	return ret;
+}
+
+void *caniot_controller_handle_user_data_get(struct caniot_controller *ctrl,
+					     uint8_t handle)
+{
+	void *user_data	 = NULL;
+	struct pendq *pq = pendq_get_by_handle(ctrl, handle);
+
+	if (pq != NULL) {
+		user_data = pq->user_data;
+	}
+
+	return user_data;
 }
 
 static struct pendq *peek_pending_query(struct caniot_controller *ctrl, caniot_did_t did)
@@ -389,7 +404,8 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 
 		.response = response,
 
-		.user_data = NULL};
+		.user_data = NULL,
+	};
 
 	user_event(ctrl, &ev);
 }
@@ -450,7 +466,8 @@ static void cancelled_query_event(struct caniot_controller *ctrl, struct pendq *
 		.handle	    = pq->handle,
 
 		.response  = NULL,
-		.user_data = pq->user_data};
+		.user_data = pq->user_data,
+	};
 
 	pendq_remove(ctrl, pq);
 
@@ -476,7 +493,8 @@ static void pendq_call_expired(struct caniot_controller *ctrl)
 			.handle	    = pq->handle,
 
 			.response  = NULL,
-			.user_data = pq->user_data};
+			.user_data = pq->user_data,
+		};
 
 		mark_query_pending_for(ctrl, pq->did, false);
 		pendq_free(ctrl, pq);

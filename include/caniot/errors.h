@@ -28,9 +28,10 @@ typedef enum {
 	CANIOT_EDRIVER, /*  DRIVER */
 	CANIOT_EAPI,	/*  API */
 
-	CANIOT_EKEYSECTION,
-	CANIOT_EKEYATTR,
-	CANIOT_EKEYPART,
+	CANIOT_EKEYSECTION, /* Unknown attributes section */
+	CANIOT_EKEYATTR,   /* Unknown attribute */
+	CANIOT_EKEYPART, /* Unknown attribute part */
+	CANIOT_ENOATTR, /* No attribute */
 
 	CANIOT_EREADONLY,
 

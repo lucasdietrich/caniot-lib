@@ -3,7 +3,7 @@
 #include <caniot/caniot.h>
 #include <caniot/controller.h>
 #include <caniot/device.h>
-#include <caniot/archutils.h>
+#include <caniot/caniot_private.h>
 
 #include <time.h>
 #include <stdlib.h>

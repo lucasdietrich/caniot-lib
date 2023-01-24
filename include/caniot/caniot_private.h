@@ -1,5 +1,5 @@
-#ifndef _CANIOT_ARCHUTILS_H_
-#define _CANIOT_ARCHUTILS_H_
+#ifndef _CANIOT_PRIVATE_H_
+#define _CANIOT_PRIVATE_H_
 
 /**
  * @brief Helper for printing strings :
@@ -17,6 +17,7 @@
 
 #if defined(__AVR__)
 #include <stdio.h>
+
 #include <avr/pgmspace.h>
 #define printf	 printf_P
 #define snprintf snprintf_P
@@ -26,6 +27,7 @@
 #define Z_ASSERT(x)
 #elif defined(__ZEPHYR__)
 #include <stdio.h>
+
 #include <zephyr/kernel.h>
 // #	define snprintf snprintf
 #define strlen_P  strlen
@@ -99,4 +101,4 @@ extern void __assert(bool statement);
 
 #define INDEX_OF(obj, base, _struct) ((_struct *)(obj) - (_struct *)(base))
 
-#endif /* _CANIOT_ARCHUTILS_H_ */
+#endif /* _CANIOT_PRIVATE_H_ */

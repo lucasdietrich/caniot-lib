@@ -10,7 +10,7 @@
         "stdbool.h": "c",
         "caniot_common.h": "c",
         "helper.h": "c",
-        "archutils.h": "c",
+        "caniot_private.h": "c",
         "memory.h": "c",
         "stddef.h": "c",
         "type_traits": "c",

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 Lucas Dietrich <ld.adecy@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <caniot/caniot.h>
 #include <caniot/caniot_private.h>
 #include <caniot/classes/class0.h>

@@ -1,3 +1,9 @@
+#
+# Copyright (c) 2023 Lucas Dietrich <ld.adecy@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 cmake_minimum_required(VERSION 3.2)
 
 message(STATUS "$CMAKE_CURRENT_SOURCE_DIR : ${CMAKE_CURRENT_SOURCE_DIR}")
@@ -28,8 +34,8 @@ target_include_directories(caniotlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 
 ####################################################################
 
-set(CONFIG_CANIOT_SAMPLES OFF CACHE BOOL "Enable CANIOT samples")
-set(CONFIG_CANIOT_TESTS OFF CACHE BOOL "Enable CANIOT tests")
+set(CONFIG_CANIOT_SAMPLES ON CACHE BOOL "Enable CANIOT samples")
+set(CONFIG_CANIOT_TESTS ON CACHE BOOL "Enable CANIOT tests")
 
 # foreach directory in "samples" include CMakeLists.txt
 if (CONFIG_CANIOT_SAMPLES)

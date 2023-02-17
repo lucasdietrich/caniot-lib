@@ -16,7 +16,8 @@
         "type_traits": "c",
         "header.h": "c",
         "cstdlib": "c",
-        "phys.h": "c"
+        "phys.h": "c",
+        "stdlib.h": "c"
     },
     "editor.rulers": [80]
 }

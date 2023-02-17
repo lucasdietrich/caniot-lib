@@ -1,13 +1,9 @@
-/**
- * @file canbus.c
- * @author Dietrich Lucas (ld.adecy@gmail.com)
- * @brief Canbus emulation
- * @version 0.1
- * @date 2022-06-09
+/*
+ * Copyright (c) 2023 Lucas Dietrich <ld.adecy@gmail.com>
  *
- * @copyright Copyright (c) 2022
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
+
 
 #include <caniot/caniot.h>
 #include <malloc.h>

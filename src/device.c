@@ -1010,8 +1010,8 @@ static uint32_t get_response_delay(struct caniot_device *dev, bool random)
 		ASSERT(dev->driv->entropy != NULL);
 
 		/* define default parameters */
-		uint16_t delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT;
-		uint16_t delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT;
+		uint16_t delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS;
+		uint16_t delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS;
 
 		uint16_t rdm;
 		dev->driv->entropy((uint8_t *)&rdm, sizeof(rdm));
@@ -1024,7 +1024,7 @@ static uint32_t get_response_delay(struct caniot_device *dev, bool random)
 		}
 
 		/* evaluate amplitude */
-		uint32_t amplitude = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT;
+		uint32_t amplitude = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS;
 		if (delay_max > delay_min) {
 			amplitude = delay_max - delay_min;
 		}

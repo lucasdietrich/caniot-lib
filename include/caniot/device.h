@@ -270,7 +270,7 @@ int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *na
 			{                                                                 \
 				.period	   = CANIOT_TELEMETRY_PERIOD_DEFAULT_MS,          \
 				.delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS,       \
-				.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT,          \
+				.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS,          \
 			},                                                                \
 		.flags =                                                                  \
 			{                                                                 \

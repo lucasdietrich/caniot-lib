@@ -10,15 +10,16 @@
 #include <caniot/caniot_private.h>
 #include <caniot/device.h>
 
-struct caniot_identification ids[DEVICES_COUNT];
+struct caniot_device_id ids[DEVICES_COUNT];
 
-struct caniot_config cfgs[DEVICES_COUNT];
+struct caniot_device_config cfgs[DEVICES_COUNT];
 
-const struct caniot_config default_cfg = CANIOT_CONFIG_DEFAULT_INIT();
+const struct caniot_device_config default_cfg = CANIOT_CONFIG_DEFAULT_INIT();
 
 struct caniot_device devices[DEVICES_COUNT];
 
-static int cb_config_on_read(struct caniot_device *dev, struct caniot_config *config)
+static int cb_config_on_read(struct caniot_device *dev,
+			     struct caniot_device_config *config)
 {
 	printf("[DEV CB] cb_config_on_read dev=%p config=%p\n", dev, config);
 
@@ -27,7 +28,8 @@ static int cb_config_on_read(struct caniot_device *dev, struct caniot_config *co
 	return 0U;
 }
 
-static int cb_config_on_write(struct caniot_device *dev, struct caniot_config *config)
+static int cb_config_on_write(struct caniot_device *dev,
+			      struct caniot_device_config *config)
 {
 	printf("[DEV CB] cb_config_on_write dev=%p config=%p\n", dev, config);
 
@@ -91,12 +93,12 @@ static int(cb_command_handler)(struct caniot_device *dev,
 	return 0U;
 }
 
-const struct caniot_api api = CANIOT_API_FULL_INIT(cb_command_handler,
-						   cb_telemetry_handler,
-						   cb_config_on_read,
-						   cb_config_on_write,
-						   cb_attr_read,
-						   cb_attr_write);
+const struct caniot_device_api api = CANIOT_DEVICE_API_FULL_INIT(cb_command_handler,
+								 cb_telemetry_handler,
+								 cb_config_on_read,
+								 cb_config_on_write,
+								 cb_attr_read,
+								 cb_attr_write);
 
 void init_devices(void)
 {
@@ -109,10 +111,10 @@ void init_devices(void)
 
 		dev->identification = &ids[i];
 
-		memset(&dev->system, 0x00, sizeof(struct caniot_system));
+		memset(&dev->system, 0x00, sizeof(struct caniot_device_system));
 
 		dev->flags.request_telemetry = 0U;
-		memcpy(&cfgs[i], &default_cfg, sizeof(struct caniot_config));
+		memcpy(&cfgs[i], &default_cfg, sizeof(struct caniot_device_config));
 		dev->config = &cfgs[i];
 
 		dev->api = &api;

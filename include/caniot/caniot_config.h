@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2023 Lucas Dietrich <ld.adecy@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef CANIOT_CONFIG_H_
+#define CANIOT_CONFIG_H_
+
+#ifndef CONFIG_CANIOT_CHECKS
+#define CONFIG_CANIOT_CHECKS_ENABLED 0
+#endif
+
+#ifndef CONFIG_CANIOT_DRIVERS_API
+#define CONFIG_CANIOT_DRIVERS_API 0
+#endif
+
+#ifndef CONFIG_CANIOT_CTRL_DRIVERS_API
+#define CONFIG_CANIOT_CTRL_DRIVERS_API 0
+#endif
+
+#ifndef CONFIG_CANIOT_DEBUG
+#define CONFIG_CANIOT_DEBUG 0
+#endif
+
+#ifndef CONFIG_CANIOT_MAX_PENDING_QUERIES
+#define CONFIG_CANIOT_MAX_PENDING_QUERIES 4U
+#endif
+
+#ifndef CONFIG_CANIOT_ATTRIBUTE_NAME
+#define CONFIG_CANIOT_ATTRIBUTE_NAME 1u
+#endif
+
+#define CANIOT_ATTR_NAME_MAX_LEN 48u
+
+#endif /* CANIOT_CONFIG_H_ */

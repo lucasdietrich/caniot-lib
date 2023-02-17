@@ -7,8 +7,49 @@
 #include <errno.h>
 #include <string.h>
 
+#include <caniot/caniot.h>
 #include <caniot/caniot_private.h>
 #include <caniot/device.h>
+
+typedef uint16_t attr_key_t;
+
+enum section_option {
+	READONLY   = 1 << 0,
+	VOLATILE   = 1 << 1,
+	PERSISTENT = 1 << 2
+};
+
+enum attr_option {
+	DISABLED = 0,
+	READABLE = 1 << 0,
+	WRITABLE = 1 << 1,
+};
+
+struct attr_ref {
+	enum attr_option option;
+	enum section_option section_option;
+	uint8_t section;
+	uint8_t offset;
+	uint8_t size;
+};
+
+struct attribute {
+	uint8_t offset;
+	uint8_t size; /* TODO merge fields size and option together */
+	uint8_t option;
+#if CONFIG_CANIOT_ATTRIBUTE_NAME
+	char name[CANIOT_ATTR_NAME_MAX_LEN];
+#endif
+};
+
+struct attr_section {
+	enum section_option option;
+	const struct attribute *array;
+	uint8_t array_size;
+#if CONFIG_CANIOT_ATTRIBUTE_NAME
+	char name[16u];
+#endif
+};
 
 #define ATTR_IDENTIFICATION 0
 #define ATTR_SYSTEM	    1
@@ -24,26 +65,6 @@
 #define ATTR_KEY(section, attr, part)                                                    \
 	((section & 0xF) << 12 | (attr & 0xFF) << 4 | (part & 0xF))
 
-typedef uint16_t attr_key_t;
-
-enum section {
-	section_identification = 0,
-	section_system	       = 1,
-	section_config	       = 2
-};
-
-enum section_option {
-	READONLY   = 1 << 0,
-	VOLATILE   = 1 << 1,
-	PERSISTENT = 1 << 2
-};
-
-enum attr_option {
-	DISABLED = 0,
-	READABLE = 1 << 0,
-	WRITABLE = 1 << 1,
-};
-
 static void attr_option_adjust(enum attr_option *attr_opt, enum section_option sec_opt)
 {
 	if (sec_opt & READONLY) {
@@ -51,220 +72,227 @@ static void attr_option_adjust(enum attr_option *attr_opt, enum section_option s
 	}
 }
 
-struct attr_ref {
-	enum attr_option option;
-	enum section_option section_option;
-	uint8_t section;
-	uint8_t offset;
-	uint8_t size;
-};
-
-struct attribute {
-	uint8_t offset;
-	uint8_t size; /* TODO merge fields size and option together */
-	uint8_t option;
-	// char name[32];
-};
-
-struct attr_section {
-	enum section_option option;
-	// char name[16];
-	const struct attribute *array;
-	uint8_t array_size;
-};
-
 #define MEMBER_SIZEOF(s, member) (sizeof(((s *)0)->member))
 
-#define ATTRIBUTE(s, rw, name, param)                                                    \
+#if CONFIG_CANIOT_ATTRIBUTE_NAME
+
+#define ATTRIBUTE(s, rw, _name, param)                                                   \
 	{                                                                                \
-		(uint8_t) offsetof(s, param), (uint8_t)MEMBER_SIZEOF(s, param),          \
-			(uint8_t)rw,                                                     \
+		.offset = (uint8_t)offsetof(s, param),                                   \
+		.size = (uint8_t)MEMBER_SIZEOF(s, param), .option = (uint8_t)rw,         \
+		.name = _name,                                                           \
 	}
 
-#define SECTION(options, name, array)                                                    \
+#define SECTION(options, _name, array)                                                   \
+	{                                                                                \
+		options, array, ARRAY_SIZE(array), _name                                 \
+	}
+
+#else
+
+#define ATTRIBUTE(s, rw, _name, param)                                                   \
+	{                                                                                \
+		.offset = (uint8_t)offsetof(s, param),                                   \
+		.size = (uint8_t)MEMBER_SIZEOF(s, param), .option = (uint8_t)rw,         \
+	}
+
+#define SECTION(options, _name, array)                                                   \
 	{                                                                                \
 		options, array, ARRAY_SIZE(array)                                        \
 	}
 
+#endif
+
 static const struct attribute identification_attr[] ROM = {
-	ATTRIBUTE(struct caniot_identification, READABLE, "nodeid", did),
-	ATTRIBUTE(struct caniot_identification, READABLE, "version", version),
-	ATTRIBUTE(struct caniot_identification, READABLE, "name", name),
-	ATTRIBUTE(struct caniot_identification, READABLE, "magic_number", magic_number),
+	ATTRIBUTE(struct caniot_device_id, READABLE, "nodeid", did),
+	ATTRIBUTE(struct caniot_device_id, READABLE, "version", version),
+	ATTRIBUTE(struct caniot_device_id, READABLE, "name", name),
+	ATTRIBUTE(struct caniot_device_id, READABLE, "magic_number", magic_number),
 };
 
 static const struct attribute system_attr[] ROM = {
-	ATTRIBUTE(struct caniot_system, READABLE, "uptime_synced", uptime_synced),
-	ATTRIBUTE(struct caniot_system, READABLE | WRITABLE, "time", time),
-	ATTRIBUTE(struct caniot_system, READABLE, "uptime", uptime),
-	ATTRIBUTE(struct caniot_system, READABLE, "start_time", start_time),
-	ATTRIBUTE(struct caniot_system, READABLE, "last_telemetry", last_telemetry),
-	ATTRIBUTE(struct caniot_system, READABLE, "received.total", received.total),
-	ATTRIBUTE(struct caniot_system,
+	ATTRIBUTE(struct caniot_device_system, READABLE, "uptime_synced", uptime_synced),
+	ATTRIBUTE(struct caniot_device_system, READABLE | WRITABLE, "time", time),
+	ATTRIBUTE(struct caniot_device_system, READABLE, "uptime", uptime),
+	ATTRIBUTE(struct caniot_device_system, READABLE, "start_time", start_time),
+	ATTRIBUTE(
+		struct caniot_device_system, READABLE, "last_telemetry", last_telemetry),
+	ATTRIBUTE(
+		struct caniot_device_system, READABLE, "received.total", received.total),
+	ATTRIBUTE(struct caniot_device_system,
 		  READABLE,
 		  "received.read_attribute",
 		  received.read_attribute),
-	ATTRIBUTE(struct caniot_system,
+	ATTRIBUTE(struct caniot_device_system,
 		  READABLE,
 		  "received.write_attribute",
 		  received.write_attribute),
-	ATTRIBUTE(struct caniot_system, READABLE, "received.command", received.command),
-	ATTRIBUTE(struct caniot_system,
+	ATTRIBUTE(struct caniot_device_system,
+		  READABLE,
+		  "received.command",
+		  received.command),
+	ATTRIBUTE(struct caniot_device_system,
 		  READABLE,
 		  "received.request_telemetry",
 		  received.request_telemetry),
-	ATTRIBUTE(struct caniot_system, DISABLED, "received.ignored", received.ignored),
-	ATTRIBUTE(struct caniot_system, DISABLED, "", received._unused3),
-	ATTRIBUTE(struct caniot_system, READABLE, "sent.total", sent.total),
-	ATTRIBUTE(struct caniot_system, READABLE, "sent.telemetry", sent.telemetry),
-	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused4),
+	ATTRIBUTE(struct caniot_device_system,
+		  DISABLED,
+		  "received.ignored",
+		  received.ignored),
+	ATTRIBUTE(struct caniot_device_system, DISABLED, "", received._unused3),
+	ATTRIBUTE(struct caniot_device_system, READABLE, "sent.total", sent.total),
 	ATTRIBUTE(
-		struct caniot_system, READABLE, "last_command_error", last_command_error),
-	ATTRIBUTE(struct caniot_system,
+		struct caniot_device_system, READABLE, "sent.telemetry", sent.telemetry),
+	ATTRIBUTE(struct caniot_device_system, DISABLED, "", _unused4),
+	ATTRIBUTE(struct caniot_device_system,
+		  READABLE,
+		  "last_command_error",
+		  last_command_error),
+	ATTRIBUTE(struct caniot_device_system,
 		  READABLE,
 		  "last_telemetry_error",
 		  last_telemetry_error),
-	ATTRIBUTE(struct caniot_system, DISABLED, "", _unused5),
-	ATTRIBUTE(struct caniot_system, READABLE, "battery", battery),
+	ATTRIBUTE(struct caniot_device_system, DISABLED, "", _unused5),
+	ATTRIBUTE(struct caniot_device_system, READABLE, "battery", battery),
 };
 
 static const struct attribute config_attr[] ROM = {
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "telemetry.period",
 		  telemetry.period), /* ms */
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "telemetry.delay",
 		  telemetry.delay), /* ms */
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "telemetry.delay_min",
 		  telemetry.delay_min), /* ms */
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "telemetry.delay_max",
 		  telemetry.delay_max), /* ms */
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "flags", flags),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "timezone", timezone),
-	ATTRIBUTE(struct caniot_config, READABLE | WRITABLE, "location", location),
+	ATTRIBUTE(struct caniot_device_config, READABLE | WRITABLE, "flags", flags),
+	ATTRIBUTE(struct caniot_device_config, READABLE | WRITABLE, "timezone", timezone),
+	ATTRIBUTE(struct caniot_device_config, READABLE | WRITABLE, "location", location),
 
 	/* Class 0 */
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls0_gpio.pulse_duration.oc1",
 		  cls0_gpio.pulse_durations[0u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls0_gpio.pulse_duration.oc2",
 		  cls0_gpio.pulse_durations[1u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls0_gpio.pulse_duration.rl1",
 		  cls0_gpio.pulse_durations[2u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls0_gpio.pulse_duration.rl2",
 		  cls0_gpio.pulse_durations[3u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls0_gpio.outputs_default",
 		  cls0_gpio.outputs_default),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls0_gpio.mask.telemetry_on_change",
 		  cls0_gpio.telemetry_on_change),
 
 	/* Class 1 */
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pc0",
 		  cls1_gpio.pulse_durations[0u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pc1",
 		  cls1_gpio.pulse_durations[1u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pc2",
 		  cls1_gpio.pulse_durations[2u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pc3",
 		  cls1_gpio.pulse_durations[3u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pd0",
 		  cls1_gpio.pulse_durations[4u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pd1",
 		  cls1_gpio.pulse_durations[5u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pd2",
 		  cls1_gpio.pulse_durations[6u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pd3",
 		  cls1_gpio.pulse_durations[7u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei0",
 		  cls1_gpio.pulse_durations[8u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei1",
 		  cls1_gpio.pulse_durations[9u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei2",
 		  cls1_gpio.pulse_durations[10u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei3",
 		  cls1_gpio.pulse_durations[11u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei4",
 		  cls1_gpio.pulse_durations[12u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei5",
 		  cls1_gpio.pulse_durations[13u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei6",
 		  cls1_gpio.pulse_durations[14u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pei7",
 		  cls1_gpio.pulse_durations[15u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pb0",
 		  cls1_gpio.pulse_durations[16u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pe0",
 		  cls1_gpio.pulse_durations[17u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration.pe1",
 		  cls1_gpio.pulse_durations[18u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.pulse_duration._reserved",
 		  cls1_gpio.pulse_durations[19u]),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.directions",
 		  cls1_gpio.directions),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.outputs_default",
 		  cls1_gpio.outputs_default),
-	ATTRIBUTE(struct caniot_config,
+	ATTRIBUTE(struct caniot_device_config,
 		  READABLE | WRITABLE,
 		  "cls1_gpio.mask.telemetry_on_change",
 		  cls1_gpio.telemetry_on_change),
@@ -274,7 +302,6 @@ static const struct attr_section attr_sections[] ROM = {
 	SECTION(READONLY, "identification", identification_attr),
 	SECTION(VOLATILE, "system", system_attr),
 	SECTION(PERSISTENT, "configuration", config_attr),
-	/* TODO create more sections for class0, class1, etc ... */
 };
 
 static inline void arch_rom_cpy_byte(uint8_t *d, const uint8_t *p)
@@ -443,15 +470,15 @@ static void read_identificate_attr(struct caniot_device *dev,
 	arch_rom_cpy(&attr->val, (uint8_t *)dev->identification + ref->offset, ref->size);
 }
 
-static void read_rom_identification(struct caniot_identification *d,
-				    const struct caniot_identification *p)
+static void read_rom_identification(struct caniot_device_id *d,
+				    const struct caniot_device_id *p)
 {
-	arch_rom_cpy_mem(d, p, sizeof(struct caniot_identification));
+	arch_rom_cpy_mem(d, p, sizeof(struct caniot_device_id));
 }
 
 void caniot_print_device_identification(const struct caniot_device *dev)
 {
-	struct caniot_identification id;
+	struct caniot_device_id id;
 
 	read_rom_identification(&id, dev->identification);
 
@@ -466,7 +493,7 @@ int caniot_device_system_reset(struct caniot_device *dev)
 {
 	if (!dev) return -CANIOT_EINVAL;
 
-	memset(&dev->system, 0, sizeof(struct caniot_system));
+	memset(&dev->system, 0, sizeof(struct caniot_device_system));
 
 	return 0;
 }
@@ -602,17 +629,17 @@ static int attribute_read(struct caniot_device *dev,
 		   ref->option);
 
 	switch (ref->section) {
-	case section_identification: {
+	case CANIOT_SECTION_DEVICE_IDENTIFICATION: {
 		read_identificate_attr(dev, ref, attr);
 		break;
 	}
 
-	case section_system: {
+	case CANIOT_SECTION_DEVICE_SYSTEM: {
 		memcpy(&attr->val, (uint8_t *)&dev->system + ref->offset, ref->size);
 		break;
 	}
 
-	case section_config: {
+	case CANIOT_SECTION_DEVICE_CONFIG: {
 		ret = read_config_attr(dev, ref, attr);
 		break;
 	}
@@ -770,11 +797,11 @@ static int attribute_write(struct caniot_device *dev,
 		   ref->option);
 
 	switch (ref->section) {
-	case section_system: {
+	case CANIOT_SECTION_DEVICE_SYSTEM: {
 		ret = write_system_attr(dev, ref, attr);
 		break;
 	}
-	case section_config: {
+	case CANIOT_SECTION_DEVICE_CONFIG: {
 		ret = write_config_attr(dev, ref, attr);
 		break;
 	}
@@ -1106,3 +1133,40 @@ void caniot_app_init(struct caniot_device *dev)
 }
 
 #endif /* CONFIG_CANIOT_DRIVERS_API */
+
+int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key)
+{
+	int ret;
+	struct attr_ref ref;
+
+	if (!attr) {
+		return -CANIOT_EINVAL;
+	}
+
+	ret = attr_resolve(key, &ref);
+	if (ret != 0) {
+		return ret;
+	}
+
+	attr->read	 = ref.option & READABLE ? 1u : 0u;
+	attr->write	 = ref.option & WRITABLE ? 1u : 0u;
+	attr->persistent = ref.section_option & PERSISTENT ? 1u : 0u;
+	attr->section	 = ref.section;
+	attr->key	 = key;
+
+#if CONFIG_CANIOT_ATTRIBUTE_NAME
+	const struct attr_section *section = attr_get_section(key);
+	const struct attribute *attribute  = section ? attr_get(key, section) : NULL;
+	if (attribute)
+		strncpy(attr->name, attribute->name, CANIOT_ATTR_NAME_MAX_LEN);
+	else
+		attr->name[0] = '\0';
+#endif
+
+	return 0;
+}
+
+int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *name)
+{
+	return -CANIOT_ENOTSUP;
+}

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <caniot/caniot.h>
 #include <malloc.h>
 #include <memory.h>

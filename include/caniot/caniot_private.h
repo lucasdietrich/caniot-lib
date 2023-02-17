@@ -7,6 +7,8 @@
 #ifndef _CANIOT_PRIVATE_H_
 #define _CANIOT_PRIVATE_H_
 
+#include <caniot/caniot.h>
+
 /**
  * @brief Helper for printing strings :
  *
@@ -31,7 +33,13 @@
 #define memcpy_P memcpy_P
 #define ROM	 PROGMEM
 #define Z_ASSERT(x)
+
+#if CONFIG_CANIOT_ATTRIBUTE_NAME
+#error "Attribute name is not supported on AVR architectures"
+#endif
+
 #elif defined(__ZEPHYR__)
+
 #include <stdio.h>
 
 #include <zephyr/kernel.h>
@@ -42,7 +50,9 @@
 #define memcpy_P  memcpy
 #define ROM
 #define Z_ASSERT(x) __ASSERT(x, STRINGIFY(xSTRINGIFY()))
+
 #else /* stdlib */
+
 #include <stdio.h>
 #define snprintf  snprintf
 #define strlen_P  strlen

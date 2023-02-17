@@ -14,33 +14,15 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <caniot/caniot_config.h>
+
+#define __PACKED __attribute__((packed))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef CONFIG_CANIOT_CHECKS
-#define CONFIG_CANIOT_CHECKS_ENABLED 0
-#endif
-
-#ifndef CONFIG_CANIOT_DRIVERS_API
-#define CONFIG_CANIOT_DRIVERS_API 0
-#endif
-
-#ifndef CONFIG_CANIOT_CTRL_DRIVERS_API
-#define CONFIG_CANIOT_CTRL_DRIVERS_API 0
-#endif
-
-#ifndef CONFIG_CANIOT_DEBUG
-#define CONFIG_CANIOT_DEBUG 0
-#endif
-
-#ifndef CONFIG_CANIOT_MAX_PENDING_QUERIES
-#define CONFIG_CANIOT_MAX_PENDING_QUERIES 4U
-#endif /* CONFIG_CANIOT_MAX_PENDING_QUERIES */
-
-#define CANIOT_VERSION1 1
-#define CANIOT_VERSION2 2
-#define CANIOT_VERSION	CANIOT_VERSION2
+#define CANIOT_VERSION CANIOT_VERSION2
 
 #define CANIOT_ID(t, q, c, d, e)                                                         \
 	((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) |     \
@@ -48,9 +30,6 @@ extern "C" {
 
 #define CANIOT_CLASS_BROADCAST (0x7U)
 #define CANIOT_SUBID_BROADCAST (0x7U)
-
-#define CANIOT_DID_MAX_VALUE CANIOT_DID_BROADCAST
-#define CANIOT_DID_MIN_VALUE (0x00U)
 
 #define CANIOT_DID(class_id, sub_id)                                                     \
 	((caniot_did_t)((class_id)&0x7U) | (((sub_id)&0x7U) << 3U))
@@ -61,13 +40,13 @@ extern "C" {
 #define CANIOT_DID_BROADCAST CANIOT_DID(CANIOT_CLASS_BROADCAST, 0x7U)
 
 #define CANIOT_DID_EQ(did1, did2)                                                        \
-	(((did1)&CANIOT_DID_MAX_VALUE) == ((did2)&CANIOT_DID_MAX_VALUE))
+	(((did1)&CANIOT_DID_BROADCAST) == ((did2)&CANIOT_DID_BROADCAST))
 
 #define CANIOT_DEVICE_IS_BROADCAST(did) CANIOT_DID_EQ(did, CANIOT_DID_BROADCAST)
 
 /* milliseconds */
-#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT 0U
-#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT 100U
+#define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS 0U
+#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT    100U
 
 /* seconds */
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT_MS 60000u
@@ -173,7 +152,7 @@ struct caniot_attribute {
 		uint8_t u8[4];
 		uint32_t val;
 	};
-} __attribute__((packed));
+} __PACKED;
 
 struct caniot_frame {
 	caniot_id_t id;

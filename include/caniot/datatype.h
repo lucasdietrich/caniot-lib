@@ -108,7 +108,7 @@ struct caniot_blc_sys_command {
 	caniot_onestate_cmd_t config_reset : 1;
 
 	uint8_t _unused10 : 2;
-} __attribute__((packed));
+} __PACKED;
 
 /* is the same as board level telemetry (blt) */
 struct caniot_blc0_telemetry {
@@ -119,7 +119,7 @@ struct caniot_blc0_telemetry {
 	uint16_t ext_temperature : 10;
 	uint16_t ext_temperature2 : 10;
 	uint16_t ext_temperature3 : 10;
-} __attribute__((packed));
+} __PACKED;
 
 /* Board level control (blc) command */
 struct caniot_blc0_command {
@@ -129,7 +129,7 @@ struct caniot_blc0_command {
 	uint16_t crl2 : 3u;
 
 	uint8_t _unused : 4u;
-} __attribute__((packed));
+} __PACKED;
 
 struct caniot_blc1_telemetry {
 	uint8_t pcpd;
@@ -142,7 +142,7 @@ struct caniot_blc1_telemetry {
 	uint32_t ext_temperature : 10;
 	uint32_t ext_temperature2 : 10;
 	uint32_t ext_temperature3 : 10;
-} __attribute__((packed));
+} __PACKED;
 
 /* TODO remove bitfields*/
 struct caniot_blc1_command {
@@ -180,7 +180,7 @@ struct caniot_blc_telemetry {
 		struct caniot_blc1_telemetry blc1;
 		uint8_t payload[8u];
 	};
-} __attribute__((packed));
+} __PACKED;
 
 struct caniot_blc_command {
 	union {
@@ -190,7 +190,7 @@ struct caniot_blc_command {
 	};
 
 	struct caniot_blc_sys_command sys;
-} __attribute__((packed));
+} __PACKED;
 
 /* Same for command and telemetry */
 struct caniot_heating_control {

@@ -462,7 +462,7 @@ bool caniot_deviceid_equal(caniot_did_t a, caniot_did_t b)
 
 bool caniot_deviceid_valid(caniot_did_t did)
 {
-	return (did <= CANIOT_DID_MAX_VALUE);
+	return (did <= CANIOT_DID_BROADCAST);
 }
 
 bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt)

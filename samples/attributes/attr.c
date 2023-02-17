@@ -13,5 +13,7 @@
 
 int main(void)
 {
-	printf("Hello, world!\n");
+	struct caniot_device_attribute attr;
+	int ret = caniot_attr_get_by_key(&attr, 0x1020);
+	printf("ret: %d name: %s\n", ret, attr.name);
 }

@@ -16,7 +16,9 @@
 
 #include <caniot/caniot_config.h>
 
+#ifndef __PACKED
 #define __PACKED __attribute__((packed))
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +40,7 @@ extern "C" {
 #define CANIOT_DID_SID(did)	 ((caniot_device_subid_t)(((did) >> 3U) & 0x7U))
 
 #define CANIOT_DID_BROADCAST CANIOT_DID(CANIOT_CLASS_BROADCAST, 0x7U)
+#define CANIOT_DID_MAX_COUNT 63u
 
 #define CANIOT_DID_EQ(did1, did2)                                                        \
 	(((did1)&CANIOT_DID_BROADCAST) == ((did2)&CANIOT_DID_BROADCAST))

@@ -1,5 +1,5 @@
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
 static uint64_t time_ms = 0U;

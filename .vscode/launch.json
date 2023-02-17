@@ -18,6 +18,19 @@
 			"miDebuggerPath": "/usr/bin/gdb"
 		},
 		{
+			"name": "GDB Attr",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/build/samples/attributes/sample_attr",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"stopAtEntry": true,
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb"
+		},
+		{
 			"name": "GDB Test",
 			"type": "cppdbg",
 			"request": "launch",

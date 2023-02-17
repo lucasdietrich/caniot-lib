@@ -1,66 +1,44 @@
-#include <stdio.h>
-
-#include <caniot/caniot.h>
-#include <caniot/controller.h>
-#include <caniot/device.h>
-#include <caniot/caniot_private.h>
-
-#include <time.h>
-#include <stdlib.h>
-#include <unistd.h>
-
 #include "header.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include <caniot/caniot.h>
+#include <caniot/caniot_private.h>
+#include <caniot/controller.h>
+#include <caniot/device.h>
+#include <unistd.h>
+
 caniot_frame_t qtelemetry = {
-	.id = {
-		.type = CANIOT_FRAME_TYPE_TELEMETRY,
+	.id  = {.type	  = CANIOT_FRAME_TYPE_TELEMETRY,
 		.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
-		.query = CANIOT_QUERY
-	},
+		.query	  = CANIOT_QUERY},
 	.len = 0U,
 };
 
 caniot_frame_t qwrite_attr = {
-	.id = {
-		.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		.query = CANIOT_QUERY
-	},
+	.id  = {.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE, .query = CANIOT_QUERY},
 	.len = 6U,
-	.buf = {
-		0x60,
-		0x20,
-		'G',
-		'B',
-		'E',
-		'N'
-	}
-};
+	.buf = {0x60, 0x20, 'G', 'B', 'E', 'N'}};
 
-caniot_frame_t qcommand = {
-	.id = {
-		.type = CANIOT_FRAME_TYPE_COMMAND,
-		.endpoint = CANIOT_ENDPOINT_APP,
-		.query = CANIOT_QUERY
-	},
-	.len = 1U,
-	.buf = {
-		0xFF
-	}
-};
+caniot_frame_t qcommand = {.id	= {.type     = CANIOT_FRAME_TYPE_COMMAND,
+				   .endpoint = CANIOT_ENDPOINT_APP,
+				   .query    = CANIOT_QUERY},
+			   .len = 1U,
+			   .buf = {0xFF}};
 
 caniot_frame_t fake_telem_resp = {
-	.id = {
-		.type = CANIOT_FRAME_TYPE_TELEMETRY,
-		.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
-		.query = CANIOT_RESPONSE,
-		.cls = CANIOT_DEVICE_CLASS1,
-		.sid = CANIOT_DEVICE_SID0,
-	},
+	.id =
+		{
+			.type	  = CANIOT_FRAME_TYPE_TELEMETRY,
+			.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
+			.query	  = CANIOT_RESPONSE,
+			.cls	  = CANIOT_DEVICE_CLASS1,
+			.sid	  = CANIOT_DEVICE_SID0,
+		},
 	.len = 0U,
-	.buf = {
-		0xFF
-	}
-};
+	.buf = {0xFF}};
 
 struct timed_frame {
 	uint64_t time; /* ms */
@@ -72,30 +50,35 @@ struct timed_frame {
 };
 
 struct timed_frame timed_frames[] = {
-	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 450U, &qtelemetry },
-	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID1), 450U, &qtelemetry },
-	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID2), 450U, &qtelemetry },
+	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 450U,
+	// &qtelemetry },
+	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID1), 450U,
+	// &qtelemetry },
+	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID2), 450U,
+	// &qtelemetry },
 };
 
 int main(void)
 {
 	int ret;
 	uint32_t counter = 0;
-	
+
 	init_controllers();
 	init_devices();
 
 	caniot_frame_t frame;
 	caniot_clear_frame(&frame);
 
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_CLASS_BROADCAST, CANIOT_SUBID_BROADCAST), &qtelemetry, 1000U);
+	// ctrl_Q(0U, CANIOT_DID(CANIOT_CLASS_BROADCAST, CANIOT_SUBID_BROADCAST),
+	// &qtelemetry, 1000U);
 	ctrl_Q(0U, CANIOT_DID_BROADCAST, &qtelemetry, 400u);
-	
+
 	// can_send(&fake_telem_resp, 0U);
 
 	// ctrl_C(0U, handle, false);
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID3), &qtelemetry, 650U);
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID4), &qwrite_attr, 550U);
+	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID3), &qtelemetry,
+	// 650U); ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID4),
+	// &qwrite_attr, 550U);
 
 	uint64_t last_time = 0u;
 
@@ -108,8 +91,9 @@ int main(void)
 
 		/* Send schedulded frames */
 		for (struct timed_frame *tf = timed_frames;
-		     tf < timed_frames + ARRAY_SIZE(timed_frames); tf++) {
-			
+		     tf < timed_frames + ARRAY_SIZE(timed_frames);
+		     tf++) {
+
 			if (tf->time >= now) {
 				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
 			}
@@ -120,7 +104,7 @@ int main(void)
 			last_time = now;
 		}
 		const uint64_t delta = now - last_time;
-		last_time = now;
+		last_time	     = now;
 
 		/* Process a single frame */
 		ret = can_recv(&frame);

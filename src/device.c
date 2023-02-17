@@ -401,7 +401,7 @@ static int attr_resolve(attr_key_t key, struct attr_ref *ref)
 {
 	const struct attr_section *section;
 	const struct attribute *attr;
-	uint8_t attr_size ;
+	uint8_t attr_size;
 
 	section = attr_get_section(key);
 	if (!section) {

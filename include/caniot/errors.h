@@ -29,9 +29,9 @@ typedef enum {
 	CANIOT_EAPI,	/*  API */
 
 	CANIOT_EKEYSECTION, /* Unknown attributes section */
-	CANIOT_EKEYATTR,   /* Unknown attribute */
-	CANIOT_EKEYPART, /* Unknown attribute part */
-	CANIOT_ENOATTR, /* No attribute */
+	CANIOT_EKEYATTR,    /* Unknown attribute */
+	CANIOT_EKEYPART,    /* Unknown attribute part */
+	CANIOT_ENOATTR,	    /* No attribute */
 
 	CANIOT_EREADONLY,
 

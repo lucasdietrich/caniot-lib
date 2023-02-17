@@ -1,9 +1,8 @@
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-
 #include <time.h>
 
 /* printf("[ get_time %lu.%lu ]\n", ts.tv_sec, ts.tv_nsec); */

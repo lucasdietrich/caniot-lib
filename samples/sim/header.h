@@ -2,7 +2,7 @@
 #define _HEADER_H
 
 #define CONTROLLERS_COUNT 1U
-#define DEVICES_COUNT 8U
+#define DEVICES_COUNT	  8U
 
 #define VTIME_INC_CONST_VAL 100U
 
@@ -26,7 +26,9 @@ int can_recv(struct caniot_frame *frame);
 void get_time(uint32_t *sec, uint16_t *ms);
 void vtime_get(uint32_t *sec, uint16_t *ms);
 void vtime_inc(uint32_t inc_ms);
-static inline void vtime_inc_const(void) { vtime_inc(VTIME_INC_CONST_VAL); }
+static inline void vtime_inc_const(void)
+{
+	vtime_inc(VTIME_INC_CONST_VAL);
+}
 
-
-#endif 
+#endif

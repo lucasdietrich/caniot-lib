@@ -10,7 +10,6 @@
  */
 
 #include <caniot/caniot.h>
-
 #include <malloc.h>
 #include <memory.h>
 
@@ -23,7 +22,7 @@ struct item {
 
 /**
  * @brief doubly linked queue
- * Note: Keeping track of the head and the tail allows 
+ * Note: Keeping track of the head and the tail allows
  * to queue and dequeue with O(1) complexity
  */
 struct {
@@ -84,7 +83,7 @@ int can_recv(struct caniot_frame *frame)
 		// dequeue if not null
 		if (queue.head != NULL) {
 			struct item *item = queue.head;
-			queue.head = queue.head->next;
+			queue.head	  = queue.head->next;
 
 			if (queue.head == NULL) {
 				queue.tail = NULL;

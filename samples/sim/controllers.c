@@ -1,7 +1,7 @@
 #include <errno.h>
 
-#include <caniot/caniot_private.h>
 #include <caniot/caniot.h>
+#include <caniot/caniot_private.h>
 #include <caniot/controller.h>
 
 static uint32_t counter = 0;
@@ -15,21 +15,22 @@ static int can_send_fail(const struct caniot_frame *frame, uint32_t delay_ms)
 	return -1;
 }
 
-const struct caniot_drivers_api driv = {
-	.entropy = NULL,
-	.get_time = vtime_get, /* get_time */
-	.recv = can_recv,
-	.send = can_send, /* can_send, can_send_fail */
-	.set_time = NULL
-};
+const struct caniot_drivers_api driv = {.entropy  = NULL,
+					.get_time = vtime_get, /* get_time */
+					.recv	  = can_recv,
+					.send = can_send, /* can_send, can_send_fail */
+					.set_time = NULL};
 
 extern caniot_frame_t qtelemetry;
 
-bool ctrl_event_cb(const caniot_controller_event_t *ev,
-		   void *user_data)
+bool ctrl_event_cb(const caniot_controller_event_t *ev, void *user_data)
 {
 	printf("[CTRL EV] did=%u handle=%u ctx=%u status=%u term=%u resp=%p\n",
-	       ev->did, ev->handle, ev->context, ev->status, ev->terminated,
+	       ev->did,
+	       ev->handle,
+	       ev->context,
+	       ev->status,
+	       ev->terminated,
 	       ev->response);
 
 	vtime_inc_const();

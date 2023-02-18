@@ -1221,13 +1221,8 @@ int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_d
 
 	for (uint8_t si = 0u; si < ARRAY_SIZE(attr_sections); si++) {
 		section = &attr_sections[si];
-		array	= attr_get_section_array(section);
-
-		
 
 		for (uint8_t ai = 0u; ai < attr_get_section_size(section); ai++) {
-			attribute = &array[ai];
-			
 			key = 0u;
 			ATTR_KEY_SECTION_SET(key, si);
 			ATTR_KEY_ATTR_SET(key, ai);

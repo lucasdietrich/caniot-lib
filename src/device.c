@@ -55,12 +55,35 @@ struct attr_section {
 #define ATTR_SYSTEM	    1
 #define ATTR_CONFIG	    2
 
-#define ATTR_KEY_SECTION(key) ((uint8_t)(((uint16_t)key) >> 12))
-#define ATTR_KEY_ATTR(key)    ((uint8_t)((((uint16_t)key) >> 4) & 0xFF))
-#define ATTR_KEY_PART(key)    ((uint8_t)(((uint16_t)key) & 0xF))
+#define ATTR_KEY_SECTION_OFFSET 12u
+#define ATTR_KEY_SECTION_SIZE	4u
+#define ATTR_KEY_SECTION_MASK	((1u << ATTR_KEY_SECTION_SIZE) - 1u)
+
+#define ATTR_KEY_ATTR_OFFSET 4u
+#define ATTR_KEY_ATTR_SIZE   8u
+#define ATTR_KEY_ATTR_MASK   ((1u << ATTR_KEY_ATTR_SIZE) - 1u)
+
+#define ATTR_KEY_PART_OFFSET 0u
+#define ATTR_KEY_PART_SIZE   4u
+#define ATTR_KEY_PART_MASK   ((1u << ATTR_KEY_PART_SIZE) - 1u)
+
+#define ATTR_KEY_SECTION_GET(key)                                                        \
+	(((key) >> ATTR_KEY_SECTION_OFFSET) & ATTR_KEY_SECTION_MASK)
+#define ATTR_KEY_ATTR_GET(key) (((key) >> ATTR_KEY_ATTR_OFFSET) & ATTR_KEY_ATTR_MASK)
+#define ATTR_KEY_PART_GET(key) (((key) >> ATTR_KEY_PART_OFFSET) & ATTR_KEY_PART_MASK)
+
+#define ATTR_KEY_SECTION_SET(key, section)                                               \
+	((key) = ((key) & ~(ATTR_KEY_SECTION_MASK << ATTR_KEY_SECTION_OFFSET)) |         \
+		 ((section & ATTR_KEY_SECTION_MASK) << ATTR_KEY_SECTION_OFFSET))
+#define ATTR_KEY_ATTR_SET(key, attr)                                                     \
+	((key) = ((key) & ~(ATTR_KEY_ATTR_MASK << ATTR_KEY_ATTR_OFFSET)) |               \
+		 ((attr & ATTR_KEY_ATTR_MASK) << ATTR_KEY_ATTR_OFFSET))
+#define ATTR_KEY_PART_SET(key, part)                                                     \
+	((key) = ((key) & ~(ATTR_KEY_PART_MASK << ATTR_KEY_PART_OFFSET)) |               \
+		 ((part & ATTR_KEY_PART_MASK) << ATTR_KEY_PART_OFFSET))
 
 /* A part is is 4B */
-#define ATTR_KEY_OFFSET(key) (ATTR_KEY_PART(key) << 2)
+#define ATTR_KEY_DATA_BYTE_OFFSET(key) (ATTR_KEY_PART_GET(key) << 2)
 
 #define ATTR_KEY(section, attr, part)                                                    \
 	((section & 0xF) << 12 | (attr & 0xFF) << 4 | (part & 0xF))
@@ -413,7 +436,7 @@ static inline enum attr_option attr_get_option(const struct attribute *attr)
 
 static const struct attr_section *attr_get_section(attr_key_t key)
 {
-	uint8_t index = ATTR_KEY_SECTION(key);
+	uint8_t index = ATTR_KEY_SECTION_GET(key);
 	if (index < ARRAY_SIZE(attr_sections)) {
 		return &attr_sections[index];
 	}
@@ -423,7 +446,7 @@ static const struct attr_section *attr_get_section(attr_key_t key)
 static const struct attribute *attr_get(attr_key_t key,
 					const struct attr_section *section)
 {
-	uint8_t index = ATTR_KEY_ATTR(key);
+	uint8_t index = ATTR_KEY_ATTR_GET(key);
 	if (index < attr_get_section_size(section)) {
 		return &attr_get_section_array(section)[index];
 	}
@@ -447,13 +470,13 @@ static int attr_resolve(attr_key_t key, struct attr_ref *ref)
 	}
 
 	attr_size = attr_get_size(attr);
-	if (ATTR_KEY_OFFSET(key) >= attr_size) {
+	if (ATTR_KEY_DATA_BYTE_OFFSET(key) >= attr_size) {
 		return -CANIOT_EKEYPART;
 	}
 
-	ref->section	    = ATTR_KEY_SECTION(key);
+	ref->section	    = ATTR_KEY_SECTION_GET(key);
 	ref->size	    = MIN(attr_size, 4u);
-	ref->offset	    = ATTR_KEY_OFFSET(key) + attr_get_offset(attr);
+	ref->offset	    = ATTR_KEY_DATA_BYTE_OFFSET(key) + attr_get_offset(attr);
 	ref->option	    = attr_get_option(attr);
 	ref->section_option = attr_get_section_option(section);
 
@@ -1134,6 +1157,30 @@ void caniot_app_init(struct caniot_device *dev)
 
 #endif /* CONFIG_CANIOT_DRIVERS_API */
 
+static void attribute_copy_from_ref(struct caniot_device_attribute *attr,
+				    struct attr_ref *ref)
+{
+	attr->read	 = ref->option & READABLE ? 1u : 0u;
+	attr->write	 = ref->option & WRITABLE ? 1u : 0u;
+	attr->persistent = ref->section_option & PERSISTENT ? 1u : 0u;
+	attr->section	 = ref->section;
+}
+
+static void attribute_copy_name_from_ref(struct caniot_device_attribute *attr,
+					 uint16_t key,
+					 struct attr_ref *ref)
+{
+#if CONFIG_CANIOT_ATTRIBUTE_NAME
+	const struct attr_section *section = attr_get_section(key);
+	const struct attribute *attribute  = section ? attr_get(key, section) : NULL;
+	if (attribute) {
+		strncpy(attr->name, attribute->name, CANIOT_ATTR_NAME_MAX_LEN);
+		return;
+	}
+#endif
+	memset(attr->name, 0x00u, CANIOT_ATTR_NAME_MAX_LEN);
+}
+
 int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key)
 {
 	int ret;
@@ -1148,20 +1195,9 @@ int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key)
 		return ret;
 	}
 
-	attr->read	 = ref.option & READABLE ? 1u : 0u;
-	attr->write	 = ref.option & WRITABLE ? 1u : 0u;
-	attr->persistent = ref.section_option & PERSISTENT ? 1u : 0u;
-	attr->section	 = ref.section;
-	attr->key	 = key;
-
-#if CONFIG_CANIOT_ATTRIBUTE_NAME
-	const struct attr_section *section = attr_get_section(key);
-	const struct attribute *attribute  = section ? attr_get(key, section) : NULL;
-	if (attribute)
-		strncpy(attr->name, attribute->name, CANIOT_ATTR_NAME_MAX_LEN);
-	else
-		attr->name[0] = '\0';
-#endif
+	attribute_copy_from_ref(attr, &ref);
+	attribute_copy_name_from_ref(attr, key, &ref);
+	attr->key = key;
 
 	return 0;
 }
@@ -1169,4 +1205,41 @@ int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key)
 int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *name)
 {
 	return -CANIOT_ENOTSUP;
+}
+
+int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_data)
+{
+	if (!handler) {
+		return -CANIOT_EINVAL;
+	}
+
+	int count = 0;
+	const struct attr_section *section;
+	const struct attribute *attribute, *array;
+	struct caniot_device_attribute attr;
+	uint16_t key;
+
+	for (uint8_t si = 0u; si < ARRAY_SIZE(attr_sections); si++) {
+		section = &attr_sections[si];
+		array	= attr_get_section_array(section);
+
+		
+
+		for (uint8_t ai = 0u; ai < attr_get_section_size(section); ai++) {
+			attribute = &array[ai];
+			
+			key = 0u;
+			ATTR_KEY_SECTION_SET(key, si);
+			ATTR_KEY_ATTR_SET(key, ai);
+
+			if (caniot_attr_get_by_key(&attr, key) == 0) {
+				count++;
+				bool zcontinue = handler(&attr, user_data);
+				if (!zcontinue) goto exit;
+			}
+		}
+	}
+
+exit:
+	return count;
 }

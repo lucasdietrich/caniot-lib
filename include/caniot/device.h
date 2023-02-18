@@ -262,6 +262,23 @@ int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key);
  */
 int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *name);
 
+/**
+ * @brief Callback for iterating over attributes
+ * 
+ * @note return false to stop iteration
+ */
+typedef bool (caniot_device_attribute_handler_t)(struct caniot_device_attribute *attr,
+					       void *user_data);
+
+/**
+ * @brief Iterate over all existing attributes, call handler for each
+ * 
+ * @param handler 
+ * @param user_data 
+ * @return int 
+ */
+int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_data);
+
 /*____________________________________________________________________________*/
 
 #define CANIOT_CONFIG_DEFAULT_INIT()                                                      \

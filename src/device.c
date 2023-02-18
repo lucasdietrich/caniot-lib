@@ -1215,7 +1215,6 @@ int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_d
 
 	int count = 0;
 	const struct attr_section *section;
-	const struct attribute *attribute, *array;
 	struct caniot_device_attribute attr;
 	uint16_t key;
 

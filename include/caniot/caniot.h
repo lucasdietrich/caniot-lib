@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#define CANIOT_VERSION CANIOT_VERSION2
+#define CANIOT_VERSION 2u
 
 #define CANIOT_ID(t, q, c, d, e)                                                         \
 	((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) |     \

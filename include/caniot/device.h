@@ -124,12 +124,12 @@ struct caniot_device {
 
 typedef int(caniot_telemetry_handler_t)(struct caniot_device *dev,
 					caniot_endpoint_t ep,
-					char *buf,
+					unsigned char *buf,
 					uint8_t *len);
 
 typedef int(caniot_command_handler_t)(struct caniot_device *dev,
 				      caniot_endpoint_t ep,
-				      const char *buf,
+				      const unsigned char *buf,
 				      uint8_t len);
 
 struct caniot_device_api {
@@ -264,18 +264,18 @@ int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *na
 
 /**
  * @brief Callback for iterating over attributes
- * 
+ *
  * @note return false to stop iteration
  */
-typedef bool (caniot_device_attribute_handler_t)(struct caniot_device_attribute *attr,
-					       void *user_data);
+typedef bool(caniot_device_attribute_handler_t)(struct caniot_device_attribute *attr,
+						void *user_data);
 
 /**
  * @brief Iterate over all existing attributes, call handler for each
- * 
- * @param handler 
- * @param user_data 
- * @return int 
+ *
+ * @param handler
+ * @param user_data
+ * @return int
  */
 int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_data);
 
@@ -287,7 +287,7 @@ int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_d
 			{                                                                 \
 				.period	   = CANIOT_TELEMETRY_PERIOD_DEFAULT_MS,          \
 				.delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS,       \
-				.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS,          \
+				.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS,       \
 			},                                                                \
 		.flags =                                                                  \
 			{                                                                 \

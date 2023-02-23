@@ -20,6 +20,9 @@ void init_devices(void);
 void controllers_process(const struct caniot_frame *frame, uint32_t time_passed);
 void devices_process(const struct caniot_frame *frame);
 
+void controllers_discovery_start(void);
+void controllers_discovery_stop(void);
+
 int ctrl_Q(uint32_t ctrlid,
 	   caniot_did_t did,
 	   struct caniot_frame *frame,

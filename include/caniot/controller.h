@@ -166,6 +166,52 @@ typedef struct {
 typedef bool (*caniot_controller_event_cb_t)(const caniot_controller_event_t *ev,
 					     void *user_data);
 
+/**
+ * @brief Discovery callback
+ * Return true to continue discovery, false to stop it
+ */
+typedef bool (*caniot_controller_discovery_cb_t)(struct caniot_controller *ctrl,
+						 caniot_did_t did,
+						 const struct caniot_frame *frame,
+						 void *user_data);
+
+typedef enum {
+	/* A BROADCAST frame is sent */
+	CANIOT_DISCOVERY_MODE_ACTIVE,
+
+	/* Controller listens for incoming frames */
+	CANIOT_DISCOVERY_MODE_PASSIVE,
+} caniot_discovery_mode_t;
+
+typedef enum {
+	/* Listening for telemetry frames
+	 * If mode is ACTIVE, a telemetry request is sent */
+	CANIOT_DISCOVERY_TYPE_TELEMETRY,
+
+	/* Listening for attribute frames
+	 * Only supported in ACTIVE mode */
+	CANIOT_DISCOVERY_TYPE_ATTRIBUTE,
+
+	/* Listening for any incoming frame
+	 * Only supported in PASSIVE mode */
+	CANIOT_DISCOVERY_TYPE_ANY,
+} caniot_discovery_type_t;
+
+struct caniot_discovery_params {
+	caniot_discovery_mode_t mode;
+	caniot_discovery_type_t type;
+
+	uint32_t timeout; /* in ms */
+
+	caniot_controller_discovery_cb_t user_callback;
+	void *user_data;
+
+	union {
+		caniot_endpoint_t endpoint; /* if type is TELEMETRY */
+		uint16_t attr_key;	    /* if type is ATTRIBUTE */
+	} data;
+};
+
 struct caniot_controller {
 	struct {
 		/* Pool of queries to be allocated */
@@ -186,6 +232,15 @@ struct caniot_controller {
 		uint32_t sec;
 		uint16_t ms;
 	} last_process;
+
+#if CONFIG_CANIOT_CONTROLLER_DISCOVERY
+	struct {
+		struct caniot_discovery_params params;
+		uint64_t did_bf;
+		uint8_t pending : 1u;
+		uint8_t handle; /* pq handle for the discovery query */
+	} discovery;
+#endif
 
 	/* Callback to handle controller events */
 	caniot_controller_event_cb_t event_cb;
@@ -344,6 +399,45 @@ int caniot_controller_process(struct caniot_controller *ctrl);
 
 /*____________________________________________________________________________*/
 
+// Discovery
+
+/**
+ * @brief Start a discovery
+ *
+ * @param ctrl
+ * @param timeout
+ * @param cb
+ * @param user_data
+ * @return int
+ */
+int caniot_controller_discovery_start(struct caniot_controller *ctrl,
+				      const struct caniot_discovery_params *params);
+
+/**
+ * @brief Stop a discovery
+ *
+ * @param ctrl
+ * @return int
+ */
+int caniot_controller_discovery_stop(struct caniot_controller *ctrl);
+
+/**
+ * @brief Return whether a discovery is running
+ *
+ * @param ctrl
+ * @return true
+ * @return false
+ */
+bool caniot_controller_discovery_running(struct caniot_controller *ctrl);
+
+/*____________________________________________________________________________*/
+
+/**
+ * @brief Debug controller pending queue
+ *
+ * @param ctrl
+ * @return int
+ */
 int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl);
 
 #ifdef __cplusplus

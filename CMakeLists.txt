@@ -17,7 +17,13 @@ project(caniotlib VERSION 1.0.0 DESCRIPTION "CANIOT lib")
 set(CMAKE_BUILD_TYPE Debug)
 
 # add debug symbols
-set(CMAKE_CXX_FLAGS "-Wall -g -O2")
+set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra -Wpedantic -g")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wpedantic -g")
+
+set(CMAKE_C_FLAGS_RELEASE "-Wall -g -O2")
+set(CMAKE_CXX_FLAGS_RELEASE "-Wall -g -O2")
+
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG : ${CMAKE_CXX_FLAGS_DEBUG}")
 
 file(GLOB CANIOT_SOURCES "${CMAKE_CURRENT_LIST_DIR}/src/**.c")
 file(GLOB CANIOT_HEADERS "${CMAKE_CURRENT_LIST_DIR}/include/**.h")
@@ -28,7 +34,7 @@ target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_DRIVERS_API=0)
 target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_CTRL_DRIVERS_API=1)
 target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_LOG_LEVEL=4)
 target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_ASSERT=1)
-target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_MAX_PENDING_QUERIES=1)
+target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_MAX_PENDING_QUERIES=4)
 target_compile_definitions(caniotlib PUBLIC CONFIG_CANIOT_ATTRIBUTE_NAME=1)
 
 target_include_directories(caniotlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")

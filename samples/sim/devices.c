@@ -21,7 +21,9 @@ struct caniot_device devices[DEVICES_COUNT];
 static int cb_config_on_read(struct caniot_device *dev,
 			     struct caniot_device_config *config)
 {
-	printf("[DEV CB] cb_config_on_read dev=%p config=%p\n", dev, config);
+	printf("[DEV CB] cb_config_on_read dev=%p config=%p\n",
+	       (void *)dev,
+	       (void *)config);
 
 	vtime_inc_const();
 
@@ -31,7 +33,9 @@ static int cb_config_on_read(struct caniot_device *dev,
 static int cb_config_on_write(struct caniot_device *dev,
 			      struct caniot_device_config *config)
 {
-	printf("[DEV CB] cb_config_on_write dev=%p config=%p\n", dev, config);
+	printf("[DEV CB] cb_config_on_write dev=%p config=%p\n",
+	       (void *)dev,
+	       (void *)config);
 
 	vtime_inc_const();
 
@@ -42,7 +46,10 @@ static int cb_attr_read(struct caniot_device *dev, uint16_t key, uint32_t *val)
 {
 	*val = 0U;
 
-	printf("[DEV CB] cb_attr_read dev=%p key=%hu *val=%p\n", dev, key, val);
+	printf("[DEV CB] cb_attr_read dev=%p key=%hu *val=%p\n",
+	       (void *)dev,
+	       key,
+	       (void *)val);
 
 	vtime_inc_const();
 
@@ -51,7 +58,7 @@ static int cb_attr_read(struct caniot_device *dev, uint16_t key, uint32_t *val)
 
 static int cb_attr_write(struct caniot_device *dev, uint16_t key, uint32_t val)
 {
-	printf("[DEV CB] cb_attr_write dev=%p key=%hu val=%u\n", dev, key, val);
+	printf("[DEV CB] cb_attr_write dev=%p key=%hu val=%u\n", (void *)dev, key, val);
 
 	vtime_inc_const();
 
@@ -60,16 +67,16 @@ static int cb_attr_write(struct caniot_device *dev, uint16_t key, uint32_t val)
 
 static int(cb_telemetry_handler)(struct caniot_device *dev,
 				 caniot_endpoint_t ep,
-				 char *buf,
+				 unsigned char *buf,
 				 uint8_t *len)
 {
 	*len = 0U;
 
 	printf("[DEV CB] cb_telemetry_handler dev=%p ep=%hhu buf=%p [&len=%p len=%hhu]\n",
-	       dev,
+	       (void *)dev,
 	       ep,
-	       buf,
-	       len,
+	       (void *)buf,
+	       (void *)len,
 	       *len);
 
 	vtime_inc_const();
@@ -79,13 +86,13 @@ static int(cb_telemetry_handler)(struct caniot_device *dev,
 
 static int(cb_command_handler)(struct caniot_device *dev,
 			       caniot_endpoint_t ep,
-			       const char *buf,
+			       const unsigned char *buf,
 			       uint8_t len)
 {
 	printf("[DEV CB] cb_command_handler dev=%p ep=%hhu buf=%p [len = %hhu]\n",
-	       dev,
+	       (void *)dev,
 	       ep,
-	       buf,
+	       (void *)buf,
 	       len);
 
 	vtime_inc_const();
@@ -123,7 +130,6 @@ void init_devices(void)
 
 void devices_process(const struct caniot_frame *req)
 {
-	int ret;
 	struct caniot_frame resp;
 
 	caniot_clear_frame(&resp);
@@ -131,7 +137,7 @@ void devices_process(const struct caniot_frame *req)
 	for (size_t i = 0U; i < ARRAY_SIZE(devices); i++) {
 		if (caniot_device_is_target(devices[i].identification->did, req) ==
 		    true) {
-			ret = caniot_device_handle_rx_frame(&devices[i], req, &resp);
+			caniot_device_handle_rx_frame(&devices[i], req, &resp);
 			caniot_explain_frame(&resp);
 			printf("\n");
 

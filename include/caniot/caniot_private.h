@@ -19,10 +19,6 @@
  * - ARM/x86/any : printf("Hello %d\n", 42);
  */
 
-#if !defined(CONFIG_CANIOT_ASSERT)
-#define CONFIG_CANIOT_ASSERT 0
-#endif
-
 #if defined(__AVR__)
 #include <stdio.h>
 

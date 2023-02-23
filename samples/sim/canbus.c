@@ -41,6 +41,8 @@ int can_send(const struct caniot_frame *frame, uint32_t delay_ms)
 {
 	int ret = -CANIOT_EINVAL;
 
+	(void)delay_ms;
+
 	if (frame != NULL) {
 		struct item *item = malloc(sizeof(struct item));
 

@@ -634,7 +634,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 			    uint8_t n,
 			    caniot_complex_digital_cmd_t xps)
 {
-#if CONFIG_CANIOT_CHECKS_ENABLED
+#if CONFIG_CANIOT_CHECKS
 	if (cmd == NULL) {
 		return -CANIOT_EINVAL;
 	}
@@ -660,7 +660,7 @@ int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
 
 int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
 {
-#if CONFIG_CANIOT_CHECKS_ENABLED
+#if CONFIG_CANIOT_CHECKS
 	if (cmd == NULL) {
 		return -CANIOT_EINVAL;
 	}
@@ -674,7 +674,7 @@ int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
 caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(struct caniot_blc1_command *cmd,
 						       uint8_t n)
 {
-#if CONFIG_CANIOT_CHECKS_ENABLED
+#if CONFIG_CANIOT_CHECKS
 	if (cmd == NULL) {
 		return -EINVAL;
 	}

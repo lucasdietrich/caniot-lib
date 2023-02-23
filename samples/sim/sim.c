@@ -17,22 +17,35 @@
 #include <unistd.h>
 
 caniot_frame_t qtelemetry = {
-	.id  = {.type	  = CANIOT_FRAME_TYPE_TELEMETRY,
-		.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
-		.query	  = CANIOT_QUERY},
+	.id =
+		{
+			.type	  = CANIOT_FRAME_TYPE_TELEMETRY,
+			.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL,
+			.query	  = CANIOT_QUERY,
+		},
 	.len = 0U,
 };
 
 caniot_frame_t qwrite_attr = {
-	.id  = {.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE, .query = CANIOT_QUERY},
+	.id =
+		{
+			.type  = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
+			.query = CANIOT_QUERY,
+		},
 	.len = 6U,
-	.buf = {0x60, 0x20, 'G', 'B', 'E', 'N'}};
+	.buf = {0x60, 0x20, 'G', 'B', 'E', 'N'},
+};
 
-caniot_frame_t qcommand = {.id	= {.type     = CANIOT_FRAME_TYPE_COMMAND,
-				   .endpoint = CANIOT_ENDPOINT_APP,
-				   .query    = CANIOT_QUERY},
-			   .len = 1U,
-			   .buf = {0xFF}};
+caniot_frame_t qcommand = {
+	.id =
+		{
+			.type	  = CANIOT_FRAME_TYPE_COMMAND,
+			.endpoint = CANIOT_ENDPOINT_APP,
+			.query	  = CANIOT_QUERY,
+		},
+	.len = 1U,
+	.buf = {0xFFu},
+};
 
 caniot_frame_t fake_telem_resp = {
 	.id =
@@ -44,7 +57,8 @@ caniot_frame_t fake_telem_resp = {
 			.sid	  = CANIOT_DEVICE_SID0,
 		},
 	.len = 0U,
-	.buf = {0xFF}};
+	.buf = {0xFFu},
+};
 
 struct timed_frame {
 	uint64_t time; /* ms */
@@ -56,8 +70,11 @@ struct timed_frame {
 };
 
 struct timed_frame timed_frames[] = {
-	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 450U,
-	// &qtelemetry },
+	{500U,
+	 0U,
+	 CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0),
+	 450U,
+	 &qtelemetry},
 	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID1), 450U,
 	// &qtelemetry },
 	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID2), 450U,
@@ -66,7 +83,6 @@ struct timed_frame timed_frames[] = {
 
 int main(void)
 {
-	int ret;
 	uint32_t counter = 0;
 
 	init_controllers();
@@ -94,6 +110,8 @@ int main(void)
 		uint16_t ms;
 		vtime_get(&sec, &ms);
 		const uint64_t now = (uint64_t)sec * 1000U + ms;
+		char chr;
+		ssize_t ret;
 
 		/* Send schedulded frames */
 		for (struct timed_frame *tf = timed_frames;
@@ -102,6 +120,24 @@ int main(void)
 
 			if (tf->time >= now) {
 				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
+			}
+		}
+		/* Check whether there is a new character with select */
+		fd_set readfds;
+		FD_ZERO(&readfds);
+		FD_SET(STDIN_FILENO, &readfds);
+		struct timeval timeout = {.tv_sec = 0, .tv_usec = 0};
+		ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
+		if (ret > 0 && read(STDIN_FILENO, &chr, 1u) > 0) {
+			switch (chr) {
+			case 'd':
+				controllers_discovery_start();
+				break;
+			case 's':
+				controllers_discovery_stop();
+				break;
+			default:
+				break;
 			}
 		}
 

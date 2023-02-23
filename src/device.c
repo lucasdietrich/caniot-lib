@@ -1166,9 +1166,8 @@ static void attribute_copy_from_ref(struct caniot_device_attribute *attr,
 	attr->section	 = ref->section;
 }
 
-static void attribute_copy_name_from_ref(struct caniot_device_attribute *attr,
-					 uint16_t key,
-					 struct attr_ref *ref)
+static void attribute_copy_name_from_key(struct caniot_device_attribute *attr,
+					 uint16_t key)
 {
 #if CONFIG_CANIOT_ATTRIBUTE_NAME
 	const struct attr_section *section = attr_get_section(key);
@@ -1196,7 +1195,7 @@ int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key)
 	}
 
 	attribute_copy_from_ref(attr, &ref);
-	attribute_copy_name_from_ref(attr, key, &ref);
+	attribute_copy_name_from_key(attr, key);
 	attr->key = key;
 
 	return 0;
@@ -1204,6 +1203,9 @@ int caniot_attr_get_by_key(struct caniot_device_attribute *attr, uint16_t key)
 
 int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *name)
 {
+	(void)attr;
+	(void)name;
+
 	return -CANIOT_ENOTSUP;
 }
 

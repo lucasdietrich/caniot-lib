@@ -107,7 +107,7 @@ bool z_macro__CANIOT_DEVICE_IS_BROADCAST(void)
 	return CANIOT_DID_EQ(did, CANIOT_DID_BROADCAST);
 }
 
-static const caniot_id_t gen_rdm_id(void)
+static caniot_id_t gen_rdm_id(void)
 {
 	const caniot_id_t id = {
 		.type = r8(), .query = r8(), .cls = r8(), .sid = r8(), .endpoint = r8()};
@@ -146,7 +146,7 @@ bool z_struct__caniot_id_t(void)
 
 	uint16_t canid = caniot_id_to_canid(id);
 
-	return canid = 0x3FU;
+	return canid & 0x3FU;
 }
 
 bool z_misc_id_conversion(void)
@@ -161,7 +161,7 @@ bool z_misc_id_conversion(void)
 	       (id.sid == id2.sid) && (id.endpoint == id2.endpoint);
 }
 
-static const caniot_did_t gen_rdm_did(bool including_broadcast)
+static caniot_did_t gen_rdm_did(bool including_broadcast)
 {
 	if (including_broadcast) {
 		return CANIOT_DID_FROM_RAW(rand_range(0, CANIOT_DID_BROADCAST - 1));
@@ -381,7 +381,7 @@ bool z_func__caniot_resp_error_for(void)
 	       CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
 
 	return all;
-};
+}
 
 bool z_func__caniot_validate_drivers_api(void)
 {

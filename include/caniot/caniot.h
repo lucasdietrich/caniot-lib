@@ -49,7 +49,7 @@ extern "C" {
 
 /* milliseconds */
 #define CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS 0U
-#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS    100U
+#define CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS 100U
 
 /* seconds */
 #define CANIOT_TELEMETRY_PERIOD_DEFAULT_MS 60000u
@@ -160,7 +160,7 @@ struct caniot_attribute {
 struct caniot_frame {
 	caniot_id_t id;
 	union {
-		char buf[8];
+		unsigned char buf[8];
 		struct caniot_attribute attr;
 		int32_t err;
 	};

@@ -377,6 +377,9 @@ int caniot_build_query_read_attribute(struct caniot_frame *frame, uint16_t key)
 {
 	ASSERT(frame);
 
+	/* Endpoint doesn't matter for attributes */
+	frame->id.endpoint = CANIOT_ENDPOINT_APP;
+
 	frame->id.type	= CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
 	frame->id.query = CANIOT_QUERY;
 	frame->len	= 2u;
@@ -390,6 +393,9 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 				       uint32_t value)
 {
 	ASSERT(frame);
+
+	/* Endpoint doesn't matter for attributes */
+	frame->id.endpoint = CANIOT_ENDPOINT_APP;
 
 	frame->id.type	= CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
 	frame->len	= 6u;
@@ -596,11 +602,11 @@ caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(struct caniot_blc1_comman
 {
 #if CONFIG_CANIOT_CHECKS
 	if (cmd == NULL) {
-		return -EINVAL;
+		return -CANIOT_EINVAL;
 	}
 
 	if (n >= CANIOT_CLASS1_IO_COUNT) {
-		return -EINVAL;
+		return -CANIOT_EINVAL;
 	}
 #endif
 	caniot_complex_digital_cmd_t xps = CANIOT_XPS_NONE;

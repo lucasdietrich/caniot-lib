@@ -190,7 +190,7 @@ struct caniot_drivers_api {
 	 * 	- Should not block.
 	 * 	- Should be thread safe (in a multi-threaded environment).
 	 *
-	 * Return 0 on success, -EAGAIN if no frame is available.
+	 * Return 0 on success, -CANIOT_EAGAIN if no frame is available.
 	 */
 	int (*recv)(struct caniot_frame *frame);
 };

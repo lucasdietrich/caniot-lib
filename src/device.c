@@ -674,9 +674,10 @@ static int attribute_read(struct caniot_device *dev,
 	return ret;
 }
 
-static void init_response(struct caniot_device *dev,
-			  struct caniot_frame *resp,
-			  caniot_endpoint_t endpoint)
+static void prepare_response(struct caniot_device *dev,
+			     struct caniot_frame *resp,
+			     caniot_frame_type_t resp_type,
+			     caniot_endpoint_t endpoint)
 {
 	ASSERT(dev != NULL);
 	ASSERT(resp != NULL);
@@ -693,21 +694,12 @@ static void init_response(struct caniot_device *dev,
 	resp->id.endpoint = endpoint;
 	resp->id.cls	  = CANIOT_DID_CLS(did);
 	resp->id.sid	  = CANIOT_DID_SID(did);
-}
-
-static void finalize_response(struct caniot_device *dev,
-			      struct caniot_frame *resp,
-			      caniot_frame_type_t resp_type)
-{
-	ASSERT(dev != NULL);
-	ASSERT(resp != NULL);
-
-	resp->id.type = resp_type;
+	resp->id.type	  = resp_type;
 }
 
 static void resp_wrap_error(struct caniot_device *dev,
 			    struct caniot_frame *resp,
-			    caniot_frame_type_t query_type,
+			    const struct caniot_frame *req,
 			    int error_code,
 			    uint32_t *p_error_arg)
 {
@@ -718,7 +710,8 @@ static void resp_wrap_error(struct caniot_device *dev,
 
 	 * otherwise (if it's an attribute error), error frame is RESPONSE/WRITE_ATTR
 	 */
-	finalize_response(dev, resp, caniot_resp_error_for(query_type));
+	prepare_response(
+		dev, resp, caniot_resp_error_for(req->id.type), req->id.endpoint);
 
 	resp->err.code = (int32_t)error_code;
 
@@ -744,6 +737,9 @@ static int handle_read_attribute(struct caniot_device *dev,
 
 	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), attr->key);
 
+	prepare_response(
+		dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, CANIOT_ENDPOINT_APP);
+
 	ret = attr_resolve(attr->key, &ref);
 
 	if (ret == 0) {
@@ -764,8 +760,6 @@ static int handle_read_attribute(struct caniot_device *dev,
 
 	/* finalize response */
 	if (ret == 0) {
-		finalize_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
-
 		resp->len      = 6u;
 		resp->attr.key = attr->key;
 	}
@@ -786,22 +780,22 @@ static int write_system_attr(struct caniot_device *dev,
 		uint32_t prev_sec;
 		uint16_t prev_msec;
 		dev->driv->get_time(&prev_sec, &prev_msec);
-		dev->driv->set_time(attr->u32);
+		dev->driv->set_time(attr->val);
 
 		/* adjust last_telemetry time,
 		 * in order to not trigger it on time update
 		 */
-		dev->system.last_telemetry += attr->u32 - prev_sec * 1000u - prev_msec;
-		dev->system.start_time += attr->u32 - prev_sec;
+		dev->system.last_telemetry += attr->val - prev_sec * 1000u - prev_msec;
+		dev->system.start_time += attr->val - prev_sec;
 
 		/* sets the system time for the current loop,
 		 * the response to reading an attribute will
 		 * send the value acknowledgement.
 		 */
-		dev->system.time = attr->u32;
+		dev->system.time = attr->val;
 
 		/* last uptime when the UNIX time was set */
-		dev->system.uptime_synced = attr->u32 - dev->system.start_time;
+		dev->system.uptime_synced = attr->val - dev->system.start_time;
 
 		return 0;
 	}
@@ -910,8 +904,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 
 	/* TODO check endpoint relative to class*/
 
-	/* set endpoint */
-	resp->id.endpoint = ep;
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY, ep);
 
 	if (dev->api->telemetry_handler == NULL) {
 		return -CANIOT_EHANDLERT;
@@ -924,9 +917,6 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
 	if (ret == 0) {
-		finalize_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
-
-		/* increment counter */
 		dev->system.sent.telemetry++;
 	}
 
@@ -951,13 +941,11 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 
 	/* no response in this case */
 	if (req->id.query != CANIOT_QUERY) {
-		ret = -EINVAL;
+		ret = -CANIOT_EINVAL;
 		goto exit;
 	}
 
 	dev->system.received.total++;
-
-	init_response(dev, resp, req->id.endpoint);
 
 	switch (req->id.type) {
 	case CANIOT_FRAME_TYPE_COMMAND: {
@@ -999,8 +987,9 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 exit:
 	if (ret != 0) {
 		/* prepare error response */
-		resp_wrap_error(dev, resp, req->id.type, ret, p_arg);
+		resp_wrap_error(dev, resp, req, ret, p_arg);
 	}
+
 	return ret;
 }
 
@@ -1137,13 +1126,12 @@ int caniot_device_process(struct caniot_device *dev)
 			random_delay = true;
 		}
 		/* if we didn't received a frame but telemetry is requested */
-	} else if (telemetry_requested(dev)) {
-		/* prepare telemetry response */
+	} else if ((ret == -CANIOT_EAGAIN) && telemetry_requested(dev)) {
 		ret = build_telemetry_resp(
 			dev, &resp, dev->config->flags.telemetry_endpoint);
 	} else {
-		/* next call would block */
-		return -CANIOT_EAGAIN;
+		/* Error */
+		goto exit;
 	}
 
 	if (ret != 0) {

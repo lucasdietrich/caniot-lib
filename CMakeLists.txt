@@ -17,8 +17,8 @@ project(caniotlib VERSION 1.0.0 DESCRIPTION "CANIOT lib")
 set(CMAKE_BUILD_TYPE Debug)
 
 # add debug symbols
-set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra -Wpedantic -g")
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -Wpedantic -g")
+set(CMAKE_C_FLAGS_DEBUG "-Wall -Wextra -pedantic -g")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall -Wextra -pedantic -g")
 
 set(CMAKE_C_FLAGS_RELEASE "-Wall -g -O2")
 set(CMAKE_CXX_FLAGS_RELEASE "-Wall -g -O2")

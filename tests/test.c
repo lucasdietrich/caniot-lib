@@ -200,173 +200,6 @@ bool z_func__caniot_device_is_target(void)
 	       !caniot_device_is_target(did, &notfordev);
 }
 
-bool z_func__caniot_type_is_valid_response_of(void)
-{
-	bool all = true;
-
-	struct {
-		caniot_frame_type_t resp;
-		caniot_frame_type_t req;
-		bool result;
-	} tests[] = {
-		{CANIOT_FRAME_TYPE_TELEMETRY, CANIOT_FRAME_TYPE_TELEMETRY, true},
-		{CANIOT_FRAME_TYPE_TELEMETRY, CANIOT_FRAME_TYPE_COMMAND, true},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_TELEMETRY, false},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_COMMAND, false},
-
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 true},
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 true},
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 false},
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 false},
-
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE, CANIOT_FRAME_TYPE_TELEMETRY, false},
-		{CANIOT_FRAME_TYPE_TELEMETRY, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, false},
-
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE, CANIOT_FRAME_TYPE_COMMAND, false},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, false},
-
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE, CANIOT_FRAME_TYPE_COMMAND, false},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE, false},
-
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE, CANIOT_FRAME_TYPE_COMMAND, false},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE, false},
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
-		all &= caniot_type_is_valid_response_of(tests[i].resp, tests[i].req) ==
-		       tests[i].result;
-
-		if (!all) {
-			break;
-		}
-	}
-
-	return all;
-}
-
-bool z_func__caniot_type_is_response_of(void)
-{
-	bool all = true;
-
-	struct {
-		caniot_frame_type_t resp;
-		caniot_frame_type_t req;
-		bool isresult;
-		bool iserr;
-	} tests[] = {
-		{CANIOT_FRAME_TYPE_TELEMETRY, CANIOT_FRAME_TYPE_TELEMETRY, true, false},
-		{CANIOT_FRAME_TYPE_TELEMETRY, CANIOT_FRAME_TYPE_COMMAND, true, false},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_TELEMETRY, false, true},
-		{CANIOT_FRAME_TYPE_COMMAND, CANIOT_FRAME_TYPE_COMMAND, false, true},
-
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 true,
-		 false},
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 true,
-		 false},
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 false,
-		 true},
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 false,
-		 true},
-
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_TELEMETRY,
-		 false,
-		 false},
-		{CANIOT_FRAME_TYPE_TELEMETRY,
-		 CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 false,
-		 false},
-
-		{CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_COMMAND,
-		 false,
-		 false},
-		{CANIOT_FRAME_TYPE_COMMAND,
-		 CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
-		 false,
-		 false},
-
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_COMMAND,
-		 false,
-		 false},
-		{CANIOT_FRAME_TYPE_COMMAND,
-		 CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 false,
-		 false},
-
-		{CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 CANIOT_FRAME_TYPE_COMMAND,
-		 false,
-		 false},
-		{CANIOT_FRAME_TYPE_COMMAND,
-		 CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
-		 false,
-		 false},
-	};
-
-	bool iserr;
-
-	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
-		all &= caniot_type_is_response_of(tests[i].resp, tests[i].req, &iserr) ==
-		       tests[i].isresult;
-		all &= iserr == tests[i].iserr;
-
-		if (!all) {
-			break;
-		}
-	}
-
-	return all;
-}
-
-bool z_func__caniot_type_what_response_of(void)
-{
-	bool all = true;
-
-	/*    Query  (row) | Response (columns) | Result
-	 * ---------------------------------
-	 *    	  | C | T | W | R |
-	 *  	C | 1 | 0 | 3 | 2 |
-	 * 	T | 1 | 0 | 3 | 2 |
-	 * 	W | 3 | 2 | 1 | 0 |
-	 * 	R | 3 | 2 | 1 | 0 |
-	 * ---------------------------------
-	 */
-	caniot_query_response_type_t matrix[4][4] = {
-		{1, 0, 3, 2},
-		{1, 0, 3, 2},
-		{3, 2, 1, 0},
-		{3, 2, 1, 0},
-	};
-
-	for (size_t q = 0; q < ARRAY_SIZE(matrix); q++) {
-		for (size_t r = 0; r < ARRAY_SIZE(matrix[0]); r++) {
-			// printf("r, q = %d,%d -> %d / %d\n", r, q,
-			//        caniot_type_what_response_of(r, q), matrix[q][r]);
-			all &= caniot_type_what_response_of(r, q) == matrix[q][r];
-		}
-	}
-
-	return all;
-}
-
 bool z_func__caniot_resp_error_for(void)
 {
 	bool all = true;
@@ -446,6 +279,7 @@ struct z_func_ctrl_test_ctx {
 	const caniot_did_t did;
 	uint8_t handle;
 	bool success;
+	bool terminated;
 
 	struct {
 		bool active; /* tells if desired sub structure is active */
@@ -462,6 +296,9 @@ static bool z_func_ctrl_cb(const caniot_controller_event_t *ev, void *user_data)
 
 	struct z_func_ctrl_test_ctx *x = user_data;
 
+	/* Return prematurely if already terminated */
+	if (x->terminated) return true;
+
 	bool all = true;
 
 	if (x->desired.active == true) {
@@ -472,14 +309,17 @@ static bool z_func_ctrl_cb(const caniot_controller_event_t *ev, void *user_data)
 
 	all &= ev->controller == &x->ctrl;
 	all &= ev->terminated == 1U;
-	all &= ev->handle == x->handle;
+	if (ev->context == CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY)
+		all &= ev->handle == x->handle;
 	all &= CANIOT_DID_EQ(ev->did, x->did);
 
-	x->success = all;
+	x->success    = all;
+	x->terminated = true;
 
 	return true;
 }
 
+/* Check timeout in controller callback */
 bool z_func_ctrl1(void)
 {
 	struct z_func_ctrl_test_ctx x = {
@@ -501,7 +341,7 @@ bool z_func_ctrl1(void)
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) ==
 	      CONFIG_CANIOT_MAX_PENDING_QUERIES - 1U);
 
-	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, NULL));
+	CHECK_0(caniot_controller_rx_frame(&x.ctrl, 1000U, NULL));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == false);
 	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
 	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
@@ -511,6 +351,7 @@ bool z_func_ctrl1(void)
 	return x.success == true;
 }
 
+/* Check OK in controller callback */
 bool z_func_ctrl2(void)
 {
 	struct z_func_ctrl_test_ctx x = {
@@ -535,7 +376,7 @@ bool z_func_ctrl2(void)
 	memcpy(&x.resp, &x.req, sizeof(x.req));
 	x.resp.id.query = CANIOT_RESPONSE;
 
-	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, &x.resp));
+	CHECK_0(caniot_controller_rx_frame(&x.ctrl, 1000U, &x.resp));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == false);
 	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
 	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
@@ -545,6 +386,7 @@ bool z_func_ctrl2(void)
 	return x.success == true;
 }
 
+/* Check status error in controller callback */
 bool z_func_ctrl3(void)
 {
 	struct z_func_ctrl_test_ctx x = {
@@ -569,9 +411,10 @@ bool z_func_ctrl3(void)
 	memcpy(&x.resp, &x.req, sizeof(x.req));
 	x.resp.id.query = CANIOT_RESPONSE;
 	x.resp.id.type	= caniot_resp_error_for(x.req.id.type);
-	x.resp.err	= -CANIOT_EHANDLERC;
+	x.resp.err.code = -CANIOT_EHANDLERC;
+	x.req.err.arg	= 0x12345678U;
 
-	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, &x.resp));
+	CHECK_0(caniot_controller_rx_frame(&x.ctrl, 1000U, &x.resp));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == false);
 	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
 	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
@@ -581,6 +424,7 @@ bool z_func_ctrl3(void)
 	return x.success == true;
 }
 
+/* Check status cancelled in controller callback */
 bool z_func_ctrl4(void)
 {
 	struct z_func_ctrl_test_ctx x = {
@@ -602,9 +446,9 @@ bool z_func_ctrl4(void)
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) ==
 	      CONFIG_CANIOT_MAX_PENDING_QUERIES - 1U);
 
-	CHECK_0(caniot_controller_cancel_query(&x.ctrl, x.handle, false));
+	CHECK_0(caniot_controller_query_cancel(&x.ctrl, x.handle, false));
 	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == false);
-	CHECK_0(caniot_controller_process_single(&x.ctrl, 1000U, NULL));
+	CHECK_0(caniot_controller_rx_frame(&x.ctrl, 1000U, NULL));
 	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
 	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
 	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) ==
@@ -613,27 +457,41 @@ bool z_func_ctrl4(void)
 	return x.success == true;
 }
 
-/*
-TODO how to test static functions ?
-
-extern struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
-					     caniot_did_t did,
-					     caniot_frame_type_t query_type,
-					     uint32_t timeout);
-
-bool z_test__alloc_free(void)
+bool z_func_dev0(void)
 {
-	struct caniot_controller ctrl;
+	struct z_func_ctrl_test_ctx x = {
+		.did	 = gen_rdm_did(false),
+		.success = false,
+		.desired = {
+			.active	 = true,
+			.context = CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN,
+		}};
 
-	CHECK_0(caniot_controller_init(&ctrl, z_func_ctrl_cb, NULL));
+	x.desired.status   = CANIOT_CONTROLLER_EVENT_STATUS_OK;
+	x.desired.resp_set = true;
 
-	pendq_alloc_and_prepare(&ctrl, gen_rdm_did(false), CANIOT_FRAME_TYPE_COMMAND,
-1000U);
+	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
+	CHECK_STRICTLY_POSITIVE(x.handle = caniot_controller_query_register(
+					&x.ctrl, x.did, &x.req, 1000U));
+	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == true);
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) ==
+	      CONFIG_CANIOT_MAX_PENDING_QUERIES - 1U);
 
-	return true;
+	memcpy(&x.resp, &x.req, sizeof(x.req));
+	x.resp.id.query = CANIOT_RESPONSE;
+	x.resp.id.endpoint =
+		CANIOT_ENDPOINT_APP; /* Device ID doesn't match req, so timeout */
+
+	CHECK_0(caniot_controller_rx_frame(&x.ctrl, 1000U, &x.resp));
+	CHECK(caniot_controller_query_pending(&x.ctrl, x.handle) == false);
+	CHECK(x.ctrl.pendingq.pending_devices_bf == 0U);
+	CHECK(x.ctrl.pendingq.timeout_queue == NULL);
+	CHECK(caniot_controller_dbg_free_pendq(&x.ctrl) ==
+	      CONFIG_CANIOT_MAX_PENDING_QUERIES);
+
+	return x.success == true;
 }
-
-*/
 
 /*____________________________________________________________________________*/
 
@@ -658,9 +516,6 @@ const struct test tests[] = {
 	TEST(z_struct__caniot_id_t, 1U),
 	TEST(z_misc_id_conversion, 100U),
 	TEST(z_func__caniot_device_is_target, 100U),
-	TEST(z_func__caniot_type_is_valid_response_of, 1U),
-	TEST(z_func__caniot_type_is_response_of, 1U),
-	TEST(z_func__caniot_type_what_response_of, 1U),
 	TEST(z_func__caniot_resp_error_for, 1U),
 	TEST(z_func__caniot_validate_drivers_api, 1U),
 	TEST(z_func__caniot_device_get_filter, 100U),
@@ -672,6 +527,7 @@ const struct test tests[] = {
 	TEST(z_func_ctrl2, 1U),
 	TEST(z_func_ctrl3, 1U),
 	TEST(z_func_ctrl4, 1U),
+	TEST(z_func_dev0, 1U),
 };
 
 int main(void)

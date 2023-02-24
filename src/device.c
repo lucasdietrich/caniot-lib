@@ -674,13 +674,9 @@ static int attribute_read(struct caniot_device *dev,
 	return ret;
 }
 
-// static bool is_error_response(struct caniot_frame *frame) {
-// 	return frame->id.query == response && frame->id.type == command;
-// }
-
-static void prepare_response(struct caniot_device *dev,
-			     struct caniot_frame *resp,
-			     caniot_frame_type_t resp_type)
+static void init_response(struct caniot_device *dev,
+			  struct caniot_frame *resp,
+			  caniot_endpoint_t endpoint)
 {
 	ASSERT(dev != NULL);
 	ASSERT(resp != NULL);
@@ -693,17 +689,27 @@ static void prepare_response(struct caniot_device *dev,
 	read_identification_nodeid(dev, &did);
 
 	/* id */
-	resp->id.type  = resp_type;
-	resp->id.query = CANIOT_RESPONSE;
-
-	resp->id.cls = CANIOT_DID_CLS(did);
-	resp->id.sid = CANIOT_DID_SID(did);
+	resp->id.query	  = CANIOT_RESPONSE;
+	resp->id.endpoint = endpoint;
+	resp->id.cls	  = CANIOT_DID_CLS(did);
+	resp->id.sid	  = CANIOT_DID_SID(did);
 }
 
-static void prepare_error(struct caniot_device *dev,
-			  struct caniot_frame *resp,
-			  caniot_frame_type_t query_type,
-			  int error)
+static void finalize_response(struct caniot_device *dev,
+			      struct caniot_frame *resp,
+			      caniot_frame_type_t resp_type)
+{
+	ASSERT(dev != NULL);
+	ASSERT(resp != NULL);
+
+	resp->id.type = resp_type;
+}
+
+static void resp_wrap_error(struct caniot_device *dev,
+			    struct caniot_frame *resp,
+			    caniot_frame_type_t query_type,
+			    int error_code,
+			    uint32_t *p_error_arg)
 {
 	ASSERT(resp != NULL);
 
@@ -712,10 +718,17 @@ static void prepare_error(struct caniot_device *dev,
 
 	 * otherwise (if it's an attribute error), error frame is RESPONSE/WRITE_ATTR
 	 */
-	prepare_response(dev, resp, caniot_resp_error_for(query_type));
+	finalize_response(dev, resp, caniot_resp_error_for(query_type));
 
-	resp->err = (int32_t)error;
-	resp->len = 4U;
+	resp->err.code = (int32_t)error_code;
+
+	/* Encode the error argument if provided */
+	if (p_error_arg != NULL) {
+		resp->err.arg = *p_error_arg;
+		resp->len     = 8u;
+	} else {
+		resp->len = 4u;
+	}
 }
 
 static int handle_read_attribute(struct caniot_device *dev,
@@ -732,8 +745,6 @@ static int handle_read_attribute(struct caniot_device *dev,
 	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), attr->key);
 
 	ret = attr_resolve(attr->key, &ref);
-
-	prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
 
 	if (ret == 0) {
 		/* if standard attribute */
@@ -753,6 +764,8 @@ static int handle_read_attribute(struct caniot_device *dev,
 
 	/* finalize response */
 	if (ret == 0) {
+		finalize_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE);
+
 		resp->len      = 6u;
 		resp->attr.key = attr->key;
 	}
@@ -897,11 +910,12 @@ static int build_telemetry_resp(struct caniot_device *dev,
 
 	/* TODO check endpoint relative to class*/
 
+	/* set endpoint */
+	resp->id.endpoint = ep;
+
 	if (dev->api->telemetry_handler == NULL) {
 		return -CANIOT_EHANDLERT;
 	}
-
-	prepare_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%p) for endpoint %d\n"),
 		   (void *)&dev->api->telemetry_handler,
@@ -910,8 +924,7 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
 	if (ret == 0) {
-		/* set endpoint */
-		resp->id.endpoint = ep;
+		finalize_response(dev, resp, CANIOT_FRAME_TYPE_TELEMETRY);
 
 		/* increment counter */
 		dev->system.sent.telemetry++;
@@ -933,6 +946,8 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	ASSERT(resp != NULL);
 
 	int ret;
+	uint32_t error_arg = 0u;
+	uint32_t *p_arg	   = NULL;
 
 	/* no response in this case */
 	if (req->id.query != CANIOT_QUERY) {
@@ -941,6 +956,8 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	}
 
 	dev->system.received.total++;
+
+	init_response(dev, resp, req->id.endpoint);
 
 	switch (req->id.type) {
 	case CANIOT_FRAME_TYPE_COMMAND: {
@@ -963,17 +980,26 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 		if (ret == 0) {
 			ret = handle_read_attribute(dev, resp, &req->attr);
 		}
+		if (ret != 0) {
+			error_arg = req->attr.key;
+			p_arg	  = &error_arg;
+		}
 		break;
 	}
 	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
 		dev->system.received.read_attribute++;
 		ret = handle_read_attribute(dev, resp, &req->attr);
+		if (ret != 0) {
+			error_arg = req->attr.key;
+			p_arg	  = &error_arg;
+		}
 		break;
 	}
 
 exit:
 	if (ret != 0) {
-		prepare_error(dev, resp, req->id.type, ret);
+		/* prepare error response */
+		resp_wrap_error(dev, resp, req->id.type, ret, p_arg);
 	}
 	return ret;
 }

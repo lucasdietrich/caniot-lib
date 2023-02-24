@@ -79,7 +79,7 @@ void controllers_process(const struct caniot_frame *frame, uint32_t time_passed)
 	struct caniot_controller *ctrl;
 
 	for (ctrl = controllers; ctrl < controllers + ARRAY_SIZE(controllers); ctrl++) {
-		caniot_controller_process_single(ctrl, time_passed, frame);
+		caniot_controller_rx_frame(ctrl, time_passed, frame);
 	}
 }
 
@@ -101,7 +101,7 @@ int ctrl_Q(uint32_t ctrlid,
 
 int ctrl_C(uint32_t ctrlid, uint8_t handle, bool suppress)
 {
-	caniot_controller_cancel_query(&controllers[ctrlid], handle, suppress);
+	caniot_controller_query_cancel(&controllers[ctrlid], handle, suppress);
 
 	return 0;
 }

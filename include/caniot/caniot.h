@@ -141,20 +141,17 @@ typedef struct {
 } caniot_id_t;
 
 struct caniot_attribute {
-	union {
-		uint16_t key;
-		struct {
-			uint16_t section : 4;
-			uint16_t attribute : 8;
-			uint16_t part : 4;
-		};
-	};
-	union {
-		uint32_t u32;
-		uint16_t u16[2];
-		uint8_t u8[4];
-		uint32_t val;
-	};
+	uint16_t key;
+	uint32_t val;
+} __PACKED;
+
+struct caniot_error {
+	int32_t code;
+
+	/* Error argument depends on the error code and context:
+	 * - if response is an error to an attribute read or write,
+	 * arg is the attribute key */
+	uint32_t arg;
 } __PACKED;
 
 struct caniot_frame {
@@ -162,7 +159,7 @@ struct caniot_frame {
 	union {
 		unsigned char buf[8];
 		struct caniot_attribute attr;
-		int32_t err;
+		struct caniot_error err;
 	};
 	uint8_t len;
 };
@@ -272,23 +269,6 @@ bool caniot_deviceid_valid(caniot_did_t did);
 bool caniot_deviceid_match(caniot_did_t dev, caniot_did_t pkt);
 
 bool caniot_endpoint_valid(caniot_endpoint_t endpoint);
-
-typedef enum {
-	CANIOT_IS_RESPONSE = 0,
-	CANIOT_IS_ERROR,
-	CANIOT_IS_OTHER_RESPONSE,
-	CANIOT_IS_OTHER_ERROR,
-} caniot_query_response_type_t;
-
-caniot_query_response_type_t caniot_type_what_response_of(caniot_frame_type_t resp,
-							  caniot_frame_type_t query);
-
-bool caniot_type_is_valid_response_of(caniot_frame_type_t resp,
-				      caniot_frame_type_t query);
-
-bool caniot_type_is_response_of(caniot_frame_type_t resp,
-				caniot_frame_type_t query,
-				bool *iserror);
 
 caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query);
 

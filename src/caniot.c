@@ -202,7 +202,7 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		CANIOT_INF(F(": -%04x"), (uint32_t)-frame->err);
+		CANIOT_INF(F(": -%04x"), (uint32_t)-frame->err.code);
 		return;
 	}
 
@@ -271,7 +271,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	len -= ret;
 
 	if (caniot_is_error_frame(frame->id)) {
-		ret = snprintf(buf, len, ": -%04x", (uint32_t)-frame->err);
+		ret = snprintf(buf, len, ": -%04x", (uint32_t)-frame->err.code);
 		total += ret;
 		buf += ret;
 		len -= ret;
@@ -504,86 +504,6 @@ bool is_telemetry_response(struct caniot_frame *frame)
 {
 	return (frame->id.query == CANIOT_RESPONSE) &&
 	       (frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
-}
-
-bool caniot_type_is_valid_response_of(caniot_frame_type_t resp, caniot_frame_type_t query)
-{
-	switch (query) {
-	case CANIOT_FRAME_TYPE_COMMAND:
-	case CANIOT_FRAME_TYPE_TELEMETRY:
-		return resp == CANIOT_FRAME_TYPE_TELEMETRY;
-		break;
-
-	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
-	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
-		return resp == CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
-		break;
-	default:
-		return false;
-	}
-}
-
-caniot_query_response_type_t caniot_type_what_response_of(caniot_frame_type_t resp,
-							  caniot_frame_type_t query)
-{
-	/* matrix representing how the current
-	 * response type matches the query type
-	 */
-
-	/*    Query  (row) | Response (columns) | Result
-	 * ---------------------------------
-	 *    	  | C | T | W | R |
-	 *  	C | 1 | 0 | 3 | 2 |
-	 * 	T | 1 | 0 | 3 | 2 |
-	 * 	W | 3 | 2 | 1 | 0 |
-	 * 	R | 3 | 2 | 1 | 0 |
-	 * ---------------------------------
-	 *
-	 * 	0: CANIOT_IS_RESPONSE
-	 * 	1: CANIOT_IS_ERROR
-	 * 	2: CANIOT_IS_OTHER_RESPONSE
-	 * 	3: CANIOT_IS_OTHER_ERROR
-	 */
-
-	const bool is_error = (resp == CANIOT_FRAME_TYPE_COMMAND) ||
-			      (resp == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
-
-	const bool is_response_of = ((resp ^ query) & 2) == 0;
-
-	return (caniot_query_response_type_t)((is_error ? 1 : 0) |
-					      (is_response_of ? 0 : 2));
-}
-
-bool caniot_type_is_response_of(caniot_frame_type_t resp,
-				caniot_frame_type_t query,
-				bool *iserror)
-{
-	/* VARIANT 2 */
-
-	bool match		    = false;
-	caniot_frame_type_t errtype = CANIOT_FRAME_TYPE_COMMAND;
-
-	switch (query) {
-	case CANIOT_FRAME_TYPE_COMMAND:
-	case CANIOT_FRAME_TYPE_TELEMETRY:
-		errtype = CANIOT_FRAME_TYPE_COMMAND;
-		match	= resp == CANIOT_FRAME_TYPE_TELEMETRY;
-		break;
-
-	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
-	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
-		errtype = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
-		match	= resp == CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
-		break;
-	default:
-		break;
-	}
-
-	if (iserror != NULL) {
-		*iserror = errtype == resp;
-	}
-
-	return match;
 }
 
 caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query)

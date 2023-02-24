@@ -24,7 +24,7 @@ static bool is_query_pending_for(struct caniot_controller *ctrl, caniot_did_t di
 
 	const bool result = ctrl->pendingq.pending_devices_bf & (1llu << did);
 
-	__DBG("is_query_pending_for(%u) -> %u\n", did, (uint32_t)result);
+	__DBG("is_query_pending_for(did: %u) -> success: %u\n", did, (uint32_t)result);
 
 	return result;
 }
@@ -34,7 +34,7 @@ mark_query_pending_for(struct caniot_controller *ctrl, caniot_did_t did, bool st
 {
 	ASSERT(ctrl != NULL);
 
-	__DBG("mark_query_pending_for(%u, %u)\n", did, status);
+	__DBG("mark_query_pending_for(did: %u, status: %u)\n", did, status);
 
 	if (status == true) {
 		ctrl->pendingq.pending_devices_bf |= (1llu << did);
@@ -90,14 +90,14 @@ pendq_queue(struct caniot_controller *ctrl, struct pendq *pq, uint32_t timeout)
 
 	_pendq_queue(&ctrl->pendingq.timeout_queue, &pq->tie);
 
-	__DBG("pendq_queue(%p, %u)\n", (void *)pq, timeout);
+	__DBG("pendq_queue(ps: %p, timeout: %u)\n", (void *)pq, timeout);
 }
 
 static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
 {
 	ASSERT(ctrl != NULL);
 
-	__DBG("pendq_shift(%u)\n", time_passed);
+	__DBG("pendq_shift(time_passed: %u)\n", time_passed);
 
 	if (time_passed == 0u) return;
 
@@ -163,7 +163,7 @@ static void pendq_tqueue_remove(struct caniot_controller *ctrl, struct pendq *pq
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
 		if (p_current == &pq->tie) {
-			__DBG("pendq_tqueue_remove(%p) -> removed\n", (void *)pq);
+			__DBG("pendq_tqueue_remove(pq: %p) -> removed\n", (void *)pq);
 
 			*prev_next_p = p_current->next;
 			if (p_current->next != NULL) {
@@ -175,7 +175,7 @@ static void pendq_tqueue_remove(struct caniot_controller *ctrl, struct pendq *pq
 		prev_next_p = &(p_current->next);
 	}
 
-	__DBG("pendq_tqueue_remove(%p) -> not found\n", (void *)pq);
+	__DBG("pendq_tqueue_remove(pq: %p) -> not found\n", (void *)pq);
 }
 
 static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
@@ -184,7 +184,7 @@ static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
 
 	struct pendq *p = ctrl->pendingq.free_list;
 	if (p != NULL) {
-		__DBG("pendq_alloc() -> %p\n", (void *)p);
+		__DBG("pendq_alloc() -> pq: %p\n", (void *)p);
 
 		ctrl->pendingq.free_list = p->next;
 	} else {
@@ -193,16 +193,16 @@ static struct pendq *pendq_alloc(struct caniot_controller *ctrl)
 	return p;
 }
 
-static void pendq_free(struct caniot_controller *ctrl, struct pendq *p)
+static void pendq_free(struct caniot_controller *ctrl, struct pendq *pq)
 {
 	ASSERT(ctrl != NULL);
 
-	if (p != NULL) {
-		__DBG("pendq_free(%p)\n", (void *)p);
+	if (pq != NULL) {
+		__DBG("pendq_free(pq: %p)\n", (void *)pq);
 
-		p->next			 = ctrl->pendingq.free_list;
-		p->handle		 = INVALID_HANDLE;
-		ctrl->pendingq.free_list = p;
+		pq->next		 = ctrl->pendingq.free_list;
+		pq->handle		 = INVALID_HANDLE;
+		ctrl->pendingq.free_list = pq;
 	} else {
 		__DBG("pendq_free(NULL)\n");
 	}
@@ -238,7 +238,7 @@ static struct pendq *pendq_get_by_did(struct caniot_controller *ctrl, caniot_did
 		}
 	}
 
-	__DBG("pendq_get_by_did(%u) -> %p\n", did, (void *)retpq);
+	__DBG("pendq_get_by_did(did: %u) -> pq: %p\n", did, (void *)retpq);
 
 	return retpq;
 }
@@ -259,7 +259,7 @@ static struct pendq *pendq_get_by_handle(struct caniot_controller *ctrl, uint8_t
 		}
 	}
 
-	__DBG("pendq_get_by_handle(%u) -> %p\n", handle, (void *)pq);
+	__DBG("pendq_get_by_handle(handle: %u) -> pq: %p\n", handle, (void *)pq);
 
 	return pq;
 }
@@ -272,9 +272,9 @@ static bool pendq_is_discovery(struct caniot_controller *ctrl, struct pendq *pq)
 	return caniot_is_broadcast(pq->did) && ctrl->discovery.pending;
 }
 
-int caniot_controller_handle_user_data_set(struct caniot_controller *ctrl,
-					   uint8_t handle,
-					   void *user_data)
+int caniot_controller_query_user_data_set(struct caniot_controller *ctrl,
+					  uint8_t handle,
+					  void *user_data)
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!ctrl) return -CANIOT_EINVAL;
@@ -291,8 +291,8 @@ int caniot_controller_handle_user_data_set(struct caniot_controller *ctrl,
 	return ret;
 }
 
-void *caniot_controller_handle_user_data_get(struct caniot_controller *ctrl,
-					     uint8_t handle)
+void *caniot_controller_query_user_data_get(struct caniot_controller *ctrl,
+					    uint8_t handle)
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!ctrl) return -CANIOT_EINVAL;
@@ -319,7 +319,7 @@ static struct pendq *peek_pending_query(struct caniot_controller *ctrl, caniot_d
 		pq = pendq_get_by_did(ctrl, CANIOT_DID_BROADCAST);
 	}
 
-	__DBG("peek_pending_query(%u) -> %p\n", did, (void *)pq);
+	__DBG("peek_pending_query(did: %u) -> pq: %p\n", did, (void *)pq);
 
 	return pq;
 }
@@ -414,8 +414,9 @@ static bool call_user_callback(struct caniot_controller *ctrl,
 	ASSERT(ev != NULL);
 	ASSERT(ctrl->event_cb != NULL);
 
-	__DBG("call_user_callback(%p) -> did=%u handle=%u ctx=%u status=%u term=%u "
-	      "resp=%p\n",
+	__DBG("call_user_callback(ev: %p) -> did: %u handle: %u ctx: %u status: %u term: "
+	      "%u "
+	      "resp: %p\n",
 	      (void *)ev,
 	      ev->did,
 	      ev->handle,
@@ -455,12 +456,12 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 
 static void resp_query_event(struct caniot_controller *ctrl,
 			     const struct caniot_frame *response,
-			     struct pendq *pq)
+			     struct pendq *pq,
+			     bool is_error)
 {
 	ASSERT(pq != NULL);
 
 	const bool release_pq = caniot_is_broadcast(pq->did) ? false : true;
-	const bool is_error   = caniot_is_error_frame(response->id);
 
 	/* If response match pending query, mark it as "terminated" and release
 	 * the pq context
@@ -563,7 +564,7 @@ static void pendq_call_expired(struct caniot_controller *ctrl)
 
 static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 					     caniot_did_t did,
-					     caniot_frame_type_t query_type)
+					     struct caniot_frame *frame)
 {
 	/* allocate */
 	struct pendq *pq = pendq_alloc(ctrl);
@@ -572,7 +573,24 @@ static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 		/* prepare data */
 		pq->did	       = did;
 		pq->handle     = 1U + INDEX_OF(pq, ctrl->pendingq.pool, struct pendq);
-		pq->query_type = query_type;
+		pq->query_type = frame->id.type;
+
+#if CONFIG_CANIOT_QUERY_ID
+		pq->query_id = 0u;
+#endif
+
+		switch (pq->query_type) {
+		case CANIOT_FRAME_TYPE_COMMAND:
+		case CANIOT_FRAME_TYPE_TELEMETRY:
+			pq->req_endpoint = frame->id.endpoint;
+			break;
+		case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+		case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
+			pq->req_attr = frame->attr.key;
+			break;
+		default:
+			break;
+		}
 	}
 
 	return pq;
@@ -607,7 +625,7 @@ static int query(struct caniot_controller *ctrl,
 			goto exit;
 		}
 
-		pq = pendq_alloc_and_prepare(ctrl, did, frame->id.type);
+		pq = pendq_alloc_and_prepare(ctrl, did, frame);
 		if (pq == NULL) {
 			ret = -CANIOT_EPQALLOC;
 			goto exit;
@@ -642,7 +660,7 @@ static int query(struct caniot_controller *ctrl,
 	}
 
 exit:
-	__DBG("query(%u, %p, %u, %u) -> %d\n",
+	__DBG("query(did: %u, frame: %p, timeout: %u, driv: %u) -> ret (handle): %d\n",
 	      did,
 	      (void *)frame,
 	      timeout,
@@ -663,7 +681,8 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 
 	int ret = query(ctrl, did, frame, timeout, false);
 
-	__DBG("caniot_controller_query_register(%u, %p, %u) -> %d\n",
+	__DBG("caniot_controller_query_register(did: %u, frame: %p, timeout: %u) -> ret: "
+	      "%d\n",
 	      did,
 	      (void *)frame,
 	      timeout,
@@ -680,12 +699,14 @@ bool caniot_controller_query_pending(struct caniot_controller *ctrl, uint8_t han
 
 	struct pendq *const pq = pendq_get_by_handle(ctrl, handle);
 
-	__DBG("caniot_controller_query_pending(%u) -> %u\n", handle, pq != NULL);
+	__DBG("caniot_controller_query_pending(handle: %u) -> pq: %u\n",
+	      handle,
+	      pq != NULL);
 
 	return pq != NULL;
 }
 
-int caniot_controller_cancel_query(struct caniot_controller *ctrl,
+int caniot_controller_query_cancel(struct caniot_controller *ctrl,
 				   uint8_t handle,
 				   bool suppress)
 {
@@ -708,9 +729,61 @@ int caniot_controller_cancel_query(struct caniot_controller *ctrl,
 
 	ret = 0;
 exit:
-	__DBG("caniot_controller_cancel_query(%u, %u) -> %d\n", handle, suppress, ret);
+	__DBG("caniot_controller_query_cancel(handle: %u, suppress: %u) -> ret: %d\n",
+	      handle,
+	      suppress,
+	      ret);
 
 	return ret;
+}
+
+static bool
+is_response_to(const struct caniot_frame *frame, struct pendq *pq, bool *p_is_error)
+{
+	// assert did match or pq is broadcast
+
+	bool match		      = false;
+	bool is_error		      = false;
+	caniot_frame_type_t resp_type = frame->id.type;
+
+	switch (pq->query_type) {
+	case CANIOT_FRAME_TYPE_COMMAND:
+	case CANIOT_FRAME_TYPE_TELEMETRY:
+		if (frame->id.endpoint == pq->req_endpoint) {
+			match = true;
+		}
+		if (frame->id.type == CANIOT_FRAME_TYPE_COMMAND) {
+			is_error = true;
+		}
+		break;
+
+	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+		if (resp_type == CANIOT_FRAME_TYPE_READ_ATTRIBUTE) {
+			/* If it is a read attribute response, the key is stored in the
+			 * attribute field */
+			if (frame->attr.key == pq->req_attr) {
+				match = true;
+			}
+		}
+		if (frame->id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE) {
+			is_error = true;
+			/* If it is an error, the key is stored in the
+			 * error argument field */
+			if ((frame->err.arg & 0xFFFFlu) == (uint32_t)pq->req_attr) {
+				match = true;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (p_is_error != NULL) {
+		*p_is_error = is_error;
+	}
+
+	return match;
 }
 
 static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
@@ -721,21 +794,19 @@ static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	if (!caniot_controller_is_target(frame)) return -CANIOT_EUNEXPECTED;
 #endif
 
+	bool is_error;
+	bool is_valid_response;
 	const caniot_did_t did = CANIOT_DID(frame->id.cls, frame->id.sid);
 
-	// If a query is pending and the frame is the response for it
-	// Call callback and clear pending query
+	/* If a query is pending and the frame is the response for it
+	 * Call callback and clear pending query */
 	struct pendq *pq = peek_pending_query(ctrl, did);
 	if (pq != NULL) {
-		bool is_error		     = false;
-		const bool is_valid_response = caniot_type_is_response_of(
-			frame->id.type, pq->query_type, &is_error);
+		is_valid_response = is_response_to(frame, pq, &is_error);
 
-		if (is_valid_response || is_error) {
-			/* is response for pending query */
-			resp_query_event(ctrl, frame, pq);
+		if (is_valid_response) {
+			resp_query_event(ctrl, frame, pq, is_error);
 		} else {
-			/* is not response for pending query */
 			orphan_resp_event(ctrl, frame);
 		}
 	} else {
@@ -744,9 +815,9 @@ static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	}
 }
 
-int caniot_controller_process_single(struct caniot_controller *ctrl,
-				     uint32_t time_passed,
-				     const struct caniot_frame *frame)
+int caniot_controller_rx_frame(struct caniot_controller *ctrl,
+			       uint32_t time_passed,
+			       const struct caniot_frame *frame)
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!ctrl) return -CANIOT_EINVAL;
@@ -762,7 +833,7 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
 	/* call callbacks for expired queries */
 	pendq_call_expired(ctrl);
 
-	__DBG("caniot_controller_process_single(%u, %p) -> 0\n",
+	__DBG("caniot_controller_rx_frame(time_passed: %u, frame: %p) -> ret: 0\n",
 	      time_passed,
 	      (void *)frame);
 
@@ -809,7 +880,7 @@ int caniot_controller_query(struct caniot_controller *ctrl,
 {
 	int ret = query(ctrl, did, frame, timeout, true);
 
-	__DBG("caniot_controller_query(%u, %p, %u) -> %d\n",
+	__DBG("caniot_controller_query(did: %u, frame: %p, timeout: %u) -> %d\n",
 	      did,
 	      (void *)frame,
 	      timeout,
@@ -980,7 +1051,7 @@ int caniot_controller_discovery_stop(struct caniot_controller *ctrl)
 #endif
 
 	if (caniot_controller_discovery_running(ctrl)) {
-		caniot_controller_cancel_query(ctrl, ctrl->discovery.handle, false);
+		caniot_controller_query_cancel(ctrl, ctrl->discovery.handle, false);
 	}
 
 	return 0u;

@@ -47,6 +47,28 @@ struct caniot_pendq {
 	 * in the response. Use of extended CAN ID enables this.
 	 */
 	caniot_frame_type_t query_type;
+
+#if CONFIG_CANIOT_QUERY_ID
+	/**
+	 * @brief Query ID, in order to identify the response.
+	 */
+	uint16_t query_id;
+#endif
+
+	union {
+		/**
+		 * @brief Requested endpoint if query_type is
+		 * CANIOT_FRAME_TYPE_ENDPOINT_REQUEST
+		 */
+		caniot_endpoint_t req_endpoint;
+
+		/**
+		 * @brief Requested attribute if query_type is
+		 * CANIOT_FRAME_TYPE_ATTRIBUTE_REQUEST
+		 */
+		uint16_t req_attr;
+	};
+
 	union {
 		struct caniot_pendq_time_handle tie; /* for timeout queue */
 		struct caniot_pendq *next;	     /* for memory allocation */
@@ -55,7 +77,7 @@ struct caniot_pendq {
 	/**
 	 * @brief User context
 	 *
-	 * Set using caniot_controller_handle_user_data_set() function
+	 * Set using caniot_controller_query_user_data_set() function
 	 */
 	void *user_data;
 };
@@ -307,7 +329,7 @@ uint32_t caniot_controller_next_timeout(const struct caniot_controller *ctrl);
  * Note: The use should send the frame. (the function does not do it)
  *
  * Note: That if the frame send fails, the query should be cancelled
- *  using function caniot_controller_cancel_query() with the returned handle
+ *  using function caniot_controller_query_cancel() with the returned handle
  *
  * @param controller
  * @param did
@@ -326,15 +348,40 @@ int caniot_controller_query_register(struct caniot_controller *ctrl,
 				     struct caniot_frame *frame,
 				     uint32_t timeout);
 
+/**
+ * @brief Return true if there is a pending query for the given handle
+ *
+ * @param ctrl Controller
+ * @param handle Handle of the query
+ * @return true	If pending
+ * @return false if not pending
+ */
 bool caniot_controller_query_pending(struct caniot_controller *ctrl, uint8_t handle);
 
-int caniot_controller_cancel_query(struct caniot_controller *ctrl,
+/**
+ * @brief Cancel a pending query given its handle.
+ * Call the user callback if not suppressed
+ *
+ * @param ctrl Controller
+ * @param handle Handle of the query
+ * @param suppress If true, the user callback will not be called
+ * @return int 0 on success, negative value on error
+ */
+int caniot_controller_query_cancel(struct caniot_controller *ctrl,
 				   uint8_t handle,
 				   bool suppress);
 
-int caniot_controller_process_single(struct caniot_controller *ctrl,
-				     uint32_t time_passed,
-				     const struct caniot_frame *frame);
+/**
+ * @brief Process a single frame received from the CAN bus
+ *
+ * @param ctrl Controller
+ * @param time_passed Time passed since last call to caniot_controller_process()
+ * @param frame
+ * @return int
+ */
+int caniot_controller_rx_frame(struct caniot_controller *ctrl,
+			       uint32_t time_passed,
+			       const struct caniot_frame *frame);
 
 /*____________________________________________________________________________*/
 
@@ -346,12 +393,19 @@ int caniot_controller_process_single(struct caniot_controller *ctrl,
  * @param user_data User data to set
  * @return int
  */
-int caniot_controller_handle_user_data_set(struct caniot_controller *ctrl,
-					   uint8_t handle,
-					   void *user_data);
+int caniot_controller_query_user_data_set(struct caniot_controller *ctrl,
+					  uint8_t handle,
+					  void *user_data);
 
-void *caniot_controller_handle_user_data_get(struct caniot_controller *ctrl,
-					     uint8_t handle);
+/**
+ * @brief Get the user data for the given query handle
+ *
+ * @param ctrl Controller
+ * @param handle Handle of the query
+ * @return void* Pointer to the user data
+ */
+void *caniot_controller_query_user_data_get(struct caniot_controller *ctrl,
+					    uint8_t handle);
 
 /*____________________________________________________________________________*/
 

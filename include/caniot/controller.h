@@ -75,6 +75,11 @@ struct caniot_pendq {
 	};
 
 	/**
+	 * @brief Bitfield of notified devices in case of broadcast query.
+	 */
+	uint64_t notified;
+
+	/**
 	 * @brief User context
 	 *
 	 * Set using caniot_controller_query_user_data_set() function
@@ -223,6 +228,8 @@ struct caniot_discovery_params {
 	caniot_discovery_mode_t mode;
 	caniot_discovery_type_t type;
 
+	bool admit_errors;
+
 	uint32_t timeout; /* in ms */
 
 	caniot_controller_discovery_cb_t user_callback;
@@ -258,7 +265,6 @@ struct caniot_controller {
 #if CONFIG_CANIOT_CONTROLLER_DISCOVERY
 	struct {
 		struct caniot_discovery_params params;
-		uint64_t did_bf;
 		uint8_t pending : 1u;
 		uint8_t handle; /* pq handle for the discovery query */
 	} discovery;

@@ -70,15 +70,12 @@ struct timed_frame {
 };
 
 struct timed_frame timed_frames[] = {
-	{500U,
+	{100u,
 	 0U,
 	 CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0),
-	 450U,
+	 1000u,
 	 &qtelemetry},
-	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID1), 450U,
-	// &qtelemetry },
-	// { 500U, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID2), 450U,
-	// &qtelemetry },
+	{100u, 0U, CANIOT_DID_BROADCAST, 1000u, &qtelemetry},
 };
 
 int main(void)
@@ -91,16 +88,7 @@ int main(void)
 	caniot_frame_t frame;
 	caniot_clear_frame(&frame);
 
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_CLASS_BROADCAST, CANIOT_SUBID_BROADCAST),
-	// &qtelemetry, 1000U);
-	ctrl_Q(0U, CANIOT_DID_BROADCAST, &qtelemetry, 400u);
-
-	// can_send(&fake_telem_resp, 0U);
-
-	// ctrl_C(0U, handle, false);
-	// ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID3), &qtelemetry,
-	// 650U); ctrl_Q(0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID4),
-	// &qwrite_attr, 550U);
+	// ctrl_Q(0U, CANIOT_DID_BROADCAST, &qtelemetry, 400u);
 
 	uint64_t last_time = 0u;
 
@@ -118,10 +106,12 @@ int main(void)
 		     tf < timed_frames + ARRAY_SIZE(timed_frames);
 		     tf++) {
 
-			if (tf->time >= now) {
+			if (now >= tf->time) {
 				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
+				tf->time = (uint64_t) -1;
 			}
 		}
+
 		/* Check whether there is a new character with select */
 		fd_set readfds;
 		FD_ZERO(&readfds);
@@ -169,6 +159,8 @@ int main(void)
 		}
 
 		counter++;
+
+		vtime_inc_const();
 	}
 
 	return 0;

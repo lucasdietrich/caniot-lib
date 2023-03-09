@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*.asm": "avr",
+        "*.bb": "shellscript",
+        "*.bbclass": "shellscript",
         "caniot.h": "c",
         "tempsens.h": "c",
         "stdint.h": "c",
@@ -21,6 +23,7 @@
         "string.h": "c",
         "caniot_config.h": "c",
         "typeinfo": "c",
+        "*.tcc": "c"
     },
     "editor.rulers": [80]
 }

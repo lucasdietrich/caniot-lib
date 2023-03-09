@@ -138,8 +138,8 @@ void devices_process(const struct caniot_frame *req)
 		if (caniot_device_is_target(devices[i].identification->did, req) ==
 		    true) {
 			caniot_device_handle_rx_frame(&devices[i], req, &resp);
-			caniot_explain_frame(&resp);
-			printf("\n");
+			// caniot_explain_frame(&resp);
+			// printf("\n");
 
 			can_send(&resp, 0U);
 		}

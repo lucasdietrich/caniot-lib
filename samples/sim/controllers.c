@@ -116,7 +116,7 @@ bool discovery_cb(struct caniot_controller *ctrl,
 	(void)ctrl;
 	(void)user_data;
 
-	printf("Discovery callback: did=%u : ", did);
+	printf("DISCOVERY CALLBACK: did=%u : ", did);
 	caniot_show_frame(frame);
 	printf("\n");
 
@@ -127,22 +127,19 @@ void controllers_discovery_start(void)
 {
 	int ret;
 
-	if (!caniot_controller_discovery_running(&controllers[0u])) {
-		params.mode	     = CANIOT_DISCOVERY_MODE_ACTIVE;
-		params.type	     = CANIOT_DISCOVERY_TYPE_TELEMETRY;
-		params.data.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL;
+	params.mode	     = CANIOT_DISCOVERY_MODE_ACTIVE;
+	params.type	     = CANIOT_DISCOVERY_TYPE_TELEMETRY;
+	params.data.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL;
 
-		params.timeout = 10000u;
+	params.timeout = 2000u;
 
-		params.user_callback = discovery_cb;
-		params.user_data     = NULL;
+	params.user_callback = discovery_cb;
+	params.user_data     = NULL;
 
-		ret = caniot_controller_discovery_start(
-			&controllers[0u],
-			(const struct caniot_discovery_params *)&params);
+	ret = caniot_controller_discovery_start(
+		&controllers[0u], (const struct caniot_discovery_params *)&params);
 
-		printf("Discovery started ret: %d", ret);
-	}
+	printf("Discovery started ret: %d\n", ret);
 }
 
 void controllers_discovery_stop(void)

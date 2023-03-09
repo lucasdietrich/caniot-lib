@@ -108,7 +108,7 @@ int main(void)
 
 			if (now >= tf->time) {
 				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
-				tf->time = (uint64_t) -1;
+				tf->time = (uint64_t)-1;
 			}
 		}
 

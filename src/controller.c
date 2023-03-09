@@ -460,91 +460,6 @@ static bool pendq_is_discovery(struct caniot_controller *ctrl, struct pendq *pq)
 #endif
 }
 
-static void resp_query_event(struct caniot_controller *ctrl,
-			     const struct caniot_frame *response,
-			     struct pendq *pq,
-			     bool is_error)
-{
-	ASSERT(pq != NULL);
-
-	const bool pq_is_broadcast = pendq_is_broadcast(pq);
-	bool release_pq		   = pq_is_broadcast ? false : true;
-	bool continue_discovery	   = true;
-
-	/* If response match pending query, mark it as "terminated" and release
-	 * the pq context
-	 */
-
-	const caniot_controller_event_t ev = {
-		.controller = ctrl,
-		.context    = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
-		.status	    = is_error ? CANIOT_CONTROLLER_EVENT_STATUS_ERROR
-				       : CANIOT_CONTROLLER_EVENT_STATUS_OK,
-
-		.did = CANIOT_DID(response->id.cls, response->id.sid),
-
-		.terminated = release_pq == true,
-		.handle	    = pq->handle,
-
-		.response  = response,
-		.user_data = pq->user_data,
-	};
-
-	if (pq_is_broadcast) {
-		/* Make sure not more than one broadcast response is received
-		 * per device */
-		if (pq->notified & (1U << ev.did)) {
-			/* Already notified for this device, ignore ... */
-			__DBG("broacast pq, device %u already notified\n", ev.did);
-			return;
-		} else {
-			__DBG("broacast pq, device %u not notified yet\n", ev.did);
-			pq->notified |= (1U << ev.did);
-		}
-
-		/* If discovery is enabled, call the discovery callback and
-		 * terminate discovery if the callback returns false
-		 */
-		if (pendq_is_discovery(ctrl, pq) == true) {
-#if CONFIG_CANIOT_CONTROLLER_DISCOVERY
-			if (!is_error || ctrl->discovery.params.admit_errors == true) {
-				continue_discovery = ctrl->discovery.params.user_callback(
-					ctrl,
-					ev.did,
-					ev.response,
-					ctrl->discovery.params.user_data);
-				if (continue_discovery == false) {
-					stop_discovery(ctrl);
-				}
-			}
-
-			/* If a discovery is running, call the user callback,
-			 * but consider the response as an orphan response, as
-			 * a discovery initiated the query */
-			orphan_resp_event(ctrl, response);
-#endif
-		} else {
-			/* call pq user callback and release pq context if the callback
-			 * returns false */
-			release_pq = call_user_callback(ctrl, &ev) == false;
-
-			if (release_pq) {
-				pendq_remove(ctrl, pq);
-			}
-		}
-	} else {
-		/* Release context before callback call in case the use wants to
-		 * perform operations on a pq which will no longer live
-		 */
-		pendq_remove(ctrl, pq);
-
-		/* Ignore user callback return value in case of a response to a
-		 * non-broadcast query because the pq context has already been
-		 * released */
-		(void)call_user_callback(ctrl, &ev);
-	}
-}
-
 static void
 cancelled_query_event(struct caniot_controller *ctrl, struct pendq *pq, bool suppress)
 {
@@ -814,7 +729,7 @@ is_response_to(const struct caniot_frame *frame, struct pendq *pq, bool *p_is_er
 		}
 		if (frame->id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE) {
 			is_error = true;
-			/* If it is an error, the key which triggered it is 
+			/* If it is an error, the key which triggered it is
 			 * stored in the error argument field */
 			if ((frame->err.arg & 0xFFFFlu) == (uint32_t)pq->req_attr) {
 				match = true;
@@ -832,29 +747,127 @@ is_response_to(const struct caniot_frame *frame, struct pendq *pq, bool *p_is_er
 	return match;
 }
 
+static void pendq_handle_device_resp(struct caniot_controller *ctrl,
+				     struct pendq *pq,
+				     const struct caniot_frame *response,
+				     bool is_error)
+{
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context    = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		.status	    = is_error ? CANIOT_CONTROLLER_EVENT_STATUS_ERROR
+				       : CANIOT_CONTROLLER_EVENT_STATUS_OK,
+
+		.did = CANIOT_DID(response->id.cls, response->id.sid),
+
+		.terminated = true,
+		.handle	    = pq->handle,
+
+		.response  = response,
+		.user_data = pq->user_data,
+	};
+
+	/* Release context before callback call in case the use wants to
+	 * perform operations on a pq which will no longer live
+	 */
+	pendq_remove(ctrl, pq);
+
+	/* Ignore user callback return value in case of a response to a
+	 * non-broadcast query because the pq context has already been
+	 * released */
+	(void)call_user_callback(ctrl, &ev);
+}
+
+static void pendq_handle_broadcast_resp(struct caniot_controller *ctrl,
+					struct pendq *pq,
+					const struct caniot_frame *response,
+					bool is_error)
+{
+	const caniot_controller_event_t ev = {
+		.controller = ctrl,
+		.context    = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
+		.status	    = is_error ? CANIOT_CONTROLLER_EVENT_STATUS_ERROR
+				       : CANIOT_CONTROLLER_EVENT_STATUS_OK,
+
+		.did = CANIOT_DID(response->id.cls, response->id.sid),
+
+		.terminated = false,
+		.handle	    = pq->handle,
+
+		.response  = response,
+		.user_data = pq->user_data,
+	};
+
+	/* Make sure not more than one broadcast response is received
+	 * per device */
+	if (pq->notified & (1U << ev.did)) {
+		/* Already notified for this device, ignore ... */
+		__DBG("broacast pq, device %u already notified\n", ev.did);
+		return;
+	} else {
+		__DBG("broacast pq, device %u not notified yet\n", ev.did);
+		pq->notified |= (1U << ev.did);
+	}
+
+	/* If discovery is enabled, call the discovery callback and
+	 * terminate discovery if the callback returns false
+	 */
+	if (pendq_is_discovery(ctrl, pq) == true) {
+#if CONFIG_CANIOT_CONTROLLER_DISCOVERY
+		if (!is_error || ctrl->discovery.params.admit_errors == true) {
+			bool continue_discovery = ctrl->discovery.params.user_callback(
+				ctrl,
+				ev.did,
+				ev.response,
+				ctrl->discovery.params.user_data);
+			if (continue_discovery == false) {
+				stop_discovery(ctrl);
+			}
+		}
+
+		/* If a discovery is running, call the user callback,
+		 * but consider the response as an orphan response, as
+		 * a discovery initiated the query */
+		orphan_resp_event(ctrl, response);
+#endif
+	} else {
+		/* call pq user callback and release pq context if the callback
+		 * returns false */
+		bool release_pq = call_user_callback(ctrl, &ev) == false;
+
+		if (release_pq) {
+			pendq_remove(ctrl, pq);
+		}
+	}
+}
+
 /**
  * @brief Pass frame to pending query
- * 
- * @param ctrl 
- * @param pq 
- * @param frame 
+ *
+ * @param ctrl
+ * @param pq
+ * @param frame
  * @return true If frame can actually be handled by the pending query
  * @return false Otherwise
  */
 static bool pendq_handle_frame(struct caniot_controller *ctrl,
 			       struct pendq *pq,
-			       const struct caniot_frame *frame)
+			       const struct caniot_frame *response)
 {
+	ASSERT(pq != NULL);
+	ASSERT(response != NULL);
+
 	bool is_error;
-	bool is_valid_response;
 
-	is_valid_response = is_response_to(frame, pq, &is_error);
-
-	if (is_valid_response) {
-		resp_query_event(ctrl, frame, pq, is_error);
+	if (!is_response_to(response, pq, &is_error)) {
+		return false;
+	} else if (pendq_is_broadcast(pq)) {
+		pendq_handle_broadcast_resp(ctrl, pq, response, is_error);
+	} else {
+		pendq_handle_device_resp(ctrl, pq, response, is_error);
 	}
 
-	return is_valid_response;
+	return true;
 }
 
 static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
@@ -955,7 +968,8 @@ int caniot_controller_query(struct caniot_controller *ctrl,
 {
 	int ret = query(ctrl, did, frame, timeout, true);
 
-	__DBG("caniot_controller_query(did: %u, frame: %p, timeout: %u) -> ret (handle): %d\n",
+	__DBG("caniot_controller_query(did: %u, frame: %p, timeout: %u) -> ret (handle): "
+	      "%d\n",
 	      did,
 	      (void *)frame,
 	      timeout,

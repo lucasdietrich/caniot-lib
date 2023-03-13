@@ -43,7 +43,7 @@
 		return false;                                                            \
 	}
 #define CHECK_STRICTLY_POSITIVE(statement)                                               \
-	if ((statement) < 0) {                                                           \
+	if ((statement) <= 0) {                                                           \
 		return false;                                                            \
 	}
 

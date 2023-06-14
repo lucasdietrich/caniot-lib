@@ -85,9 +85,14 @@ struct caniot_device_config {
 	} telemetry;
 
 	struct {
+		/* Allow the application to send error frames in case of error */
 		uint8_t error_response : 1;
+
+		/* Allow the application to randomly delay telemetry */
 		uint8_t telemetry_delay_rdm : 1;
-		uint8_t telemetry_endpoint : 2;
+
+		/* Endpoint to use to send periodic telemetry */
+		caniot_endpoint_t telemetry_endpoint : 2;
 	} flags;
 
 	int32_t timezone;
@@ -117,8 +122,9 @@ struct caniot_device {
 #endif
 
 	struct {
-		uint8_t request_telemetry : 1;
-		uint8_t initialized : 1;
+		uint8_t request_telemetry_ep : 4u; /* Bitmask represent what endpoint(s)
+						      to send telemetry for */
+		uint8_t initialized : 1u;	   /* Device is initialized */
 	} flags;
 };
 
@@ -218,6 +224,14 @@ int caniot_device_process(struct caniot_device *dev);
 int caniot_device_scales_rdmdelay(struct caniot_device *dev, uint32_t *rdmdelay);
 
 bool caniot_device_time_synced(struct caniot_device *dev);
+
+void caniot_device_trigger_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep);
+
+void caniot_device_trigger_periodic_telemetry(struct caniot_device *dev);
+
+bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep);
+
+bool caniot_device_triggered_telemetry_any(struct caniot_device *dev);
 
 /*____________________________________________________________________________*/
 

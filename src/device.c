@@ -1073,11 +1073,41 @@ static uint32_t get_response_delay(struct caniot_device *dev, bool random)
 	return delay_ms;
 }
 
-static inline bool telemetry_requested(struct caniot_device *dev)
+void caniot_device_trigger_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep)
+{
+	ASSERT(dev != NULL);
+	ASSERT(ep <= CANIOT_ENDPOINT_BOARD_CONTROL);
+
+	dev->flags.request_telemetry_ep |= (1u << ep);
+}
+
+void caniot_device_trigger_periodic_telemetry(struct caniot_device *dev)
+{
+	caniot_device_trigger_telemetry_ep(dev, dev->config->flags.telemetry_endpoint);
+}
+
+bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep)
+{
+	ASSERT(dev != NULL);
+	ASSERT(ep <= CANIOT_ENDPOINT_BOARD_CONTROL);
+
+	return (dev->flags.request_telemetry_ep & (1u << ep)) != 0u;
+}
+
+bool caniot_device_triggered_telemetry_any(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
 
-	return dev->flags.request_telemetry == 1u;
+	return dev->flags.request_telemetry_ep != 0u;
+}
+
+static inline void telemetry_trig_clear_ep(struct caniot_device *dev,
+					   caniot_endpoint_t ep)
+{
+	ASSERT(dev != NULL);
+	ASSERT(ep <= CANIOT_ENDPOINT_BOARD_CONTROL);
+
+	dev->flags.request_telemetry_ep &= ~(1u << ep);
 }
 
 int caniot_device_process(struct caniot_device *dev)
@@ -1097,7 +1127,8 @@ int caniot_device_process(struct caniot_device *dev)
 	const uint32_t now	   = dev->system.time * 1000 + msec;
 	const uint32_t ellapsed_ms = now - dev->system.last_telemetry;
 	if (ellapsed_ms >= dev->config->telemetry.period) {
-		dev->flags.request_telemetry = 1;
+		caniot_device_trigger_telemetry_ep(dev,
+						dev->config->flags.telemetry_endpoint);
 
 		CANIOT_DBG(F("Requesting telemetry\n"));
 	}
@@ -1126,9 +1157,19 @@ int caniot_device_process(struct caniot_device *dev)
 			random_delay = true;
 		}
 		/* if we didn't received a frame but telemetry is requested */
-	} else if ((ret == -CANIOT_EAGAIN) && telemetry_requested(dev)) {
-		ret = build_telemetry_resp(
-			dev, &resp, dev->config->flags.telemetry_endpoint);
+	} else if ((ret == -CANIOT_EAGAIN) &&
+		   caniot_device_triggered_telemetry_any(dev)) {
+		/* Iterate over all endpoints then prepare the telemetry frame for the
+		 * first found. In the case of multiple endpoints requesting telemetry,
+		 * "board control" has the highest priority.
+		 */
+		for (int8_t ep = CANIOT_ENDPOINT_BOARD_CONTROL; ep >= CANIOT_ENDPOINT_APP;
+		     ep--) {
+			if (caniot_device_triggered_telemetry_ep(dev, ep) == true) {
+				ret = build_telemetry_resp(dev, &resp, ep);
+				break;
+			}
+		}
 	} else {
 		/* Error */
 		goto exit;
@@ -1148,9 +1189,17 @@ int caniot_device_process(struct caniot_device *dev)
 	if (ret == 0) {
 		dev->system.sent.total++;
 
+		/* if we sent a telemetry frame */
 		if (is_telemetry_response(&resp) == true) {
-			dev->system.last_telemetry   = now;
-			dev->flags.request_telemetry = 0;
+			
+			telemetry_trig_clear_ep(dev, resp.id.endpoint);
+
+			/* If the endpoint is the one configured for periodic telemetry,
+			 * update the last telemetry timestamp.
+			 */
+			if (resp.id.endpoint == dev->config->flags.telemetry_endpoint) {
+				dev->system.last_telemetry = now;
+			}
 		}
 	}
 

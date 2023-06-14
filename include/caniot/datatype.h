@@ -198,6 +198,8 @@ struct caniot_heating_control {
 	caniot_heating_status_t heater2_cmd : 4u;
 	caniot_heating_status_t heater3_cmd : 4u;
 	caniot_heating_status_t heater4_cmd : 4u;
+	uint8_t power_status : 1u; /* Tells whether power is detected or not, telemetry
+				      only */
 };
 
 struct caniot_shutters_control {

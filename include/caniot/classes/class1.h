@@ -48,12 +48,12 @@ int caniot_cmd_blc1_init(struct caniot_blc1_command *cmd);
  * @return int
  */
 int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps);
+							uint8_t n,
+							caniot_complex_digital_cmd_t xps);
 
 int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd);
 
 caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(struct caniot_blc1_command *cmd,
-						       uint8_t n);
+													   uint8_t n);
 
 #endif /* _DEV_CANIOT_CLASS1_H_ */

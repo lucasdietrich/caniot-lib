@@ -31,7 +31,8 @@ struct {
 /**
  * @brief Send a can message on the emulated CAN bus
  *
- * Frame pointed by the pointer can be deallocated after the function terminates.
+ * Frame pointed by the pointer can be deallocated after the function
+ * terminates.
  *
  * @param frame
  * @param delay_ms ignored, frame is always without delay
@@ -80,7 +81,7 @@ int can_recv(struct caniot_frame *frame)
 		// dequeue if not null
 		if (queue.head != NULL) {
 			struct item *item = queue.head;
-			queue.head	  = queue.head->next;
+			queue.head		  = queue.head->next;
 
 			if (queue.head == NULL) {
 				queue.tail = NULL;

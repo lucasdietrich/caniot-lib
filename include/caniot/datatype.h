@@ -55,7 +55,8 @@ typedef enum {
 /**
  * @brief
  *
- * Note: Is compatible with caniot_twostate_cmd_t or caniot_light_cmd_t for example
+ * Note: Is compatible with caniot_twostate_cmd_t or caniot_light_cmd_t for
+ * example
  */
 typedef enum {
 	CANIOT_XPS_NONE = 0,
@@ -78,10 +79,10 @@ typedef enum {
 	CANIOT_HEATER_OFF
 } caniot_heating_status_t;
 
-#define CANIOT_SHUTTER_CMD_NONE	       0xFFu
+#define CANIOT_SHUTTER_CMD_NONE		   0xFFu
 #define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
-#define CANIOT_SHUTTER_CMD_OPEN	       (100u)
-#define CANIOT_SHUTTER_CMD_CLOSE       (0u)
+#define CANIOT_SHUTTER_CMD_OPEN		   (100u)
+#define CANIOT_SHUTTER_CMD_CLOSE	   (0u)
 
 #define CANIOT_BLT_SIZE sizeof(struct caniot_blc0_telemetry)
 
@@ -215,7 +216,7 @@ void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc);
 
 #define AS(buf, s) CANIOT_INTERPRET(buf, s)
 
-#define AS_BLC_COMMAND(buf)    CANIOT_INTERPRET(buf, caniot_blc_command)
+#define AS_BLC_COMMAND(buf)	   CANIOT_INTERPRET(buf, caniot_blc_command)
 #define AS_BLC0_COMMAND(buf)   CANIOT_INTERPRET(buf, caniot_blc0_command)
 #define AS_BLC0_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc0_telemetry)
 
@@ -241,11 +242,11 @@ int16_t caniot_dt_T10_to_T16(uint16_t T);
 #define CANIOT_DT_VALID_T10_TEMP(temp) ((temp) != CANIOT_DT_T10_INVALID)
 
 static inline int caniot_build_query_blc_command(struct caniot_frame *frame,
-						 uint8_t endpoint,
-						 struct caniot_blc_command *blc)
+												 uint8_t endpoint,
+												 struct caniot_blc_command *blc)
 {
-	return caniot_build_query_command(
-		frame, endpoint, (uint8_t *)blc, sizeof(struct caniot_blc_command));
+	return caniot_build_query_command(frame, endpoint, (uint8_t *)blc,
+									  sizeof(struct caniot_blc_command));
 }
 
 #ifdef __cplusplus

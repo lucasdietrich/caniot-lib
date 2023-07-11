@@ -1,4 +1,6 @@
 {
+    "editor.rulers": [80],
+    "editor.autoIndent": "full",
     "files.associations": {
         "*.asm": "avr",
         "*.bb": "shellscript",
@@ -25,5 +27,5 @@
         "typeinfo": "c",
         "*.tcc": "c"
     },
-    "editor.rulers": [80]
+    "workbench.tree.indent": 4,
 }

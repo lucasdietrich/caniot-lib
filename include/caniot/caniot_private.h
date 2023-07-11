@@ -27,7 +27,7 @@
 #define snprintf snprintf_P
 #define F(x)	 PSTR(x)
 #define memcpy_P memcpy_P
-#define ROM	 PROGMEM
+#define ROM		 PROGMEM
 #define Z_ASSERT(x)
 
 #if CONFIG_CANIOT_ATTRIBUTE_NAME
@@ -105,9 +105,9 @@ extern void __assert(bool statement);
 #endif /* CANIOT_LOG_LEVEL >= 1 */
 
 #if !defined(__ZEPHYR__)
-#define MIN(a, b)		       ((a) < (b) ? (a) : (b))
-#define MAX(a, b)		       ((a) > (b) ? (a) : (b))
-#define ARRAY_SIZE(a)		       (sizeof(a) / sizeof((a)[0]))
+#define MIN(a, b)					   ((a) < (b) ? (a) : (b))
+#define MAX(a, b)					   ((a) > (b) ? (a) : (b))
+#define ARRAY_SIZE(a)				   (sizeof(a) / sizeof((a)[0]))
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #endif
 

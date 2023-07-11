@@ -27,7 +27,7 @@ extern "C" {
 #define CANIOT_VERSION 2u
 
 #define CANIOT_ID(t, q, c, d, e)                                                         \
-	((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) |     \
+	((t & 0x3U) | ((q & 0x1U) << 2U) | ((c & 0x7U) << 3U) | ((d & 0x7U) << 6U) |         \
 	 ((e & 0x3U) << 9U))
 
 #define CANIOT_CLASS_BROADCAST (0x7U)
@@ -36,8 +36,8 @@ extern "C" {
 #define CANIOT_DID(class_id, sub_id)                                                     \
 	((caniot_did_t)((class_id)&0x7U) | (((sub_id)&0x7U) << 3U))
 #define CANIOT_DID_FROM_RAW(raw) ((raw)&CANIOT_DID_BROADCAST)
-#define CANIOT_DID_CLS(did)	 ((caniot_device_class_t)((did)&0x7U))
-#define CANIOT_DID_SID(did)	 ((caniot_device_subid_t)(((did) >> 3U) & 0x7U))
+#define CANIOT_DID_CLS(did)		 ((caniot_device_class_t)((did)&0x7U))
+#define CANIOT_DID_SID(did)		 ((caniot_device_subid_t)(((did) >> 3U) & 0x7U))
 
 #define CANIOT_DID_BROADCAST CANIOT_DID(CANIOT_CLASS_BROADCAST, 0x7U)
 #define CANIOT_DID_MAX_COUNT 63u
@@ -58,12 +58,12 @@ extern "C" {
 
 #define CANIOT_TIMEZONE_DEFAULT 3600U
 #define CANIOT_LOCATION_REGION_DEFAULT                                                   \
-	{                                                                                \
-		'E', 'U'                                                                 \
+	{                                                                                    \
+		'E', 'U'                                                                         \
 	}
 #define CANIOT_LOCATION_COUNTRY_DEFAULT                                                  \
-	{                                                                                \
-		'F', 'R'                                                                 \
+	{                                                                                    \
+		'F', 'R'                                                                         \
 	}
 
 #define CANIOT_ID_GET_TYPE(id)	   ((caniot_frame_type_t)(id & 0x3U))
@@ -75,7 +75,7 @@ extern "C" {
 #define CANIOT_ADDR_LEN sizeof("0x3f")
 
 /* Defines for emulated devices */
-#define CANIOT_EMU_CLASS	0x7u
+#define CANIOT_EMU_CLASS		0x7u
 #define CNAIOT_MAGIC_NUMBER_EMU 0xFFFFFFFFu
 
 typedef enum {
@@ -101,8 +101,8 @@ typedef enum {
 } caniot_device_subid_t;
 
 typedef enum {
-	CANIOT_FRAME_TYPE_COMMAND	  = 0,
-	CANIOT_FRAME_TYPE_TELEMETRY	  = 1,
+	CANIOT_FRAME_TYPE_COMMAND		  = 0,
+	CANIOT_FRAME_TYPE_TELEMETRY		  = 1,
 	CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE = 2,
 	CANIOT_FRAME_TYPE_READ_ATTRIBUTE  = 3,
 } caniot_frame_type_t;
@@ -113,9 +113,9 @@ typedef enum {
 } caniot_frame_dir_t;
 
 typedef enum {
-	CANIOT_ENDPOINT_APP	      = 0,
-	CANIOT_ENDPOINT_1	      = 1,
-	CANIOT_ENDPOINT_2	      = 2,
+	CANIOT_ENDPOINT_APP			  = 0,
+	CANIOT_ENDPOINT_1			  = 1,
+	CANIOT_ENDPOINT_2			  = 2,
 	CANIOT_ENDPOINT_BOARD_CONTROL = 3,
 } caniot_endpoint_t;
 
@@ -211,7 +211,7 @@ static inline void caniot_clear_frame(struct caniot_frame *frame)
 }
 
 static inline void caniot_copy_frame(struct caniot_frame *dst,
-				     const struct caniot_frame *src)
+									 const struct caniot_frame *src)
 {
 	memcpy(dst, src, sizeof(struct caniot_frame));
 }
@@ -240,15 +240,15 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 int caniot_build_query_telemetry(struct caniot_frame *frame, uint8_t endpoint);
 
 int caniot_build_query_command(struct caniot_frame *frame,
-			       uint8_t endpoint,
-			       const uint8_t *buf,
-			       uint8_t size);
+							   uint8_t endpoint,
+							   const uint8_t *buf,
+							   uint8_t size);
 
 int caniot_build_query_read_attribute(struct caniot_frame *frame, uint16_t key);
 
 int caniot_build_query_write_attribute(struct caniot_frame *frame,
-				       uint16_t key,
-				       uint32_t value);
+									   uint16_t key,
+									   uint32_t value);
 
 caniot_did_t caniot_frame_get_did(struct caniot_frame *frame);
 

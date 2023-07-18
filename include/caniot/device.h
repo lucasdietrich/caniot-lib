@@ -23,11 +23,11 @@ struct caniot_device_id {
 } __PACKED;
 
 struct caniot_device_system {
-	uint32_t uptime_synced;	 /* s */
-	uint32_t time;		 /* s */
-	uint32_t uptime;	 /* s */
-	uint32_t start_time;	 /* s */
-	uint32_t last_telemetry; /* ms */
+	uint32_t uptime_synced;	 /* s - uptime when time was last synced */
+	uint32_t time;		 /* s - time in seconds since epoch */
+	uint32_t uptime;	 /* s - uptime in seconds */
+	uint32_t start_time;	 /* s - time in seconds since epoch */
+	uint32_t last_telemetry; /* ms - time in milliseconds since epoch */
 	struct {
 		uint32_t total;
 		uint32_t read_attribute;
@@ -208,6 +208,20 @@ static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
 			 CANIOT_DID_SID(CANIOT_DID_BROADCAST),
 			 0U);
 }
+
+/**
+ * @brief Verify whether the device is targeted by the CAN frame (ext, rtr, id)
+ * 
+ * This function programmatically verifies if the device is targeted by the frame.
+ * 
+ * @param dev 
+ * @param ext 
+ * @param rtr 
+ * @param id 
+ * @return true 
+ * @return false 
+ */
+bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id);
 
 /*____________________________________________________________________________*/
 

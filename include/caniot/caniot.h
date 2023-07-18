@@ -167,9 +167,14 @@ struct caniot_frame {
 typedef struct caniot_frame caniot_frame_t;
 
 struct caniot_drivers_api {
-	/* util */
+	
+	/* Fill the buffer with random data */
 	void (*entropy)(uint8_t *buf, size_t len);
+
+	/* Get the current time in seconds (since epoch) */
 	void (*get_time)(uint32_t *sec, uint16_t *ms);
+
+	/* Set the current time in seconds (since epoch) */
 	void (*set_time)(uint32_t sec);
 
 	/**

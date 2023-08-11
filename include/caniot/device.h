@@ -211,15 +211,15 @@ static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
 
 /**
  * @brief Verify whether the device is targeted by the CAN frame (ext, rtr, id)
- * 
+ *
  * This function programmatically verifies if the device is targeted by the frame.
- * 
- * @param dev 
- * @param ext 
- * @param rtr 
- * @param id 
- * @return true 
- * @return false 
+ *
+ * @param dev
+ * @param ext
+ * @param rtr
+ * @param id
+ * @return true
+ * @return false
  */
 bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id);
 
@@ -243,7 +243,8 @@ void caniot_device_trigger_telemetry_ep(struct caniot_device *dev, caniot_endpoi
 
 void caniot_device_trigger_periodic_telemetry(struct caniot_device *dev);
 
-bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep);
+bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev,
+					  caniot_endpoint_t ep);
 
 bool caniot_device_triggered_telemetry_any(struct caniot_device *dev);
 

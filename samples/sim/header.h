@@ -17,7 +17,7 @@
 void init_controllers(void);
 void init_devices(void);
 
-void controllers_process(const struct caniot_frame *frame, uint32_t time_passed);
+void controllers_process(const struct caniot_frame *frame, uint32_t time_passed_ms);
 void devices_process(const struct caniot_frame *frame);
 
 void controllers_discovery_start(void);

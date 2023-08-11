@@ -167,7 +167,7 @@ struct caniot_frame {
 typedef struct caniot_frame caniot_frame_t;
 
 struct caniot_drivers_api {
-	
+
 	/* Fill the buffer with random data */
 	void (*entropy)(uint8_t *buf, size_t len);
 

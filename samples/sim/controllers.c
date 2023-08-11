@@ -74,12 +74,12 @@ void init_controllers(void)
 	}
 }
 
-void controllers_process(const struct caniot_frame *frame, uint32_t time_passed)
+void controllers_process(const struct caniot_frame *frame, uint32_t time_passed_ms)
 {
 	struct caniot_controller *ctrl;
 
 	for (ctrl = controllers; ctrl < controllers + ARRAY_SIZE(controllers); ctrl++) {
-		caniot_controller_rx_frame(ctrl, time_passed, frame);
+		caniot_controller_rx_frame(ctrl, time_passed_ms, frame);
 	}
 }
 

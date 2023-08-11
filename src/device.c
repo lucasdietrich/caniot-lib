@@ -1129,7 +1129,7 @@ int caniot_device_process(struct caniot_device *dev)
 	const uint32_t ellapsed_ms = now - dev->system.last_telemetry;
 	if (ellapsed_ms >= dev->config->telemetry.period) {
 		caniot_device_trigger_telemetry_ep(dev,
-						dev->config->flags.telemetry_endpoint);
+						   dev->config->flags.telemetry_endpoint);
 
 		CANIOT_DBG(F("Requesting telemetry\n"));
 	}
@@ -1192,7 +1192,7 @@ int caniot_device_process(struct caniot_device *dev)
 
 		/* if we sent a telemetry frame */
 		if (is_telemetry_response(&resp) == true) {
-			
+
 			telemetry_trig_clear_ep(dev, resp.id.endpoint);
 
 			/* If the endpoint is the one configured for periodic telemetry,
@@ -1307,8 +1307,8 @@ exit:
 bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id)
 {
 	bool targeted = false;
-	
-	(void) rtr;
+
+	(void)rtr;
 
 	if (!ext) {
 		const uint16_t std_id = id & 0x7FFu; /* CAN standard ID mask (11 bits) */
@@ -1317,8 +1317,12 @@ bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id)
 		const uint16_t dev_filt	  = caniot_device_get_filter(did);
 		const uint16_t broad_filt = caniot_device_get_filter_broadcast(did);
 
-		CANIOT_DBG(F("mask: 0x%04X, dev_filt: 0x%04X, broad_filt: 0x%04X, std_id: 0x%04X\n"),
-			   mask, dev_filt, broad_filt, std_id);
+		CANIOT_DBG(F("mask: 0x%04X, dev_filt: 0x%04X, broad_filt: 0x%04X, "
+			     "std_id: 0x%04X\n"),
+			   mask,
+			   dev_filt,
+			   broad_filt,
+			   std_id);
 
 		if ((std_id & mask) == dev_filt) {
 			targeted = true;

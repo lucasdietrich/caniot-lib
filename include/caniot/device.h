@@ -102,7 +102,7 @@ struct caniot_device_config {
 		char country[2];
 	} location;
 
-	/* TODO Use different structure to represent different classes */
+	/* TODO Use different structures to represent different classes */
 	union {
 		struct caniot_class0_config cls0_gpio;
 		struct caniot_class1_config cls1_gpio;
@@ -117,7 +117,7 @@ struct caniot_device {
 
 	const struct caniot_device_api *api;
 
-#if CONFIG_CANIOT_DRIVERS_API
+#if CONFIG_CANIOT_DEVICE_DRIVERS_API
 	const struct caniot_drivers_api *driv;
 #endif
 

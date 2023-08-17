@@ -39,6 +39,7 @@ typedef enum {
 	CANIOT_EKEYATTR,    /* Unknown attribute */
 	CANIOT_EKEYPART,    /* Unknown attribute part */
 	CANIOT_ENOATTR,	    /* No attribute */
+	CANIOT_ECLSATTR,    /* Class attribute not accessible for current device */
 
 	CANIOT_EREADONLY,
 

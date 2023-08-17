@@ -15,10 +15,21 @@
 extern "C" {
 #endif
 
+// Device identification
 struct caniot_device_id {
+	/* Device ID (6 bits) defined has (Class << 3) | SID */
 	caniot_did_t did;
+
+	/* Device version defined as:
+	 * - CANIOT version (8 bits)
+	 * - Device firmware version (8 bits)
+	 */
 	uint16_t version;
+
+	/* Device name (32 bytes) */
 	char name[32];
+
+	/* Magic number (32 bits) */
 	uint32_t magic_number;
 } __PACKED;
 
@@ -35,8 +46,8 @@ struct caniot_device_system {
 		uint32_t command;
 		uint32_t request_telemetry;
 		uint32_t ignored; /* Ignore because, not msg not addressed to the device*/
-		uint32_t _unused3;
 	} received;
+	uint32_t _unused3;
 	struct {
 		uint32_t total;
 		uint32_t telemetry;
@@ -211,21 +222,23 @@ static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
 
 /**
  * @brief Verify whether the device is targeted by the CAN frame (ext, rtr, id)
- * 
+ *
  * This function programmatically verifies if the device is targeted by the frame.
- * 
- * @param dev 
- * @param ext 
- * @param rtr 
- * @param id 
- * @return true 
- * @return false 
+ *
+ * @param dev
+ * @param ext
+ * @param rtr
+ * @param id
+ * @return true
+ * @return false
  */
 bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id);
 
 /*____________________________________________________________________________*/
 
 void caniot_app_init(struct caniot_device *dev);
+
+void caniot_app_deinit(struct caniot_device *dev);
 
 /**
  * @brief Receive incoming CANIOT message if any and handle it
@@ -243,7 +256,8 @@ void caniot_device_trigger_telemetry_ep(struct caniot_device *dev, caniot_endpoi
 
 void caniot_device_trigger_periodic_telemetry(struct caniot_device *dev);
 
-bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep);
+bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev,
+					  caniot_endpoint_t ep);
 
 bool caniot_device_triggered_telemetry_any(struct caniot_device *dev);
 
@@ -258,6 +272,99 @@ bool caniot_device_triggered_telemetry_any(struct caniot_device *dev);
 int caniot_device_verify(struct caniot_device *dev);
 
 /*____________________________________________________________________________*/
+
+#define CANIOT_ATTR_KEY(section, attr, part)                                             \
+	((section & 0xF) << 12 | (attr & 0xFF) << 4 | (part & 0xF))
+
+#define CANIOT_ATTR_KEY_ID_NODEID	CANIOT_ATTR_KEY(0, 0x0, 0) // 0x0000
+#define CANIOT_ATTR_KEY_ID_VERSION	CANIOT_ATTR_KEY(0, 0x1, 0) // 0x0010
+#define CANIOT_ATTR_KEY_ID_NAME		CANIOT_ATTR_KEY(0, 0x2, 0) // 0x0020
+#define CANIOT_ATTR_KEY_ID_MAGIC_NUMBER CANIOT_ATTR_KEY(0, 0x3, 0) // 0x0030
+
+#define CANIOT_ATTR_KEY_SYSTEM_UPTIME_SYNCED	      CANIOT_ATTR_KEY(1, 0x0, 0) // 0x1000
+#define CANIOT_ATTR_KEY_SYSTEM_TIME		      CANIOT_ATTR_KEY(1, 0x1, 0) // 0x1010
+#define CANIOT_ATTR_KEY_SYSTEM_UPTIME		      CANIOT_ATTR_KEY(1, 0x2, 0) // 0x1020
+#define CANIOT_ATTR_KEY_SYSTEM_START_TIME	      CANIOT_ATTR_KEY(1, 0x3, 0) // 0x1030
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY	      CANIOT_ATTR_KEY(1, 0x4, 0) // 0x1040
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_TOTAL	      CANIOT_ATTR_KEY(1, 0x5, 0) // 0x1050
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_READ_ATTR     CANIOT_ATTR_KEY(1, 0x6, 0) // 0x1060
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_WRITE_ATTR    CANIOT_ATTR_KEY(1, 0x7, 0) // 0x1070
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_COMMAND	      CANIOT_ATTR_KEY(1, 0x8, 0) // 0x1080
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_REQ_TELEMETRY CANIOT_ATTR_KEY(1, 0x9, 0) // 0x1090
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_IGNORED	      CANIOT_ATTR_KEY(1, 0xA, 0) // 0x10A0
+#define CANIOT_ATTR_KEY_SYSTEM_UNUSED3		      CANIOT_ATTR_KEY(1, 0xB, 0) // 0x10B0
+#define CANIOT_ATTR_KEY_SYSTEM_SENT_TOTAL	      CANIOT_ATTR_KEY(1, 0xC, 0) // 0x10C0
+#define CANIOT_ATTR_KEY_SYSTEM_SENT_TELEMETRY	      CANIOT_ATTR_KEY(1, 0xD, 0) // 0x10D0
+#define CANIOT_ATTR_KEY_SYSTEM_UNUSED4		      CANIOT_ATTR_KEY(1, 0xE, 0) // 0x10E0
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_COMMAND_ERROR     CANIOT_ATTR_KEY(1, 0xF, 0) // 0x10F0
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY_ERROR   CANIOT_ATTR_KEY(1, 0x10, 0) // 0x1100
+#define CANIOT_ATTR_KEY_SYSTEM_UNUSED5		      CANIOT_ATTR_KEY(1, 0x11, 0) // 0x1110
+#define CANIOT_ATTR_KEY_SYSTEM_BATTERY		      CANIOT_ATTR_KEY(1, 0x12, 0) // 0x1120
+
+#define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_PERIOD	   CANIOT_ATTR_KEY(2, 0x0, 0) // 0x2000
+#define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_DELAY	   CANIOT_ATTR_KEY(2, 0x1, 0) // 0x2010
+#define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_DELAY_MIN CANIOT_ATTR_KEY(2, 0x2, 0) // 0x2020
+#define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_DELAY_MAX CANIOT_ATTR_KEY(2, 0x3, 0) // 0x2030
+#define CANIOT_ATTR_KEY_CONFIG_FLAGS		   CANIOT_ATTR_KEY(2, 0x4, 0) // 0x2040
+#define CANIOT_ATTR_KEY_CONFIG_TIMEZONE		   CANIOT_ATTR_KEY(2, 0x5, 0) // 0x2050
+#define CANIOT_ATTR_KEY_CONFIG_LOCATION		   CANIOT_ATTR_KEY(2, 0x6, 0) // 0x2060
+#define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_PULSE_DURATION_OC1                              \
+	CANIOT_ATTR_KEY(2, 0x7, 0) // 0x2070
+#define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_PULSE_DURATION_OC2                              \
+	CANIOT_ATTR_KEY(2, 0x8, 0) // 0x2080
+#define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_PULSE_DURATION_RL1                              \
+	CANIOT_ATTR_KEY(2, 0x9, 0) // 0x2090
+#define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_PULSE_DURATION_RL2                              \
+	CANIOT_ATTR_KEY(2, 0xA, 0) // 0x20A0
+#define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_OUTPUTS_DEFAULT                                 \
+	CANIOT_ATTR_KEY(2, 0xB, 0) // 0x20B0
+#define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_MASK_TELEMETRY_ON_CHANGE                        \
+	CANIOT_ATTR_KEY(2, 0xC, 0) // 0x20C0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PC0                              \
+	CANIOT_ATTR_KEY(2, 0xD, 0) // 0x20D0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PC1                              \
+	CANIOT_ATTR_KEY(2, 0xE, 0) // 0x20E0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PC2                              \
+	CANIOT_ATTR_KEY(2, 0xF, 0) // 0x20F0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PC3                              \
+	CANIOT_ATTR_KEY(2, 0x10, 0) // 0x2100
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PD0                              \
+	CANIOT_ATTR_KEY(2, 0x11, 0) // 0x2110
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PD1                              \
+	CANIOT_ATTR_KEY(2, 0x12, 0) // 0x2120
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PD2                              \
+	CANIOT_ATTR_KEY(2, 0x13, 0) // 0x2130
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PD3                              \
+	CANIOT_ATTR_KEY(2, 0x14, 0) // 0x2140
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI0                             \
+	CANIOT_ATTR_KEY(2, 0x15, 0) // 0x2150
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI1                             \
+	CANIOT_ATTR_KEY(2, 0x16, 0) // 0x2160
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI2                             \
+	CANIOT_ATTR_KEY(2, 0x17, 0) // 0x2170
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI3                             \
+	CANIOT_ATTR_KEY(2, 0x18, 0) // 0x2180
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI4                             \
+	CANIOT_ATTR_KEY(2, 0x19, 0) // 0x2190
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI5                             \
+	CANIOT_ATTR_KEY(2, 0x1A, 0) // 0x21A0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI6                             \
+	CANIOT_ATTR_KEY(2, 0x1B, 0) // 0x21B0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PEI7                             \
+	CANIOT_ATTR_KEY(2, 0x1C, 0) // 0x21C0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PB0                              \
+	CANIOT_ATTR_KEY(2, 0x1D, 0) // 0x21D0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PE0                              \
+	CANIOT_ATTR_KEY(2, 0x1E, 0) // 0x21E0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PE1                              \
+	CANIOT_ATTR_KEY(2, 0x1F, 0) // 0x21F0
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_RESERVED                         \
+	CANIOT_ATTR_KEY(2, 0x20, 0)						// 0x2200
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_DIRECTIONS CANIOT_ATTR_KEY(2, 0x21, 0) // 0x2210
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_OUTPUTS_DEFAULT                                 \
+	CANIOT_ATTR_KEY(2, 0x22, 0) // 0x2220
+#define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_MASK_TELEMETRY_ON_CHANGE                        \
+	CANIOT_ATTR_KEY(2, 0x23, 0) // 0x2230
 
 enum caniot_device_section {
 	CANIOT_SECTION_DEVICE_IDENTIFICATION = 0,

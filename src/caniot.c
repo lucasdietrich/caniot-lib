@@ -212,10 +212,11 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("LEN = %d, key = %02x val = %04x"),
+		CANIOT_INF(F("LEN = %d, key = %02x val = %04x%04x"),
 			   frame->len,
 			   frame->attr.key,
-			   frame->attr.val);
+			   (FMT_UINT_CAST)(frame->attr.val >> 16u),
+			   (FMT_UINT_CAST)(frame->attr.val & 0xFFFFu));
 	}
 }
 

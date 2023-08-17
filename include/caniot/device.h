@@ -35,10 +35,17 @@ struct caniot_device_id {
 
 struct caniot_device_system {
 	uint32_t uptime_synced;	 /* s - uptime when time was last synced */
-	uint32_t time;		 /* s - time in seconds since epoch */
+	uint32_t time;		 /* s - current time in seconds since epoch */
 	uint32_t uptime;	 /* s - uptime in seconds */
-	uint32_t start_time;	 /* s - time in seconds since epoch */
-	uint32_t last_telemetry; /* ms - time in milliseconds since epoch */
+	uint32_t start_time;	 /* s - start time in seconds since epoch */
+	uint32_t last_telemetry; /* s - last telemetry time in seconds since epoch */
+
+	/* ms - time in milliseconds in system time 
+         * (can be uptime or time since epoch), modulo 32 !!!
+	 * this is used to precisely measure time between two telemetry events
+	 */
+	uint32_t _last_telemetry_ms;
+
 	struct {
 		uint32_t total;
 		uint32_t read_attribute;
@@ -87,7 +94,7 @@ struct caniot_class1_config {
 
 struct caniot_device_config {
 	struct {
-		uint32_t period; /* period in seconds */
+		uint32_t period; /* period in milliseconds */
 		union {
 			uint16_t delay_min; /* minimum in milliseconds */
 			uint16_t delay;	    /* delay in milliseconds */
@@ -286,13 +293,13 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_ATTR_KEY_SYSTEM_UPTIME		      CANIOT_ATTR_KEY(1, 0x2, 0) // 0x1020
 #define CANIOT_ATTR_KEY_SYSTEM_START_TIME	      CANIOT_ATTR_KEY(1, 0x3, 0) // 0x1030
 #define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY	      CANIOT_ATTR_KEY(1, 0x4, 0) // 0x1040
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY_MS_MOD  CANIOT_ATTR_KEY(1, 0xB, 0) // 0x10B0
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_TOTAL	      CANIOT_ATTR_KEY(1, 0x5, 0) // 0x1050
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_READ_ATTR     CANIOT_ATTR_KEY(1, 0x6, 0) // 0x1060
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_WRITE_ATTR    CANIOT_ATTR_KEY(1, 0x7, 0) // 0x1070
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_COMMAND	      CANIOT_ATTR_KEY(1, 0x8, 0) // 0x1080
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_REQ_TELEMETRY CANIOT_ATTR_KEY(1, 0x9, 0) // 0x1090
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_IGNORED	      CANIOT_ATTR_KEY(1, 0xA, 0) // 0x10A0
-#define CANIOT_ATTR_KEY_SYSTEM_UNUSED3		      CANIOT_ATTR_KEY(1, 0xB, 0) // 0x10B0
 #define CANIOT_ATTR_KEY_SYSTEM_SENT_TOTAL	      CANIOT_ATTR_KEY(1, 0xC, 0) // 0x10C0
 #define CANIOT_ATTR_KEY_SYSTEM_SENT_TELEMETRY	      CANIOT_ATTR_KEY(1, 0xD, 0) // 0x10D0
 #define CANIOT_ATTR_KEY_SYSTEM_UNUSED4		      CANIOT_ATTR_KEY(1, 0xE, 0) // 0x10E0

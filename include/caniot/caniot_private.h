@@ -62,6 +62,8 @@ extern void __assert(bool statement);
 #define Z_ASSERT(x) __assert(x)
 #endif
 
+#define FMT_UINT_CAST unsigned int
+
 #if CONFIG_CANIOT_ASSERT
 #define ASSERT(x) Z_ASSERT(x)
 #else

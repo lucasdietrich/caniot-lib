@@ -1201,7 +1201,7 @@ bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
 		ev->context,
 		caniot_controller_event_status_to_str(ev->status),
 		ev->status,
-		ev->response,
+		(void*)ev->response,
 		ev->terminated,
 		ev->user_data);
 

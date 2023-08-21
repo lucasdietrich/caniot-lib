@@ -641,19 +641,19 @@ static int config_written(struct caniot_device *dev)
 
 	/* local configuration in RAM should be updated */
 	if (dev->api->config.on_write != NULL) {
-#if CONFIG_CANIOT_DRIVERS_API
+#if CONFIG_CANIOT_DEVICE_DRIVERS_API
 		/* we update the last telemetry time which could
 		 * have changed if the timezone changed
 		 */
 		uint32_t prev_sec, new_sec;
 		uint16_t prev_msec, new_msec;
 		dev->driv->get_time(&prev_sec, &prev_msec);
-#endif /* CONFIG_CANIOT_DRIVERS_API */
+#endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
 
 		/* call application callback to apply the new configuration */
 		ret = dev->api->config.on_write(dev, dev->config);
 
-#if CONFIG_CANIOT_DRIVERS_API
+#if CONFIG_CANIOT_DEVICE_DRIVERS_API
 		dev->driv->get_time(&new_sec, &new_msec);
 
 		const int32_t diff_sec	= new_sec - prev_sec;
@@ -665,9 +665,8 @@ static int config_written(struct caniot_device *dev)
 		/* adjust last_telemetry time,
 		 * in order to not trigger it on time update
 		 */
-		dev->system._last_telemetry_ms += diff_msec;
-		dev->system.last_telemetry += diff_sec;
-#endif /* CONFIG_CANIOT_DRIVERS_API */
+		dev->system.last_telemetry += diff_msec;
+#endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
 	}
 
 	return ret;
@@ -863,7 +862,7 @@ static int write_system_attr(struct caniot_device *dev,
 	ASSERT(ref != NULL);
 	ASSERT(attr != NULL);
 
-#if CONFIG_CANIOT_DRIVERS_API
+#if CONFIG_CANIOT_DEVICE_DRIVERS_API
 	if (attr->key == 0x1010U) { /* time */
 		uint32_t prev_sec;
 		uint16_t prev_msec;
@@ -1101,7 +1100,7 @@ bool caniot_device_time_synced(struct caniot_device *dev)
 
 /*____________________________________________________________________________*/
 
-#if CONFIG_CANIOT_DRIVERS_API
+#if CONFIG_CANIOT_DEVICE_DRIVERS_API
 uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
@@ -1331,7 +1330,7 @@ void caniot_app_deinit(struct caniot_device *dev)
 	dev->flags.initialized = 0u;
 }
 
-#endif /* CONFIG_CANIOT_DRIVERS_API */
+#endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
 
 static void attribute_copy_from_ref(struct caniot_device_attribute *attr,
 				    struct attr_ref *ref)
@@ -1419,8 +1418,6 @@ exit:
 bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id)
 {
 	bool targeted = false;
-
-	ASSERT(dev != NULL);
 
 	(void)rtr;
 

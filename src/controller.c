@@ -91,26 +91,26 @@ pendq_queue(struct caniot_controller *ctrl, struct pendq *pq, uint32_t timeout)
 	__DBG("pendq_queue(ps: %p, timeout: %u)\n", (void *)pq, timeout);
 }
 
-static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed)
+static void pendq_shift(struct caniot_controller *ctrl, uint32_t time_passed_ms)
 {
 	ASSERT(ctrl != NULL);
 
-	__DBG("pendq_shift(time_passed: %u)\n", time_passed);
+	__DBG("pendq_shift(time_passed_ms: %u)\n", time_passed_ms);
 
-	if (time_passed == 0u) return;
+	if (time_passed_ms == 0u) return;
 
 	struct pqt **prev_next_p = &ctrl->pendingq.timeout_queue;
 	while (*prev_next_p != NULL) {
 		struct pqt *p_current = *prev_next_p;
 
-		if (p_current->delay <= time_passed) {
+		if (p_current->delay <= time_passed_ms) {
 			if (p_current->delay != 0) {
-				time_passed -= p_current->delay;
+				time_passed_ms -= p_current->delay;
 				p_current->delay = 0;
 			}
 			prev_next_p = &(p_current->next);
 		} else {
-			p_current->delay -= time_passed;
+			p_current->delay -= time_passed_ms;
 			break;
 		}
 	}
@@ -292,7 +292,7 @@ void *caniot_controller_query_user_data_get(struct caniot_controller *ctrl,
 					    uint8_t handle)
 {
 #if CONFIG_CANIOT_CHECKS
-	if (!ctrl) return -CANIOT_EINVAL;
+	if (!ctrl) return NULL;
 #endif
 
 	void *user_data	 = NULL;
@@ -362,6 +362,7 @@ exit:
 	return ret;
 }
 
+#if CONFIG_CANIOT_CTRL_DRIVERS_API
 int caniot_controller_driv_init(struct caniot_controller *ctrl,
 				const struct caniot_drivers_api *driv,
 				caniot_controller_event_cb_t cb,
@@ -372,17 +373,29 @@ int caniot_controller_driv_init(struct caniot_controller *ctrl,
 		goto exit;
 	}
 
-#if CONFIG_CANIOT_CTRL_DRIVERS_API
 	if (driv == NULL) {
 		ret = -CANIOT_EDRIVER;
 		goto exit;
 	}
 	ctrl->driv = driv;
-#endif
 
 exit:
 	return ret;
 }
+#else
+int caniot_controller_driv_init(struct caniot_controller *ctrl,
+				const struct caniot_drivers_api *driv,
+				caniot_controller_event_cb_t cb,
+				void *user_data)
+{
+	(void)ctrl;
+	(void)driv;
+	(void)cb;
+	(void)user_data;
+
+	return -CANIOT_ENOTSUP;
+}
+#endif
 
 uint32_t caniot_controller_next_timeout(const struct caniot_controller *ctrl)
 {
@@ -673,7 +686,7 @@ int caniot_controller_query_cancel(struct caniot_controller *ctrl,
 	int ret;
 
 #if CONFIG_CANIOT_CHECKS
-	if (!ctrl == NULL) return -CANIOT_EINVAL;
+	if (!ctrl) return -CANIOT_EINVAL;
 #endif
 
 	struct pendq *pq = pendq_get_by_handle(ctrl, handle);
@@ -870,11 +883,11 @@ static bool pendq_handle_frame(struct caniot_controller *ctrl,
 	return true;
 }
 
-static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
-					      const struct caniot_frame *frame)
+static int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
+					     const struct caniot_frame *frame)
 {
 #if CONFIG_CANIOT_CHECKS
-	if (!ctrl || !frame) ret = -CANIOT_EINVAL;
+	if (!ctrl || !frame) return -CANIOT_EINVAL;
 	if (!caniot_controller_is_target(frame)) return -CANIOT_EUNEXPECTED;
 #endif
 
@@ -901,10 +914,12 @@ static void caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 	if (orphan) {
 		orphan_resp_event(ctrl, frame);
 	}
+
+	return 0;
 }
 
 int caniot_controller_rx_frame(struct caniot_controller *ctrl,
-			       uint32_t time_passed,
+			       uint32_t time_passed_ms,
 			       const struct caniot_frame *frame)
 {
 #if CONFIG_CANIOT_CHECKS
@@ -912,17 +927,20 @@ int caniot_controller_rx_frame(struct caniot_controller *ctrl,
 #endif
 
 	if (frame != NULL) {
-		caniot_controller_handle_rx_frame(ctrl, frame);
+		int ret;
+		if ((ret = caniot_controller_handle_rx_frame(ctrl, frame)) < 0) {
+			return ret;
+		}
 	}
 
 	/* update timeouts */
-	pendq_shift(ctrl, time_passed);
+	pendq_shift(ctrl, time_passed_ms);
 
 	/* call callbacks for expired queries */
 	pendq_call_expired(ctrl);
 
-	__DBG("caniot_controller_rx_frame(time_passed: %u, frame: %p) -> ret: 0\n",
-	      time_passed,
+	__DBG("caniot_controller_rx_frame(time_passed_ms: %u, frame: %p) -> ret: 0\n",
+	      time_passed_ms,
 	      (void *)frame);
 
 	return 0U;
@@ -1008,7 +1026,9 @@ int caniot_controller_process(struct caniot_controller *ctrl)
 	while (true) {
 		ret = ctrl->driv->recv(&frame);
 		if (ret == 0) {
-			caniot_controller_handle_rx_frame(ctrl, &frame);
+			if ((ret = caniot_controller_handle_rx_frame(ctrl, &frame)) < 0) {
+				return ret;
+			}
 		} else if (ret == -CANIOT_EAGAIN) {
 			break;
 		} else {
@@ -1135,4 +1155,55 @@ int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl)
 	}
 
 	return count;
+}
+
+static const char *
+caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx)
+{
+	switch (ctx) {
+	case CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN:
+		return "orphan";
+	case CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY:
+		return "query";
+	default:
+		return "<unknown>";
+	}
+}
+
+static const char *
+caniot_controller_event_status_to_str(caniot_controller_event_status_t status)
+{
+	switch (status) {
+	case CANIOT_CONTROLLER_EVENT_STATUS_OK:
+		return "ok";
+	case CANIOT_CONTROLLER_EVENT_STATUS_ERROR:
+		return "error";
+	case CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT:
+		return "timeout";
+	case CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED:
+		return "cancelled";
+	default:
+		return "<unknown>";
+	}
+}
+
+bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
+					 void *user_data)
+{
+	CANIOT_INF(
+		"cb stub ev: %p user: %p did: %u handle: %u ctx: %s (%u) status: %s (%u) "
+		"response: %p terminated: %u (ev pq: user: %p)\n",
+		(void *)ev,
+		user_data,
+		ev->did,
+		ev->handle,
+		caniot_controller_event_context_to_str(ev->context),
+		ev->context,
+		caniot_controller_event_status_to_str(ev->status),
+		ev->status,
+		ev->response,
+		ev->terminated,
+		ev->user_data);
+
+	return true;
 }

@@ -381,12 +381,12 @@ int caniot_controller_query_cancel(struct caniot_controller *ctrl,
  * @brief Process a single frame received from the CAN bus
  *
  * @param ctrl Controller
- * @param time_passed Time passed since last call to caniot_controller_process()
+ * @param time_passed_ms Time passed since last call to caniot_controller_process() in ms
  * @param frame
  * @return int
  */
 int caniot_controller_rx_frame(struct caniot_controller *ctrl,
-			       uint32_t time_passed,
+			       uint32_t time_passed_ms,
 			       const struct caniot_frame *frame);
 
 /*____________________________________________________________________________*/
@@ -499,6 +499,15 @@ bool caniot_controller_discovery_running(struct caniot_controller *ctrl);
  * @return int
  */
 int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl);
+
+/**
+ * @brief Debug controller event callback call
+ *
+ * @param ev
+ * @param user_data
+ */
+bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
+					 void *user_data);
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,7 @@
 
 uint16_t caniot_fake_get_temp(struct caniot_device *dev)
 {
-#if CONFIG_CANIOT_DRIVERS_API
+#if CONFIG_CANIOT_DEVICE_DRIVERS_API
 	uint8_t buf;
 	dev->driv->entropy(&buf, 1U);
 #else

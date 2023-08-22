@@ -442,11 +442,13 @@ static void orphan_resp_event(struct caniot_controller *ctrl,
 	ASSERT(response != NULL);
 
 	const caniot_did_t did = CANIOT_DID(response->id.cls, response->id.sid);
+	const bool is_error    = caniot_is_error_frame(response->id);
 
 	const caniot_controller_event_t ev = {
 		.controller = ctrl,
 		.context    = CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN,
-		.status	    = CANIOT_CONTROLLER_EVENT_STATUS_OK,
+		.status	    = is_error ? CANIOT_CONTROLLER_EVENT_STATUS_ERROR
+				       : CANIOT_CONTROLLER_EVENT_STATUS_OK,
 
 		.did = did,
 
@@ -970,10 +972,10 @@ int caniot_controller_send(struct caniot_controller *ctrl,
 			   caniot_did_t did,
 			   struct caniot_frame *frame)
 {
-	const int ret = caniot_controller_query(ctrl, did, frame, 0U);
-
 	/* As timeout is 0U, no context is created and the frame is
-	 * sent immediately. */
+	 * sent immediately. Without expecting a response. */
+	const int ret = caniot_controller_query(ctrl, did, frame, 0u);
+
 	ASSERT(ret <= 0);
 
 	return ret;
@@ -1157,8 +1159,7 @@ int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl)
 	return count;
 }
 
-static const char *
-caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx)
+const char *caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx)
 {
 	switch (ctx) {
 	case CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN:
@@ -1170,8 +1171,7 @@ caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx)
 	}
 }
 
-static const char *
-caniot_controller_event_status_to_str(caniot_controller_event_status_t status)
+const char *caniot_controller_event_status_to_str(caniot_controller_event_status_t status)
 {
 	switch (status) {
 	case CANIOT_CONTROLLER_EVENT_STATUS_OK:

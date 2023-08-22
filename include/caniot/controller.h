@@ -118,15 +118,14 @@ typedef enum {
 	 *
 	 * "pq" can be NULL or set, "response" is VALID.
 	 */
-	CANIOT_CONTROLLER_EVENT_STATUS_ERROR, /* error frame received, is part of a query
-						 (response is set) */
+	CANIOT_CONTROLLER_EVENT_STATUS_ERROR, /* error frame received */
 
 	/**
 	 * @brief A query timed out
 	 *
 	 * "pq" is set, reponse is NULL.
 	 */
-	CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT, /*  */
+	CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT,
 
 	/**
 	 * @brief A query was cancelled
@@ -508,6 +507,10 @@ int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl);
  */
 bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
 					 void *user_data);
+
+const char *caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx);
+
+const char *caniot_controller_event_status_to_str(caniot_controller_event_status_t status);
 
 #ifdef __cplusplus
 }

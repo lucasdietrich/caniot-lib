@@ -798,13 +798,15 @@ static void pendq_handle_broadcast_resp(struct caniot_controller *ctrl,
 					const struct caniot_frame *response,
 					bool is_error)
 {
+	ASSERT(caniot_is_broadcast(pq->did));
+
 	const caniot_controller_event_t ev = {
 		.controller = ctrl,
 		.context    = CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY,
 		.status	    = is_error ? CANIOT_CONTROLLER_EVENT_STATUS_ERROR
 				       : CANIOT_CONTROLLER_EVENT_STATUS_OK,
 
-		.did = CANIOT_DID(response->id.cls, response->id.sid),
+		.did = CANIOT_DID_BROADCAST,
 
 		.terminated = false,
 		.handle	    = pq->handle,
@@ -1201,7 +1203,7 @@ bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
 		ev->context,
 		caniot_controller_event_status_to_str(ev->status),
 		ev->status,
-		(void*)ev->response,
+		(void *)ev->response,
 		ev->terminated,
 		ev->user_data);
 

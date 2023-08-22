@@ -1109,9 +1109,10 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 		uint32_t sec;
 		uint16_t msec;
 		dev->driv->get_time(&sec, &msec);
-		const uint32_t now_ms = sec * 1000 + msec;
+		const uint32_t now_ms	   = sec * 1000 + msec;
 		const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
-		CANIOT_DBG(F("now: %u _last_telemetry_ms: %u since last: %u < period: %u ? (* ms)\n"),
+		CANIOT_DBG(F("now: %u _last_telemetry_ms: %u since last: %u < period: %u "
+			     "? (* ms)\n"),
 			   (FMT_UINT_CAST)now_ms,
 			   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
 			   (FMT_UINT_CAST)ellapsed_ms,
@@ -1218,12 +1219,12 @@ int caniot_device_process(struct caniot_device *dev)
 	const uint32_t now_ms	   = dev->system.time * 1000 + msec;
 	const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
 
-	CANIOT_DBG(
-		F("now: %u _last_telemetry_ms: %u ellapsed_ms: %u >= period: %u ? (* ms)\n"),
-		(FMT_UINT_CAST)now_ms,
-		(FMT_UINT_CAST)dev->system._last_telemetry_ms,
-		(FMT_UINT_CAST)ellapsed_ms,
-		(FMT_UINT_CAST)dev->config->telemetry.period);
+	CANIOT_DBG(F("now: %u _last_telemetry_ms: %u ellapsed_ms: %u >= period: %u ? (* "
+		     "ms)\n"),
+		   (FMT_UINT_CAST)now_ms,
+		   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
+		   (FMT_UINT_CAST)ellapsed_ms,
+		   (FMT_UINT_CAST)dev->config->telemetry.period);
 
 	if (ellapsed_ms >= dev->config->telemetry.period) {
 		caniot_device_trigger_telemetry_ep(dev,
@@ -1256,7 +1257,6 @@ int caniot_device_process(struct caniot_device *dev)
 			random_delay = true;
 		}
 
-		
 	} else if ((ret == -CANIOT_EAGAIN) &&
 		   caniot_device_triggered_telemetry_any(dev)) {
 		/* if we didn't received a frame but telemetry is requested */

@@ -40,8 +40,8 @@ struct caniot_device_system {
 	uint32_t start_time;	 /* s - start time in seconds since epoch */
 	uint32_t last_telemetry; /* s - last telemetry time in seconds since epoch */
 
-	/* ms - time in milliseconds in system time 
-         * (can be uptime or time since epoch), modulo 32 !!!
+	/* ms - time in milliseconds in system time
+	 * (can be uptime or time since epoch), modulo 32 !!!
 	 * this is used to precisely measure time between two telemetry events
 	 */
 	uint32_t _last_telemetry_ms;

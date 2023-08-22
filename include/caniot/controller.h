@@ -510,7 +510,8 @@ bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
 
 const char *caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx);
 
-const char *caniot_controller_event_status_to_str(caniot_controller_event_status_t status);
+const char *
+caniot_controller_event_status_to_str(caniot_controller_event_status_t status);
 
 #ifdef __cplusplus
 }

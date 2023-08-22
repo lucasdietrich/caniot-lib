@@ -120,7 +120,7 @@ void init_devices(void)
 
 		memset(&dev->system, 0x00, sizeof(struct caniot_device_system));
 
-		dev->flags.request_telemetry_ep = 0U;
+		dev->flags.request_telemetry_ep = CANIOT_ENDPOINT_APP;
 		memcpy(&cfgs[i], &default_cfg, sizeof(struct caniot_device_config));
 		dev->config = &cfgs[i];
 

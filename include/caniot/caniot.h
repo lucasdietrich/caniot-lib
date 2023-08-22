@@ -154,6 +154,11 @@ struct caniot_error {
 	uint32_t arg;
 } __PACKED;
 
+typedef struct caniot_timestamp {
+	uint32_t sec; /* Integer part of the timestamp (seconds since epoch) */
+	uint16_t frac;  /* Fractional part of the timestamp (milliseconds) */
+} caniot_timestamp_t;
+
 struct caniot_frame {
 	caniot_id_t id;
 	union {
@@ -162,6 +167,16 @@ struct caniot_frame {
 		struct caniot_error err;
 	};
 	uint8_t len;
+
+#if CONFIG_CANIOT_FRAME_TIMESTAMP
+	/**
+	 * @brief Timestamp of the frame.
+	 * 
+	 * This should be set by the driver when the frame is received (with driv->recv()).
+	 * This variable is transparent to the library.
+	 */
+	caniot_timestamp_t timestamp;
+#endif
 };
 
 typedef struct caniot_frame caniot_frame_t;

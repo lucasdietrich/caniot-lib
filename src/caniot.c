@@ -212,7 +212,7 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("LEN = %d, key = %02x val = %04x%04x"),
+		CANIOT_INF(F("len: %d key: x%02x val: x%04x%04x"),
 			   frame->len,
 			   frame->attr.key,
 			   (FMT_UINT_CAST)(frame->attr.val >> 16u),
@@ -241,7 +241,10 @@ int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len)
 	} else {
 		ret = snprintf(buf,
 			       len,
-			       "%s %s ",
+			       "%02u %s-%s %s %s ",
+			       CANIOT_DID(id.cls, id.sid),
+			       get_class_str(id.cls),
+			       get_sid_str(id.sid),
 			       get_type_str(id.type),
 			       get_query_str(id.query));
 	}
@@ -298,7 +301,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	} else {
 		ret = snprintf(buf,
 			       len,
-			       "LEN = %d, key = %02x val = %04x",
+			       "len: %d key: x%02x val: x%04x",
 			       frame->len,
 			       frame->attr.key,
 			       frame->attr.val);

@@ -83,7 +83,11 @@ typedef enum {
 #define CANIOT_SHUTTER_CMD_OPEN	       (100u)
 #define CANIOT_SHUTTER_CMD_CLOSE       (0u)
 
-#define CANIOT_BLT_SIZE sizeof(struct caniot_blc0_telemetry)
+#define CANIOT_BLC_SYS_RESET_MASK	    0x1u
+#define CANIOT_BLC_SYS_SOFT_RESET_MASK	    0x2u
+#define CANIOT_BLC_SYS_WATCHDOG_RESET_MASK  0x4u
+#define CANIOT_BLC_SYS_WATCHDOG_MASK	    0x18u
+#define CANIOT_BLC_SYS_WATCHDOG_ENABLE_MASK 0x10u
 
 struct caniot_blc_sys_command {
 	/* in the case of the AVR, proper software reset should use the watchdog :
@@ -106,20 +110,22 @@ struct caniot_blc_sys_command {
 
 	/* Reset the device configuration */
 	caniot_onestate_cmd_t config_reset : 1;
+};
 
-	uint8_t _unused10 : 2;
-} __PACKED;
+#define CANIOT_BLC0_TELEMETRY_BUF_LEN 7
+#define CANIOT_BLC0_COMMAND_BUF_LEN   2
 
-/* is the same as board level telemetry (blt) */
+#define CANIOT_BLC1_TELEMETRY_BUF_LEN 8
+#define CANIOT_BLC1_COMMAND_BUF_LEN   7
+
 struct caniot_blc0_telemetry {
 	uint8_t dio;
 	uint8_t pdio : 4;
-	uint8_t _unused : 4;
 	uint16_t int_temperature : 10;
 	uint16_t ext_temperature : 10;
 	uint16_t ext_temperature2 : 10;
 	uint16_t ext_temperature3 : 10;
-} __PACKED;
+};
 
 /* Board level control (blc) command */
 struct caniot_blc0_command {
@@ -127,9 +133,7 @@ struct caniot_blc0_command {
 	uint16_t coc2 : 3u;
 	uint16_t crl1 : 3u;
 	uint16_t crl2 : 3u;
-
-	uint8_t _unused : 4u;
-} __PACKED;
+};
 
 struct caniot_blc1_telemetry {
 	uint8_t pcpd;
@@ -137,60 +141,34 @@ struct caniot_blc1_telemetry {
 	uint8_t pb0 : 1;
 	uint8_t pe0 : 1;
 	uint8_t pe1 : 1;
-	uint8_t _unused : 5u;
 	uint32_t int_temperature : 10;
 	uint32_t ext_temperature : 10;
 	uint32_t ext_temperature2 : 10;
 	uint32_t ext_temperature3 : 10;
-} __PACKED;
+};
 
 /* TODO remove bitfields*/
 struct caniot_blc1_command {
-	union {
-#if __AVR__
-		struct {
-			uint64_t cpb0 : 3u;
-			uint64_t cpc0 : 3u;
-			uint64_t cpc1 : 3u;
-			uint64_t cpc2 : 3u;
-			uint64_t cpc3 : 3u;
-			uint64_t cpd0 : 3u;
-			uint64_t cpd1 : 3u;
-			uint64_t cpd2 : 3u;
-			uint64_t cpd3 : 3u;
-			uint64_t ceio0 : 3u;
-			uint64_t ceio1 : 3u;
-			uint64_t ceio2 : 3u;
-			uint64_t ceio3 : 3u;
-			uint64_t ceio4 : 3u;
-			uint64_t ceio5 : 3u;
-			uint64_t ceio6 : 3u;
-			uint64_t ceio7 : 3u;
-			uint64_t cpe0 : 3u;
-			uint64_t cpe1 : 2u;
-		};
-#endif /* __AVR__ */
-		uint8_t data[7u];
-	};
+	uint64_t cpc0 : 3u;
+	uint64_t cpc1 : 3u;
+	uint64_t cpc2 : 3u;
+	uint64_t cpc3 : 3u;
+	uint64_t cpd0 : 3u;
+	uint64_t cpd1 : 3u;
+	uint64_t cpd2 : 3u;
+	uint64_t cpd3 : 3u;
+	uint64_t ceio0 : 3u;
+	uint64_t ceio1 : 3u;
+	uint64_t ceio2 : 3u;
+	uint64_t ceio3 : 3u;
+	uint64_t ceio4 : 3u;
+	uint64_t ceio5 : 3u;
+	uint64_t ceio6 : 3u;
+	uint64_t ceio7 : 3u;
+	uint64_t cpb0 : 3u;
+	uint64_t cpe0 : 3u;
+	uint64_t cpe1 : 2u;
 };
-
-struct caniot_blc_telemetry {
-	union {
-		struct caniot_blc0_telemetry blc0;
-		struct caniot_blc1_telemetry blc1;
-		uint8_t payload[8u];
-	};
-} __PACKED;
-
-struct caniot_blc_command {
-	union {
-		struct caniot_blc0_command blc0;
-		struct caniot_blc1_command blc1;
-		uint8_t payload[7u];
-	};
-
-	struct caniot_blc_sys_command sys;
-} __PACKED;
 
 /* Same for command and telemetry */
 struct caniot_heating_control {
@@ -206,31 +184,47 @@ struct caniot_shutters_control {
 	uint8_t shutters_openness[4u];
 };
 
-void caniot_blc_command_init(struct caniot_blc_command *cmd);
 void caniot_blc0_command_init(struct caniot_blc0_command *cmd);
 void caniot_blc1_command_init(struct caniot_blc1_command *cmd);
+void caniot_caniot_blc_sys_command_init(struct caniot_blc_sys_command *cmd);
 
-void caniot_blc_sys_req_reboot(struct caniot_blc_sys_command *sysc);
-void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc);
+uint8_t caniot_caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *cmd);
+void caniot_caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd,
+					     uint8_t byte);
 
-#define CANIOT_INTERPRET(buf, s) ((struct s *)buf)
+int caniot_blc0_telemetry_ser(const struct caniot_blc0_telemetry *t,
+			      uint8_t *buf,
+			      size_t len);
+int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t, uint8_t *buf, size_t len);
 
-#define AS(buf, s) CANIOT_INTERPRET(buf, s)
+int caniot_blc0_command_ser(const struct caniot_blc0_command *t,
+			    uint8_t *buf,
+			    size_t len);
+int caniot_blc0_command_get(struct caniot_blc0_command *t, uint8_t *buf, size_t len);
 
-#define AS_BLC_COMMAND(buf)    CANIOT_INTERPRET(buf, caniot_blc_command)
-#define AS_BLC0_COMMAND(buf)   CANIOT_INTERPRET(buf, caniot_blc0_command)
-#define AS_BLC0_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc0_telemetry)
+int caniot_blc1_cmd_set_xps(uint8_t *buf,
+			    size_t len,
+			    uint8_t n,
+			    caniot_complex_digital_cmd_t xps);
 
-#define AS_BLC1_COMMAND(buf)   CANIOT_INTERPRET(buf, caniot_blc1_command)
-#define AS_BLC1_TELEMETRY(buf) CANIOT_INTERPRET(buf, caniot_blc1_telemetry)
+caniot_complex_digital_cmd_t
+caniot_blc1_cmd_parse_xps(uint8_t *buf, size_t len, uint8_t n);
 
-int caniot_dt_endpoints_count(uint8_t cls);
+int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
+			      uint8_t *buf,
+			      size_t len);
+int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t, uint8_t *buf, size_t len);
 
-bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint);
+int caniot_blc1_command_ser(const struct caniot_blc1_command *t,
+			    uint8_t *buf,
+			    size_t len);
+int caniot_blc1_command_get(struct caniot_blc1_command *t, uint8_t *buf, size_t len);
 
 /* conversion functions */
 
+
 uint16_t caniot_dt_T16_to_T10(int16_t T16);
+
 
 int16_t caniot_dt_T10_to_T16(uint16_t T);
 
@@ -241,14 +235,6 @@ int16_t caniot_dt_T10_to_T16(uint16_t T);
 
 #define CANIOT_DT_VALID_T16_TEMP(temp) ((temp) != CANIOT_DT_T16_INVALID)
 #define CANIOT_DT_VALID_T10_TEMP(temp) ((temp) != CANIOT_DT_T10_INVALID)
-
-static inline int caniot_build_query_blc_command(struct caniot_frame *frame,
-						 uint8_t endpoint,
-						 struct caniot_blc_command *blc)
-{
-	return caniot_build_query_command(
-		frame, endpoint, (uint8_t *)blc, sizeof(struct caniot_blc_command));
-}
 
 #ifdef __cplusplus
 }

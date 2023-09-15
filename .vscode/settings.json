@@ -25,5 +25,5 @@
         "typeinfo": "c",
         "*.tcc": "c"
     },
-    "editor.rulers": [80]
+    "editor.rulers": [80],
 }

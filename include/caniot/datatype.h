@@ -250,6 +250,8 @@ static inline int caniot_build_query_blc_command(struct caniot_frame *frame,
 		frame, endpoint, (uint8_t *)blc, sizeof(struct caniot_blc_command));
 }
 
+const char *caniot_heating_status_to_str(caniot_heating_status_t status);
+
 #ifdef __cplusplus
 }
 #endif

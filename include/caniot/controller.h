@@ -174,7 +174,7 @@ typedef struct {
 	 * - CANIOT_CONTROLLER_EVENT_STATUS_ERROR
 	 */
 	const struct caniot_frame *response;
-	
+
 	/**
 	 * @brief User context
 	 *

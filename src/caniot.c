@@ -6,8 +6,6 @@
 
 #include <caniot/caniot.h>
 #include <caniot/caniot_private.h>
-#include <caniot/classes/class0.h>
-#include <caniot/classes/class1.h>
 #include <caniot/datatype.h>
 
 static const char cls_str[][3U] ROM = {

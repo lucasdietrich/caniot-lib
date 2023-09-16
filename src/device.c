@@ -26,7 +26,7 @@ enum section_option {
 #define ATTR_OPTION_CLASS_ALL_POS 5u
 
 enum attr_option {
-	DISABLED       = 0u,
+	HIDDEN	       = 0u,
 	READABLE       = 1 << ATTR_OPTION_READABLE_POS,
 	WRITABLE       = 1 << ATTR_OPTION_WRITABLE_POS,
 	ATTR_CLASS0    = 0u << ATTR_OPTION_CLASS_POS,
@@ -168,7 +168,7 @@ static const struct attribute system_attr[] ROM = {
 	[0x4] = ATTRIBUTE(
 		struct caniot_device_system, READABLE, "last_telemetry", last_telemetry),
 	[0xB] = ATTRIBUTE(struct caniot_device_system,
-			  DISABLED,
+			  READABLE,
 			  "_last_telemetry_ms",
 			  _last_telemetry_ms),
 	[0x5] = ATTRIBUTE(
@@ -190,14 +190,14 @@ static const struct attribute system_attr[] ROM = {
 			  "received.request_telemetry",
 			  received.request_telemetry),
 	[0xA] = ATTRIBUTE(struct caniot_device_system,
-			  DISABLED,
+			  HIDDEN,
 			  "received.ignored",
 			  received.ignored),
 	[0xC] = ATTRIBUTE(
 		struct caniot_device_system, READABLE, "sent.total", sent.total),
 	[0xD] = ATTRIBUTE(
 		struct caniot_device_system, READABLE, "sent.telemetry", sent.telemetry),
-	[0xE]  = ATTRIBUTE(struct caniot_device_system, DISABLED, "", _unused4),
+	[0xE]  = ATTRIBUTE(struct caniot_device_system, HIDDEN, "", _unused4),
 	[0xF]  = ATTRIBUTE(struct caniot_device_system,
 			   READABLE,
 			   "last_command_error",
@@ -206,7 +206,7 @@ static const struct attribute system_attr[] ROM = {
 			   READABLE,
 			   "last_telemetry_error",
 			   last_telemetry_error),
-	[0x11] = ATTRIBUTE(struct caniot_device_system, DISABLED, "", _unused5),
+	[0x11] = ATTRIBUTE(struct caniot_device_system, HIDDEN, "", _unused5),
 	[0x12] = ATTRIBUTE(struct caniot_device_system, READABLE, "battery", battery),
 };
 

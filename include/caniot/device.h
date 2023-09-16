@@ -52,7 +52,7 @@ struct caniot_device_system {
 		uint32_t write_attribute;
 		uint32_t command;
 		uint32_t request_telemetry;
-		uint32_t ignored; /* Ignore because, not msg not addressed to the device*/
+		uint32_t ignored; /* frame doesn't target current device */
 	} received;
 	uint32_t _unused3;
 	struct {
@@ -80,7 +80,10 @@ struct caniot_class0_config {
 
 struct caniot_class1_config {
 	/* Duration in seconds of the pulse for all outputs. */
-	uint32_t pulse_durations[20u]; /* Last memory space is not used */
+	uint32_t pulse_durations[19u];
+
+	/* Unused */
+	uint32_t _unused1;
 
 	/* Directions */
 	uint32_t directions; /* 0 = input, 1 = output */
@@ -120,12 +123,10 @@ struct caniot_device_config {
 		char country[2];
 	} location;
 
-	/* TODO Use different structures to represent different classes */
 	union {
 		struct caniot_class0_config cls0_gpio;
 		struct caniot_class1_config cls1_gpio;
 	};
-
 } __PACKED;
 
 struct caniot_device {
@@ -254,8 +255,6 @@ void caniot_app_deinit(struct caniot_device *dev);
  * @return int
  */
 int caniot_device_process(struct caniot_device *dev);
-
-int caniot_device_scales_rdmdelay(struct caniot_device *dev, uint32_t *rdmdelay);
 
 bool caniot_device_time_synced(struct caniot_device *dev);
 

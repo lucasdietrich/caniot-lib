@@ -69,19 +69,14 @@ typedef enum {
 } caniot_complex_digital_cmd_t;
 
 typedef enum {
-	CANIOT_HEATER_NONE = 0,
-	CANIOT_HEATER_CONFORT,
-	CANIOT_HEATER_CONFORT_MIN_1,
-	CANIOT_HEATER_CONFORT_MIN_2,
-	CANIOT_HEATER_ENERGY_SAVING,
-	CANIOT_HEATER_FROST_FREE,
-	CANIOT_HEATER_OFF
+	CANIOT_HEATER_NONE	       = 0,
+	CANIOT_HEATER_COMFORT	       = 1,
+	CANIOT_HEATER_COMFORT_MIN_1    = 2,
+	CANIOT_HEATER_COMFORT_MIN_2    = 3,
+	CANIOT_HEATER_ENERGY_SAVING    = 4,
+	CANIOT_HEATER_FROST_PROTECTION = 5,
+	CANIOT_HEATER_STOP	       = 6
 } caniot_heating_status_t;
-
-#define CANIOT_SHUTTER_CMD_NONE	       0xFFu
-#define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
-#define CANIOT_SHUTTER_CMD_OPEN	       (100u)
-#define CANIOT_SHUTTER_CMD_CLOSE       (0u)
 
 #define CANIOT_BLC_SYS_RESET_MASK	    0x1u
 #define CANIOT_BLC_SYS_SOFT_RESET_MASK	    0x2u
@@ -112,64 +107,6 @@ struct caniot_blc_sys_command {
 	caniot_onestate_cmd_t config_reset : 1;
 };
 
-#define CANIOT_BLC0_TELEMETRY_BUF_LEN 7
-#define CANIOT_BLC0_COMMAND_BUF_LEN   2
-
-#define CANIOT_BLC1_TELEMETRY_BUF_LEN 8
-#define CANIOT_BLC1_COMMAND_BUF_LEN   7
-
-struct caniot_blc0_telemetry {
-	uint8_t dio;
-	uint8_t pdio : 4;
-	uint16_t int_temperature : 10;
-	uint16_t ext_temperature : 10;
-	uint16_t ext_temperature2 : 10;
-	uint16_t ext_temperature3 : 10;
-};
-
-/* Board level control (blc) command */
-struct caniot_blc0_command {
-	uint16_t coc1 : 3u;
-	uint16_t coc2 : 3u;
-	uint16_t crl1 : 3u;
-	uint16_t crl2 : 3u;
-};
-
-struct caniot_blc1_telemetry {
-	uint8_t pcpd;
-	uint8_t eio;
-	uint8_t pb0 : 1;
-	uint8_t pe0 : 1;
-	uint8_t pe1 : 1;
-	uint32_t int_temperature : 10;
-	uint32_t ext_temperature : 10;
-	uint32_t ext_temperature2 : 10;
-	uint32_t ext_temperature3 : 10;
-};
-
-/* TODO remove bitfields*/
-struct caniot_blc1_command {
-	uint64_t cpc0 : 3u;
-	uint64_t cpc1 : 3u;
-	uint64_t cpc2 : 3u;
-	uint64_t cpc3 : 3u;
-	uint64_t cpd0 : 3u;
-	uint64_t cpd1 : 3u;
-	uint64_t cpd2 : 3u;
-	uint64_t cpd3 : 3u;
-	uint64_t ceio0 : 3u;
-	uint64_t ceio1 : 3u;
-	uint64_t ceio2 : 3u;
-	uint64_t ceio3 : 3u;
-	uint64_t ceio4 : 3u;
-	uint64_t ceio5 : 3u;
-	uint64_t ceio6 : 3u;
-	uint64_t ceio7 : 3u;
-	uint64_t cpb0 : 3u;
-	uint64_t cpe0 : 3u;
-	uint64_t cpe1 : 2u;
-};
-
 /* Same for command and telemetry */
 struct caniot_heating_control {
 	caniot_heating_status_t heater1_cmd : 4u;
@@ -180,51 +117,21 @@ struct caniot_heating_control {
 				      only */
 };
 
+#define CANIOT_SHUTTER_CMD_NONE	       0xFFu
+#define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
+#define CANIOT_SHUTTER_CMD_OPEN	       (100u)
+#define CANIOT_SHUTTER_CMD_CLOSE       (0u)
+
 struct caniot_shutters_control {
 	uint8_t shutters_openness[4u];
 };
 
-void caniot_blc0_command_init(struct caniot_blc0_command *cmd);
-void caniot_blc1_command_init(struct caniot_blc1_command *cmd);
 void caniot_caniot_blc_sys_command_init(struct caniot_blc_sys_command *cmd);
 
 uint8_t caniot_caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *cmd);
-void caniot_caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd,
-					     uint8_t byte);
-
-int caniot_blc0_telemetry_ser(const struct caniot_blc0_telemetry *t,
-			      uint8_t *buf,
-			      size_t len);
-int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t, uint8_t *buf, size_t len);
-
-int caniot_blc0_command_ser(const struct caniot_blc0_command *t,
-			    uint8_t *buf,
-			    size_t len);
-int caniot_blc0_command_get(struct caniot_blc0_command *t, uint8_t *buf, size_t len);
-
-int caniot_blc1_cmd_set_xps(uint8_t *buf,
-			    size_t len,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps);
-
-caniot_complex_digital_cmd_t
-caniot_blc1_cmd_parse_xps(uint8_t *buf, size_t len, uint8_t n);
-
-int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
-			      uint8_t *buf,
-			      size_t len);
-int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t, uint8_t *buf, size_t len);
-
-int caniot_blc1_command_ser(const struct caniot_blc1_command *t,
-			    uint8_t *buf,
-			    size_t len);
-int caniot_blc1_command_get(struct caniot_blc1_command *t, uint8_t *buf, size_t len);
-
+void caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd, uint8_t byte);
 /* conversion functions */
-
-
 uint16_t caniot_dt_T16_to_T10(int16_t T16);
-
 
 int16_t caniot_dt_T10_to_T16(uint16_t T);
 

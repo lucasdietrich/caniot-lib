@@ -62,13 +62,15 @@ int caniot_blc0_command_get(struct caniot_blc0_command *t,
 			    const uint8_t *buf,
 			    uint8_t len);
 
-int caniot_blc1_cmd_set_xps(uint8_t *buf,
+int caniot_blc1_cmd_set_xps(caniot_complex_digital_cmd_t xps,
+			    uint8_t *buf,
 			    uint8_t len,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps);
+			    uint8_t n);
 
-caniot_complex_digital_cmd_t
-caniot_blc1_cmd_parse_xps(const uint8_t *buf, uint8_t len, uint8_t n);
+int caniot_blc1_cmd_parse_xps(caniot_complex_digital_cmd_t *xps,
+			      const uint8_t *buf,
+			      uint8_t len,
+			      uint8_t n);
 
 int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
 			      uint8_t *buf,

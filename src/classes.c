@@ -126,10 +126,10 @@ static caniot_complex_digital_cmd_t z_blc1_cmd_parse_xps(const uint8_t *buf, uin
 	return xps;
 }
 
-int caniot_blc1_cmd_set_xps(uint8_t *buf,
+int caniot_blc1_cmd_set_xps(caniot_complex_digital_cmd_t xps,
+			    uint8_t *buf,
 			    uint8_t len,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps)
+			    uint8_t n)
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!buf || n >= CANIOT_CLASS1_IO_COUNT || len >= CANIOT_BLC1_COMMAND_BUF_LEN)
@@ -141,13 +141,22 @@ int caniot_blc1_cmd_set_xps(uint8_t *buf,
 	return 0;
 }
 
-caniot_complex_digital_cmd_t
-caniot_blc1_cmd_parse_xps(const uint8_t *buf, uint8_t len, uint8_t n)
+int caniot_blc1_cmd_parse_xps(caniot_complex_digital_cmd_t *xps,
+			      const uint8_t *buf,
+			      uint8_t len,
+			      uint8_t n)
 {
-	if (!buf || n >= CANIOT_CLASS1_IO_COUNT || len >= CANIOT_BLC1_COMMAND_BUF_LEN)
+#if CONFIG_CANIOT_CHECKS
+	if (!buf || !xps || n >= CANIOT_CLASS1_IO_COUNT ||
+	    len >= CANIOT_BLC1_COMMAND_BUF_LEN) {
+		if (xps) *xps = CANIOT_XPS_NONE;
 		return -CANIOT_EINVAL;
+	}
+#endif
 
-	return z_blc1_cmd_parse_xps(buf, n);
+	*xps = z_blc1_cmd_parse_xps(buf, n);
+
+	return 0;
 }
 
 int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,

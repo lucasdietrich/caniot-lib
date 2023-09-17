@@ -82,13 +82,13 @@ struct caniot_class1_config {
 	/* Duration in seconds of the pulse for all outputs. */
 	uint32_t pulse_durations[19u];
 
-	/* Unused */
-	uint32_t _unused1;
+	/* Bitmap of self managed IOs. i.e. that cannot be controlled remotely. */
+	uint32_t self_managed;
 
-	/* Directions */
+	/* Bitmap of IO directions */
 	uint32_t directions; /* 0 = input, 1 = output */
 
-	/* Output default values for outputs */
+	/* Bitmap of output default values for outputs */
 	uint32_t outputs_default;
 
 	/* The mask gpio to be used for notifications. */

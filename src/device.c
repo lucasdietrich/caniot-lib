@@ -1320,14 +1320,16 @@ void caniot_app_init(struct caniot_device *dev)
 
 	dev->driv->get_time(&dev->system.start_time, NULL);
 
-	dev->flags.initialized = 1u;
+	dev->flags.initialized		= 1u;
+	dev->flags.request_telemetry_ep = 0u;
 }
 
 void caniot_app_deinit(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
 
-	dev->flags.initialized = 0u;
+	dev->flags.initialized		= 0u;
+	dev->flags.request_telemetry_ep = 0u;
 }
 
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */

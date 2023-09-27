@@ -1105,7 +1105,13 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
 
-	if (prepare_config_read(dev) == 0) {
+	uint32_t remaining;
+
+	if (prepare_config_read(dev) != 0) {
+		remaining = 1000u; /* default 1 second in case of config read error */
+	} else if (!dev->config->flags.telemetry_periodic_enabled) {
+		remaining = (uint32_t)-1; /* Periodic telemetry disabled */
+	} else {
 		uint32_t sec;
 		uint16_t msec;
 		dev->driv->get_time(&sec, &msec);
@@ -1119,14 +1125,13 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 			   (FMT_UINT_CAST)dev->config->telemetry.period);
 
 		if (dev->config->telemetry.period <= ellapsed_ms) {
-			return 0;
+			remaining = 0u;
 		} else {
-			return dev->config->telemetry.period - ellapsed_ms;
+			remaining = dev->config->telemetry.period - ellapsed_ms;
 		}
 	}
 
-	/* default 1 second */
-	return 1000u;
+	return remaining;
 }
 
 static uint32_t get_response_delay(struct caniot_device *dev, bool random)
@@ -1208,29 +1213,36 @@ int caniot_device_process(struct caniot_device *dev)
 
 	int ret;
 	struct caniot_frame req, resp;
+	uint32_t now_ms;
 
-	/* get current time (ms precision) */
-	uint16_t msec;
-	dev->driv->get_time(&dev->system.time, &msec);
-	dev->system.uptime = dev->system.time - dev->system.start_time;
-
-	/* check if we need to send telemetry (calculated in seconds) */
+	/* Refresh configuration */
 	prepare_config_read(dev);
-	const uint32_t now_ms	   = dev->system.time * 1000 + msec;
-	const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
 
-	CANIOT_DBG(F("now: %u _last_telemetry_ms: %u ellapsed_ms: %u >= period: %u ? (* "
-		     "ms)\n"),
-		   (FMT_UINT_CAST)now_ms,
-		   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
-		   (FMT_UINT_CAST)ellapsed_ms,
-		   (FMT_UINT_CAST)dev->config->telemetry.period);
+	/* Periodic telemetry enabled */
+	if (dev->config->flags.telemetry_periodic_enabled) {
+		/* get current time (ms precision) */
+		uint16_t msec;
+		dev->driv->get_time(&dev->system.time, &msec);
+		dev->system.uptime = dev->system.time - dev->system.start_time;
 
-	if (ellapsed_ms >= dev->config->telemetry.period) {
-		caniot_device_trigger_telemetry_ep(dev,
-						   dev->config->flags.telemetry_endpoint);
+		/* check if we need to send telemetry (calculated in seconds) */
+		now_ms			   = dev->system.time * 1000 + msec;
+		const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
 
-		CANIOT_DBG(F("Requesting telemetry\n"));
+		CANIOT_DBG(F("now: %u _last_telemetry_ms: %u ellapsed_ms: %u >= period: "
+			     "%u ? (* "
+			     "ms)\n"),
+			   (FMT_UINT_CAST)now_ms,
+			   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
+			   (FMT_UINT_CAST)ellapsed_ms,
+			   (FMT_UINT_CAST)dev->config->telemetry.period);
+
+		if (ellapsed_ms >= dev->config->telemetry.period) {
+			caniot_device_trigger_telemetry_ep(
+				dev, dev->config->flags.telemetry_endpoint);
+
+			CANIOT_DBG(F("Requesting telemetry\n"));
+		}
 	}
 
 	/* received any incoming frame */
@@ -1293,13 +1305,14 @@ int caniot_device_process(struct caniot_device *dev)
 
 		/* if we sent a telemetry frame */
 		if (is_telemetry_response(&resp) == true) {
-
 			telemetry_trig_clear_ep(dev, resp.id.endpoint);
 
-			/* If the endpoint is the one configured for periodic telemetry,
+			/* If period telemetry is enabled and
+			 * the endpoint is the one configured for periodic telemetry,
 			 * update the last telemetry timestamp.
 			 */
-			if (resp.id.endpoint == dev->config->flags.telemetry_endpoint) {
+			if (dev->config->flags.telemetry_periodic_enabled &&
+			    resp.id.endpoint == dev->config->flags.telemetry_endpoint) {
 				dev->system._last_telemetry_ms = now_ms;
 				dev->system.last_telemetry     = dev->system.time;
 			}

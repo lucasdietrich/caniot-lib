@@ -114,6 +114,9 @@ struct caniot_device_config {
 
 		/* Endpoint to use to send periodic telemetry */
 		caniot_endpoint_t telemetry_endpoint : 2;
+
+		/* Periodic telemetry is enabled */
+		uint8_t telemetry_periodic_enabled : 1;
 	} flags;
 
 	int32_t timezone;
@@ -435,6 +438,7 @@ int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_d
 				.error_response	     = 1u,                                \
 				.telemetry_delay_rdm = 1u,                                \
 				.telemetry_endpoint  = CANIOT_TELEMETRY_ENDPOINT_DEFAULT, \
+				.telemetry_periodic_enabled = 1u,                         \
 			},                                                                \
 		.timezone = CANIOT_TIMEZONE_DEFAULT,                                      \
 		.location =                                                               \

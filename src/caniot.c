@@ -139,10 +139,9 @@ void caniot_show_deviceid(caniot_did_t did)
 		cpy_class_str(CANIOT_DID_CLS(did), cls_str, sizeof(cls_str));
 		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
-		CANIOT_INF(
-			F("[%hhd] 0x%02x (cls=%s sid=%s)"), did, did, cls_str, sid_str);
+		CANIOT_INF(F("(%hhd: %s,%s)"), did, cls_str, sid_str);
 #else
-		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
+		CANIOT_INF(F("(%hhd: %s,%s)"),
 			   did,
 			   did,
 			   get_class_str(CANIOT_DID_CLS(did)),

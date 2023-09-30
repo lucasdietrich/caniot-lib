@@ -571,11 +571,17 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 
 	read_rom_identification(&id, dev->identification);
 
-	CANIOT_INF(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n\n"),
+	CANIOT_INF(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n"),
 		   id.name,
 		   CANIOT_DID_CLS(id.did),
 		   CANIOT_DID_SID(id.did),
 		   id.version);
+
+	CANIOT_INF(F("commit  = "));
+	for (uint8_t i = 0u; i < 20u; i++) {
+		CANIOT_INF(F("%02hx"), id.build_commit[i]);
+	}
+	CANIOT_INF(F("\n\n"));
 }
 
 int caniot_device_system_reset(struct caniot_device *dev)

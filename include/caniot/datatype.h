@@ -76,7 +76,8 @@ typedef enum {
 	CANIOT_HEATER_ENERGY_SAVING    = 4,
 	CANIOT_HEATER_FROST_PROTECTION = 5,
 	CANIOT_HEATER_STOP	       = 6
-} caniot_heating_status_t;
+	// 7 is reserved for future use
+} caniot_heating_mode_t;
 
 #define CANIOT_BLC_SYS_RESET_MASK	    0x1u
 #define CANIOT_BLC_SYS_SOFT_RESET_MASK	    0x2u
@@ -109,10 +110,10 @@ struct caniot_blc_sys_command {
 
 /* Same for command and telemetry */
 struct caniot_heating_control {
-	caniot_heating_status_t heater1_cmd : 4u;
-	caniot_heating_status_t heater2_cmd : 4u;
-	caniot_heating_status_t heater3_cmd : 4u;
-	caniot_heating_status_t heater4_cmd : 4u;
+	caniot_heating_mode_t heater1_cmd : 4u;
+	caniot_heating_mode_t heater2_cmd : 4u;
+	caniot_heating_mode_t heater3_cmd : 4u;
+	caniot_heating_mode_t heater4_cmd : 4u;
 	uint8_t power_status : 1u; /* Tells whether power is detected or not, telemetry
 				      only */
 };

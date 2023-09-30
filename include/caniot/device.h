@@ -31,6 +31,15 @@ struct caniot_device_id {
 
 	/* Magic number (32 bits) */
 	uint32_t magic_number;
+
+	/* Build date (32 bits) */
+	uint32_t build_date;
+
+	/* Build commit (32 bits) */
+	uint8_t build_commit[20u];
+
+	/* Firmware features (128 bits) */
+	uint32_t features[4u];
 } __PACKED;
 
 struct caniot_device_system {
@@ -289,6 +298,9 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_ATTR_KEY_ID_VERSION	CANIOT_ATTR_KEY(0, 0x1, 0) // 0x0010
 #define CANIOT_ATTR_KEY_ID_NAME		CANIOT_ATTR_KEY(0, 0x2, 0) // 0x0020
 #define CANIOT_ATTR_KEY_ID_MAGIC_NUMBER CANIOT_ATTR_KEY(0, 0x3, 0) // 0x0030
+#define CANIOT_ATTR_KEY_ID_BUILD_DATE	CANIOT_ATTR_KEY(0, 0x4, 0) // 0x0040
+#define CANIOT_ATTR_KEY_ID_BUILD_COMMIT CANIOT_ATTR_KEY(0, 0x5, 0) // 0x0050
+#define CANIOT_ATTR_KEY_ID_FEATURES	CANIOT_ATTR_KEY(0, 0x6, 0) // 0x0060
 
 #define CANIOT_ATTR_KEY_SYSTEM_UPTIME_SYNCED	      CANIOT_ATTR_KEY(1, 0x0, 0) // 0x1000
 #define CANIOT_ATTR_KEY_SYSTEM_TIME		      CANIOT_ATTR_KEY(1, 0x1, 0) // 0x1010

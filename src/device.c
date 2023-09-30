@@ -156,6 +156,9 @@ static const struct attribute identification_attr[] ROM = {
 	[0x2] = ATTRIBUTE(struct caniot_device_id, READABLE, "name", name),
 	[0x3] = ATTRIBUTE(
 		struct caniot_device_id, READABLE, "magic_number", magic_number),
+	[0x4] = ATTRIBUTE(struct caniot_device_id, READABLE, "build_date", build_date),
+	[0x5] = ATTRIBUTE(struct caniot_device_id, READABLE, "build_commit", build_commit),
+	[0x6] = ATTRIBUTE(struct caniot_device_id, READABLE, "features", features),
 };
 
 static const struct attribute system_attr[] ROM = {

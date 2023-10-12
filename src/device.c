@@ -1227,13 +1227,13 @@ int caniot_device_process(struct caniot_device *dev)
 	/* Refresh configuration */
 	prepare_config_read(dev);
 
+	/* get current time (ms precision) */
+	uint16_t msec;
+	dev->driv->get_time(&dev->system.time, &msec);
+	dev->system.uptime = dev->system.time - dev->system.start_time;
+
 	/* Periodic telemetry enabled */
 	if (dev->config->flags.telemetry_periodic_enabled) {
-		/* get current time (ms precision) */
-		uint16_t msec;
-		dev->driv->get_time(&dev->system.time, &msec);
-		dev->system.uptime = dev->system.time - dev->system.start_time;
-
 		/* check if we need to send telemetry (calculated in seconds) */
 		now_ms			   = dev->system.time * 1000 + msec;
 		const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;

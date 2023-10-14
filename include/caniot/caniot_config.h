@@ -52,6 +52,10 @@
 #define CONFIG_CANIOT_QUERY_ID 0u
 #endif
 
+#ifndef CONFIG_CANIOT_BUILD_INFOS
+#define CONFIG_CANIOT_BUILD_INFOS 0u
+#endif
+
 #define CANIOT_ATTR_NAME_MAX_LEN 48u
 
 #endif /* CANIOT_CONFIG_H_ */

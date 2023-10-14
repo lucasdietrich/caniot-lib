@@ -501,7 +501,7 @@ bool z_func_datatype_blc_sys(void)
 			.config_reset = GB(n, 5),
 		};
 
-		const serialized_cmd = caniot_blc_sys_command_to_byte(&cmd);
+		const uint8_t serialized_cmd = caniot_blc_sys_command_to_byte(&cmd);
 		caniot_blc_sys_command_from_byte(&parsed_cmd, serialized_cmd);
 
 		success &= parsed_cmd.reset == cmd.reset;

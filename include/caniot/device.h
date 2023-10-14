@@ -32,11 +32,13 @@ struct caniot_device_id {
 	/* Magic number (32 bits) */
 	uint32_t magic_number;
 
+#if CONFIG_CANIOT_BUILD_INFOS
 	/* Build date (32 bits) */
 	uint32_t build_date;
 
 	/* Build commit (32 bits) */
 	uint8_t build_commit[20u];
+#endif
 
 	/* Firmware features (128 bits) */
 	uint32_t features[4u];

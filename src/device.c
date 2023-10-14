@@ -154,8 +154,10 @@ static const struct attribute identification_attr[] ROM = {
 	[0x1] = ATTRIBUTE(struct caniot_device_id, READABLE, "version", version),
 	[0x2] = ATTRIBUTE(struct caniot_device_id, READABLE, "name", name),
 	[0x3] = ATTRIBUTE(struct caniot_device_id, READABLE, "magic_number", magic_number),
+#if CONFIG_CANIOT_BUILD_INFOS
 	[0x4] = ATTRIBUTE(struct caniot_device_id, READABLE, "build_date", build_date),
 	[0x5] = ATTRIBUTE(struct caniot_device_id, READABLE, "build_commit", build_commit),
+#endif
 	[0x6] = ATTRIBUTE(struct caniot_device_id, READABLE, "features", features),
 };
 
@@ -564,10 +566,13 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 			   CANIOT_DID_SID(id.did),
 			   id.version);
 
+#if CONFIG_CANIOT_BUILD_INFOS
 	CANIOT_INF(F("commit  = "));
 	for (uint8_t i = 0u; i < 20u; i++) {
 		CANIOT_INF(F("%02hx"), id.build_commit[i]);
 	}
+#endif
+
 	CANIOT_INF(F("\n\n"));
 }
 

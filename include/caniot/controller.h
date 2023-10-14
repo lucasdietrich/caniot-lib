@@ -19,7 +19,7 @@ struct caniot_pendq_time_handle {
 	union {
 		uint32_t timeout; /* Timeout if response is not yet received */
 		uint32_t delay;	  /* Delay the query took when response is received */
-	};			  /* in ms */
+	};					  /* in ms */
 
 	/* next query in the time queue
 	 * @see
@@ -71,7 +71,7 @@ struct caniot_pendq {
 
 	union {
 		struct caniot_pendq_time_handle tie; /* for timeout queue */
-		struct caniot_pendq *next;	     /* for memory allocation */
+		struct caniot_pendq *next;			 /* for memory allocation */
 	};
 
 	/**
@@ -174,7 +174,7 @@ typedef struct {
 	 * - CANIOT_CONTROLLER_EVENT_STATUS_ERROR
 	 */
 	const struct caniot_frame *response;
-	
+
 	/**
 	 * @brief User context
 	 *
@@ -190,16 +190,16 @@ typedef struct {
  * @param user_data User data (passed when initializing the controller)
  */
 typedef bool (*caniot_controller_event_cb_t)(const caniot_controller_event_t *ev,
-					     void *user_data);
+											 void *user_data);
 
 /**
  * @brief Discovery callback
  * Return true to continue discovery, false to stop it
  */
 typedef bool (*caniot_controller_discovery_cb_t)(struct caniot_controller *ctrl,
-						 caniot_did_t did,
-						 const struct caniot_frame *frame,
-						 void *user_data);
+												 caniot_did_t did,
+												 const struct caniot_frame *frame,
+												 void *user_data);
 
 typedef enum {
 	/* A BROADCAST frame is sent */
@@ -236,7 +236,7 @@ struct caniot_discovery_params {
 
 	union {
 		caniot_endpoint_t endpoint; /* if type is TELEMETRY */
-		uint16_t attr_key;	    /* if type is ATTRIBUTE */
+		uint16_t attr_key;			/* if type is ATTRIBUTE */
 	} data;
 };
 
@@ -294,8 +294,8 @@ typedef struct caniot_controller caniot_controller_t;
  * @return int
  */
 int caniot_controller_init(struct caniot_controller *ctrl,
-			   caniot_controller_event_cb_t cb,
-			   void *user_data);
+						   caniot_controller_event_cb_t cb,
+						   void *user_data);
 
 /**
  * @brief Initialize a controller, provide functions API, cb and user data
@@ -307,9 +307,9 @@ int caniot_controller_init(struct caniot_controller *ctrl,
  * @return int
  */
 int caniot_controller_driv_init(struct caniot_controller *ctrl,
-				const struct caniot_drivers_api *driv,
-				caniot_controller_event_cb_t cb,
-				void *user_data);
+								const struct caniot_drivers_api *driv,
+								caniot_controller_event_cb_t cb,
+								void *user_data);
 
 /**
  * @brief Deinitialize a controller
@@ -349,9 +349,9 @@ uint32_t caniot_controller_next_timeout(const struct caniot_controller *ctrl);
  * @return int handle on success (> 0), negative value on error, 0 if no context allocated
  */
 int caniot_controller_query_register(struct caniot_controller *ctrl,
-				     caniot_did_t did,
-				     struct caniot_frame *frame,
-				     uint32_t timeout);
+									 caniot_did_t did,
+									 struct caniot_frame *frame,
+									 uint32_t timeout);
 
 /**
  * @brief Return true if there is a pending query for the given handle
@@ -373,8 +373,8 @@ bool caniot_controller_query_pending(struct caniot_controller *ctrl, uint8_t han
  * @return int 0 on success, negative value on error
  */
 int caniot_controller_query_cancel(struct caniot_controller *ctrl,
-				   uint8_t handle,
-				   bool suppress);
+								   uint8_t handle,
+								   bool suppress);
 
 /**
  * @brief Process a single frame received from the CAN bus
@@ -385,8 +385,8 @@ int caniot_controller_query_cancel(struct caniot_controller *ctrl,
  * @return int
  */
 int caniot_controller_rx_frame(struct caniot_controller *ctrl,
-			       uint32_t time_passed_ms,
-			       const struct caniot_frame *frame);
+							   uint32_t time_passed_ms,
+							   const struct caniot_frame *frame);
 
 /*____________________________________________________________________________*/
 
@@ -399,8 +399,8 @@ int caniot_controller_rx_frame(struct caniot_controller *ctrl,
  * @return int
  */
 int caniot_controller_query_user_data_set(struct caniot_controller *ctrl,
-					  uint8_t handle,
-					  void *user_data);
+										  uint8_t handle,
+										  void *user_data);
 
 /**
  * @brief Get the user data for the given query handle
@@ -410,7 +410,7 @@ int caniot_controller_query_user_data_set(struct caniot_controller *ctrl,
  * @return void* Pointer to the user data
  */
 void *caniot_controller_query_user_data_get(struct caniot_controller *ctrl,
-					    uint8_t handle);
+											uint8_t handle);
 
 /*____________________________________________________________________________*/
 
@@ -427,9 +427,9 @@ void *caniot_controller_query_user_data_get(struct caniot_controller *ctrl,
  * @return int Handle of the query, 0 if not tracked, negative value on error
  */
 int caniot_controller_query(struct caniot_controller *ctrl,
-			    caniot_did_t did,
-			    struct caniot_frame *frame,
-			    uint32_t timeout);
+							caniot_did_t did,
+							struct caniot_frame *frame,
+							uint32_t timeout);
 
 /**
  * @brief Send a query without tracking it.
@@ -442,8 +442,8 @@ int caniot_controller_query(struct caniot_controller *ctrl,
  * @return int
  */
 int caniot_controller_send(struct caniot_controller *ctrl,
-			   caniot_did_t did,
-			   struct caniot_frame *frame);
+						   caniot_did_t did,
+						   struct caniot_frame *frame);
 
 /**
  *
@@ -470,7 +470,7 @@ int caniot_controller_process(struct caniot_controller *ctrl);
  * @return int
  */
 int caniot_controller_discovery_start(struct caniot_controller *ctrl,
-				      const struct caniot_discovery_params *params);
+									  const struct caniot_discovery_params *params);
 
 /**
  * @brief Stop a discovery
@@ -506,7 +506,7 @@ int caniot_controller_dbg_free_pendq(struct caniot_controller *ctrl);
  * @param user_data
  */
 bool caniot_controller_dbg_event_cb_stub(const caniot_controller_event_t *ev,
-					 void *user_data);
+										 void *user_data);
 
 const char *caniot_controller_event_context_to_str(caniot_controller_event_context_t ctx);
 

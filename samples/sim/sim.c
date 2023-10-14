@@ -70,11 +70,7 @@ struct timed_frame {
 };
 
 struct timed_frame timed_frames[] = {
-	{100u,
-	 0U,
-	 CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0),
-	 1000u,
-	 &qtelemetry},
+	{100u, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qtelemetry},
 	{100u, 0U, CANIOT_DID_BROADCAST, 1000u, &qtelemetry},
 };
 
@@ -103,8 +99,8 @@ int main(void)
 
 		/* Send schedulded frames */
 		for (struct timed_frame *tf = timed_frames;
-		     tf < timed_frames + ARRAY_SIZE(timed_frames);
-		     tf++) {
+			 tf < timed_frames + ARRAY_SIZE(timed_frames);
+			 tf++) {
 
 			if (now >= tf->time) {
 				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
@@ -117,7 +113,7 @@ int main(void)
 		FD_ZERO(&readfds);
 		FD_SET(STDIN_FILENO, &readfds);
 		struct timeval timeout = {.tv_sec = 0, .tv_usec = 0};
-		ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
+		ret					   = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
 		if (ret > 0 && read(STDIN_FILENO, &chr, 1u) > 0) {
 			switch (chr) {
 			case 'd':
@@ -136,7 +132,7 @@ int main(void)
 			last_time = now;
 		}
 		const uint64_t delta = now - last_time;
-		last_time	     = now;
+		last_time			 = now;
 
 		/* Process a single frame */
 		ret = can_recv(&frame);

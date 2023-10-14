@@ -10,25 +10,25 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define CANIOT_ERROR_BASE	 0x3A00U
-#define CANIOT_ERROR_MAX	 0x3AFFU
+#define CANIOT_ERROR_BASE		 0x3A00U
+#define CANIOT_ERROR_MAX		 0x3AFFU
 #define CANIOT_ERROR_DEVICE_MASK 0x0080U
 
 typedef enum {
-	CANIOT_OK     = 0x0000,
+	CANIOT_OK	  = 0x0000,
 	CANIOT_EINVAL = CANIOT_ERROR_BASE, /* Invalid argument */
-	CANIOT_ENPROC,			   /*  UNPROCESSABLE */
-	CANIOT_ECMD,			   /*  COMMAND */
-	CANIOT_EKEY,			   /*  KEY (read/write-attribute) */
-	CANIOT_ETIMEOUT,		   /*  TIMEOUT */
-	CANIOT_EAGAIN,			   /*  BUSY / EAGAIN */
-	CANIOT_EFMT,			   /*  FORMAT */
-	CANIOT_EHANDLERC,		   /*  UNDEFINED COMMAND HANDLER  */
-	CANIOT_EHANDLERT,		   /*  UNDEFINED TELEMETRY HANDLER */
-	CANIOT_ETELEMETRY,		   /*  TELEMETRY */
-	CANIOT_EUNEXPECTED,		   /*  Unexpected frame */
+	CANIOT_ENPROC,					   /*  UNPROCESSABLE */
+	CANIOT_ECMD,					   /*  COMMAND */
+	CANIOT_EKEY,					   /*  KEY (read/write-attribute) */
+	CANIOT_ETIMEOUT,				   /*  TIMEOUT */
+	CANIOT_EAGAIN,					   /*  BUSY / EAGAIN */
+	CANIOT_EFMT,					   /*  FORMAT */
+	CANIOT_EHANDLERC,				   /*  UNDEFINED COMMAND HANDLER  */
+	CANIOT_EHANDLERT,				   /*  UNDEFINED TELEMETRY HANDLER */
+	CANIOT_ETELEMETRY,				   /*  TELEMETRY */
+	CANIOT_EUNEXPECTED,				   /*  Unexpected frame */
 
-	CANIOT_EEP,    /*  ENDPOINT */
+	CANIOT_EEP,	   /*  ENDPOINT */
 	CANIOT_ECMDEP, /*  ILLEGAL COMMAND, BROADCAST TO ALL ENDPOINTS */
 
 	CANIOT_ENOINIT, /*  NOT INITIALIZED */
@@ -36,10 +36,10 @@ typedef enum {
 	CANIOT_EAPI,	/*  API */
 
 	CANIOT_EKEYSECTION, /* Unknown attributes section */
-	CANIOT_EKEYATTR,    /* Unknown attribute */
-	CANIOT_EKEYPART,    /* Unknown attribute part */
-	CANIOT_ENOATTR,	    /* No attribute */
-	CANIOT_ECLSATTR,    /* Class attribute not accessible for current device */
+	CANIOT_EKEYATTR,	/* Unknown attribute */
+	CANIOT_EKEYPART,	/* Unknown attribute part */
+	CANIOT_ENOATTR,		/* No attribute */
+	CANIOT_ECLSATTR,	/* Class attribute not accessible for current device */
 
 	CANIOT_EREADONLY,
 

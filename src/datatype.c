@@ -68,20 +68,20 @@ uint8_t caniot_caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_comman
 }
 
 void caniot_caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd,
-					     uint8_t byte)
+											 uint8_t byte)
 {
 	ASSERT(cmd != NULL);
 
-	cmd->reset	   = (byte >> 0) & 0x01u;
+	cmd->reset			= (byte >> 0) & 0x01u;
 	cmd->software_reset = (byte >> 1) & 0x01u;
 	cmd->watchdog_reset = (byte >> 2) & 0x01u;
-	cmd->watchdog	   = (byte >> 3) & 0x03u;
-	cmd->config_reset   = (byte >> 5) & 0x01u;
+	cmd->watchdog		= (byte >> 3) & 0x03u;
+	cmd->config_reset	= (byte >> 5) & 0x01u;
 }
 
 int caniot_blc0_telemetry_ser(const struct caniot_blc0_telemetry *t,
-			      uint8_t *buf,
-			      size_t len)
+							  uint8_t *buf,
+							  size_t len)
 {
 	if (!t || !buf || len < CANIOT_BLC0_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
 
@@ -106,10 +106,10 @@ int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t, uint8_t *buf, siz
 {
 	if (!t || !buf || len < CANIOT_BLC0_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
 
-	t->dio		    = buf[0];
-	t->pdio		    = buf[1] & 0x0Fu;
-	t->int_temperature  = (buf[2]) | ((buf[3] & 0x03u) << 8);
-	t->ext_temperature  = ((buf[3] >> 2) & 0x3Fu) | ((buf[4] & 0x0Fu) << 6);
+	t->dio				= buf[0];
+	t->pdio				= buf[1] & 0x0Fu;
+	t->int_temperature	= (buf[2]) | ((buf[3] & 0x03u) << 8);
+	t->ext_temperature	= ((buf[3] >> 2) & 0x3Fu) | ((buf[4] & 0x0Fu) << 6);
 	t->ext_temperature2 = ((buf[4] >> 4) & 0x0Fu) | ((buf[5] & 0x3Fu) << 4);
 	t->ext_temperature3 = ((buf[5] >> 6) & 0x03u) | ((buf[6]) << 2);
 
@@ -171,9 +171,9 @@ static caniot_complex_digital_cmd_t z_blc1_cmd_parse_xps(uint8_t *buf, uint8_t n
 }
 
 int caniot_blc1_cmd_set_xps(uint8_t *buf,
-			    size_t len,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps)
+							size_t len,
+							uint8_t n,
+							caniot_complex_digital_cmd_t xps)
 {
 	if (!buf || n >= CANIOT_CLASS1_IO_COUNT || len >= CANIOT_BLC1_COMMAND_BUF_LEN)
 		return -CANIOT_EINVAL;
@@ -193,8 +193,8 @@ caniot_blc1_cmd_parse_xps(uint8_t *buf, size_t len, uint8_t n)
 }
 
 int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
-			      uint8_t *buf,
-			      size_t len)
+							  uint8_t *buf,
+							  size_t len)
 {
 	if (!t || !buf || len < CANIOT_BLC1_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
 
@@ -227,8 +227,8 @@ int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t, uint8_t *buf, siz
 	t->pe0	= (buf[2] >> 1) & 0x01u;
 	t->pe1	= (buf[2] >> 2) & 0x01u;
 
-	t->int_temperature  = (buf[3]) | ((buf[4] & 0x03u) << 8);
-	t->ext_temperature  = ((buf[4] >> 2) & 0x3fu) | ((buf[5] & 0x0fu) << 6);
+	t->int_temperature	= (buf[3]) | ((buf[4] & 0x03u) << 8);
+	t->ext_temperature	= ((buf[4] >> 2) & 0x3fu) | ((buf[5] & 0x0fu) << 6);
 	t->ext_temperature2 = ((buf[5] >> 4) & 0x0fu) | ((buf[6] & 0x3fu) << 4);
 	t->ext_temperature3 = ((buf[6] >> 6) & 0x03u) | ((buf[7]) << 2);
 

@@ -80,7 +80,7 @@ int can_recv(struct caniot_frame *frame)
 		// dequeue if not null
 		if (queue.head != NULL) {
 			struct item *item = queue.head;
-			queue.head	  = queue.head->next;
+			queue.head		  = queue.head->next;
 
 			if (queue.head == NULL) {
 				queue.tail = NULL;

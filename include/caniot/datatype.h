@@ -78,15 +78,15 @@ typedef enum {
 	CANIOT_HEATER_OFF
 } caniot_heating_status_t;
 
-#define CANIOT_SHUTTER_CMD_NONE	       0xFFu
+#define CANIOT_SHUTTER_CMD_NONE		   0xFFu
 #define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
-#define CANIOT_SHUTTER_CMD_OPEN	       (100u)
-#define CANIOT_SHUTTER_CMD_CLOSE       (0u)
+#define CANIOT_SHUTTER_CMD_OPEN		   (100u)
+#define CANIOT_SHUTTER_CMD_CLOSE	   (0u)
 
-#define CANIOT_BLC_SYS_RESET_MASK	    0x1u
-#define CANIOT_BLC_SYS_SOFT_RESET_MASK	    0x2u
-#define CANIOT_BLC_SYS_WATCHDOG_RESET_MASK  0x4u
-#define CANIOT_BLC_SYS_WATCHDOG_MASK	    0x18u
+#define CANIOT_BLC_SYS_RESET_MASK			0x1u
+#define CANIOT_BLC_SYS_SOFT_RESET_MASK		0x2u
+#define CANIOT_BLC_SYS_WATCHDOG_RESET_MASK	0x4u
+#define CANIOT_BLC_SYS_WATCHDOG_MASK		0x18u
 #define CANIOT_BLC_SYS_WATCHDOG_ENABLE_MASK 0x10u
 
 struct caniot_blc_sys_command {
@@ -113,10 +113,10 @@ struct caniot_blc_sys_command {
 };
 
 #define CANIOT_BLC0_TELEMETRY_BUF_LEN 7
-#define CANIOT_BLC0_COMMAND_BUF_LEN   2
+#define CANIOT_BLC0_COMMAND_BUF_LEN	  2
 
 #define CANIOT_BLC1_TELEMETRY_BUF_LEN 8
-#define CANIOT_BLC1_COMMAND_BUF_LEN   7
+#define CANIOT_BLC1_COMMAND_BUF_LEN	  7
 
 struct caniot_blc0_telemetry {
 	uint8_t dio;
@@ -177,7 +177,7 @@ struct caniot_heating_control {
 	caniot_heating_status_t heater3_cmd : 4u;
 	caniot_heating_status_t heater4_cmd : 4u;
 	uint8_t power_status : 1u; /* Tells whether power is detected or not, telemetry
-				      only */
+					  only */
 };
 
 struct caniot_shutters_control {
@@ -190,41 +190,39 @@ void caniot_caniot_blc_sys_command_init(struct caniot_blc_sys_command *cmd);
 
 uint8_t caniot_caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *cmd);
 void caniot_caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd,
-					     uint8_t byte);
+											 uint8_t byte);
 
 int caniot_blc0_telemetry_ser(const struct caniot_blc0_telemetry *t,
-			      uint8_t *buf,
-			      size_t len);
+							  uint8_t *buf,
+							  size_t len);
 int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t, uint8_t *buf, size_t len);
 
 int caniot_blc0_command_ser(const struct caniot_blc0_command *t,
-			    uint8_t *buf,
-			    size_t len);
+							uint8_t *buf,
+							size_t len);
 int caniot_blc0_command_get(struct caniot_blc0_command *t, uint8_t *buf, size_t len);
 
 int caniot_blc1_cmd_set_xps(uint8_t *buf,
-			    size_t len,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps);
+							size_t len,
+							uint8_t n,
+							caniot_complex_digital_cmd_t xps);
 
 caniot_complex_digital_cmd_t
 caniot_blc1_cmd_parse_xps(uint8_t *buf, size_t len, uint8_t n);
 
 int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
-			      uint8_t *buf,
-			      size_t len);
+							  uint8_t *buf,
+							  size_t len);
 int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t, uint8_t *buf, size_t len);
 
 int caniot_blc1_command_ser(const struct caniot_blc1_command *t,
-			    uint8_t *buf,
-			    size_t len);
+							uint8_t *buf,
+							size_t len);
 int caniot_blc1_command_get(struct caniot_blc1_command *t, uint8_t *buf, size_t len);
 
 /* conversion functions */
 
-
 uint16_t caniot_dt_T16_to_T10(int16_t T16);
-
 
 int16_t caniot_dt_T10_to_T16(uint16_t T);
 

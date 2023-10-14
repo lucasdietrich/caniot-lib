@@ -38,12 +38,12 @@ bool ctrl_event_cb(const caniot_controller_event_t *ev, void *user_data)
 	(void)user_data;
 
 	printf("[CTRL EV] did=%u handle=%u ctx=%u status=%u term=%u resp=%p\n",
-	       ev->did,
-	       ev->handle,
-	       ev->context,
-	       ev->status,
-	       ev->terminated,
-	       (void *)ev->response);
+		   ev->did,
+		   ev->handle,
+		   ev->context,
+		   ev->status,
+		   ev->terminated,
+		   (void *)ev->response);
 
 	vtime_inc_const();
 
@@ -57,7 +57,7 @@ bool ctrl_event_cb(const caniot_controller_event_t *ev, void *user_data)
 			goto exit;
 		}
 		ctrl_Q(0U, CANIOT_DID(ev->response->id.cls, ev->response->id.sid),
-		       &qtelemetry, 350U);
+			   &qtelemetry, 350U);
 	}
 exit:
 	*/
@@ -84,9 +84,9 @@ void controllers_process(const struct caniot_frame *frame, uint32_t time_passed_
 }
 
 int ctrl_Q(uint32_t ctrlid,
-	   caniot_did_t did,
-	   struct caniot_frame *frame,
-	   uint32_t timeout)
+		   caniot_did_t did,
+		   struct caniot_frame *frame,
+		   uint32_t timeout)
 {
 	int ret = -EINVAL;
 
@@ -109,9 +109,9 @@ int ctrl_C(uint32_t ctrlid, uint8_t handle, bool suppress)
 static struct caniot_discovery_params params;
 
 bool discovery_cb(struct caniot_controller *ctrl,
-		  caniot_did_t did,
-		  const struct caniot_frame *frame,
-		  void *user_data)
+				  caniot_did_t did,
+				  const struct caniot_frame *frame,
+				  void *user_data)
 {
 	(void)ctrl;
 	(void)user_data;
@@ -127,14 +127,14 @@ void controllers_discovery_start(void)
 {
 	int ret;
 
-	params.mode	     = CANIOT_DISCOVERY_MODE_ACTIVE;
-	params.type	     = CANIOT_DISCOVERY_TYPE_TELEMETRY;
+	params.mode			 = CANIOT_DISCOVERY_MODE_ACTIVE;
+	params.type			 = CANIOT_DISCOVERY_TYPE_TELEMETRY;
 	params.data.endpoint = CANIOT_ENDPOINT_BOARD_CONTROL;
 
 	params.timeout = 2000u;
 
 	params.user_callback = discovery_cb;
-	params.user_data     = NULL;
+	params.user_data	 = NULL;
 
 	ret = caniot_controller_discovery_start(
 		&controllers[0u], (const struct caniot_discovery_params *)&params);

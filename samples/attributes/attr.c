@@ -16,12 +16,12 @@ bool attr_handler(struct caniot_device_attribute *attr, void *user_data)
 	(void)user_data;
 
 	printf("key: %04hx section: %u name: %s [%s%s%s]\n",
-	       attr->key,
-	       attr->section,
-	       attr->name,
-	       attr->read ? "R" : "-",
-	       attr->write ? "W" : "-",
-	       attr->persistent ? "P" : "-");
+		   attr->key,
+		   attr->section,
+		   attr->name,
+		   attr->read ? "R" : "-",
+		   attr->write ? "W" : "-",
+		   attr->persistent ? "P" : "-");
 
 	return true;
 }

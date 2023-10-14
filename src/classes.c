@@ -48,6 +48,8 @@ int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC0_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	t->dio				= buf[0];
@@ -66,6 +68,8 @@ int caniot_blc0_command_ser(const struct caniot_blc0_command *t,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || !len || *len < CANIOT_BLC0_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	buf[0] = t->coc1 | (t->coc2 << 3) | ((t->crl1 & 0x03u) << 6);
@@ -82,6 +86,8 @@ int caniot_blc0_command_get(struct caniot_blc0_command *t,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC0_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	t->coc1 = buf[0] & 0x07u;
@@ -132,6 +138,8 @@ int caniot_blc1_cmd_set_xps(caniot_complex_digital_cmd_t xps,
 #if CONFIG_CANIOT_CHECKS
 	if (!buf || n >= CANIOT_CLASS1_IO_COUNT || len >= CANIOT_BLC1_COMMAND_BUF_LEN)
 		return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	z_blc1_cmd_set_xps(buf, n, xps);
@@ -150,6 +158,8 @@ int caniot_blc1_cmd_parse_xps(caniot_complex_digital_cmd_t *xps,
 		if (xps) *xps = CANIOT_XPS_NONE;
 		return -CANIOT_EINVAL;
 	}
+#else
+	(void) len;
 #endif
 
 	*xps = z_blc1_cmd_parse_xps(buf, n);
@@ -163,6 +173,8 @@ int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || !len || *len < CANIOT_BLC1_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	buf[0] = t->pcpd;
@@ -192,6 +204,8 @@ int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC1_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	t->pcpd = buf[0];
@@ -231,6 +245,8 @@ int caniot_blc1_command_get(struct caniot_blc1_command *t,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC1_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
+#else
+	(void) len;
 #endif
 
 	for (uint8_t i = 0u; i < CANIOT_CLASS1_IO_COUNT; i++) {

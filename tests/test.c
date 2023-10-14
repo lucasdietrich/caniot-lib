@@ -14,11 +14,18 @@
 #include <caniot/caniot_private.h>
 #include <caniot/controller.h>
 #include <caniot/device.h>
+#include <caniot/datatype.h>
 
 #define SEED 0
 
 #define TRUE  true
 #define FALSE false
+
+#define GB(_x, _pos) (((_x) >> (_pos)) & 0x1u)
+#define GBZ(_x, _pos, _size) (((_x) >> (_pos)) & ((1u << (_size)) - 1u))
+#define GB2(_x, _pos) (((_x) >> (_pos)) & 0x3u)
+#define GB3(_x, _pos) (((_x) >> (_pos)) & 0x7u)
+#define GB4(_x, _pos) (((_x) >> (_pos)) & 0xFu)
 
 #define TEST_ASSERT(statement)                                                           \
 	if (!(statement)) {                                                                  \
@@ -479,6 +486,43 @@ bool z_func_dev0(void)
 	return x.success == true;
 }
 
+bool z_func_datatype_blc_sys(void)
+{
+	bool success = true;
+
+	for (uint32_t n = 0; n < 2*2*2*4*2; n++)
+	{
+		struct caniot_blc_sys_command parsed_cmd;
+		const struct caniot_blc_sys_command cmd = {
+			.reset		  = GB(n, 0),
+			.software_reset = GB(n, 1),
+			.watchdog_reset = GB(n, 2),
+			.watchdog		= GB2(n, 3),
+			.config_reset = GB(n, 5),
+		};
+
+		const serialized_cmd = caniot_blc_sys_command_to_byte(&cmd);
+		caniot_blc_sys_command_from_byte(&parsed_cmd, serialized_cmd);
+
+		success &= parsed_cmd.reset == cmd.reset;
+		success &= parsed_cmd.software_reset == cmd.software_reset;
+		success &= parsed_cmd.watchdog_reset == cmd.watchdog_reset;
+		success &= parsed_cmd.watchdog == cmd.watchdog;
+		success &= parsed_cmd.config_reset == cmd.config_reset;
+	}
+
+	return success;
+}
+
+bool z_func_datatype_tmperature(void)
+{
+	// Precision is 0.1°C
+	const int16_t temperature16 = rand_range(CANIOT_DT_T16_MIN / 10, CANIOT_DT_T16_MAX / 10) * 10;
+	const uint16_t temperature10 = caniot_dt_T16_to_T10(temperature16);
+	const int16_t temperature16_2 = caniot_dt_T10_to_T16(temperature10);
+	return temperature16 == temperature16_2;
+}
+
 /*____________________________________________________________________________*/
 
 struct test {
@@ -514,6 +558,8 @@ const struct test tests[] = {
 	TEST(z_func_ctrl3, 1U),
 	TEST(z_func_ctrl4, 1U),
 	TEST(z_func_dev0, 1U),
+	TEST(z_func_datatype_blc_sys, 1U),
+	TEST(z_func_datatype_tmperature, 100u),
 };
 
 int main(void)

@@ -106,7 +106,7 @@ void init_devices(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(devices); i++) {
 		struct caniot_device *dev = &devices[i];
 
-		ids[i].did			= CANIOT_DID(CANIOT_DEVICE_CLASS1, i);
+		ids[i].did			= i;
 		ids[i].magic_number = 2 * i + 1U;
 		ids[i].version		= 0;
 

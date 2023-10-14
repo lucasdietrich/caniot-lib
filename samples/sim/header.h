@@ -8,7 +8,7 @@
 #define _HEADER_H
 
 #define CONTROLLERS_COUNT 1U
-#define DEVICES_COUNT	  2u
+#define DEVICES_COUNT	  63u
 
 #define VTIME_INC_CONST_VAL 100U
 

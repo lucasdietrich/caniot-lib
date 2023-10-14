@@ -129,14 +129,18 @@ struct caniot_shutters_control {
 
 void caniot_caniot_blc_sys_command_init(struct caniot_blc_sys_command *cmd);
 
-uint8_t caniot_caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *cmd);
+uint8_t caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *cmd);
 void caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd, uint8_t byte);
+
 /* conversion functions */
 uint16_t caniot_dt_T16_to_T10(int16_t T16);
 
 int16_t caniot_dt_T10_to_T16(uint16_t T);
 
 /* constants */
+#define CANIOT_DT_T16_MIN ((int16_t)-2800)
+#define CANIOT_DT_T16_MAX ((int16_t)7200)
+
 #define CANIOT_DT_T16_INVALID ((int16_t)INT16_MAX)
 #define CANIOT_DT_T10_INVALID ((uint16_t)0x3FFU)
 #define CANIOT_DT_T8_INVALID  ((uint8_t)0xFFU)

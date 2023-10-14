@@ -143,7 +143,6 @@ void caniot_show_deviceid(caniot_did_t did)
 #else
 		CANIOT_INF(F("(%hhd: %s,%s)"),
 				   did,
-				   did,
 				   get_class_str(CANIOT_DID_CLS(did)),
 				   get_sid_str(CANIOT_DID_SID(did)));
 #endif

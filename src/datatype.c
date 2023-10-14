@@ -36,7 +36,7 @@ void caniot_caniot_blc_sys_command_init(struct caniot_blc_sys_command *cmd)
 	memset(cmd, 0x00U, sizeof(struct caniot_blc_sys_command));
 }
 
-uint8_t caniot_caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *bf)
+uint8_t caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *bf)
 {
 	uint8_t byte = 0x00u;
 

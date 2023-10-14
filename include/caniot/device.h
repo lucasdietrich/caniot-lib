@@ -44,8 +44,8 @@ struct caniot_device_id {
 
 struct caniot_device_system {
 	uint32_t uptime_synced;	 /* s - uptime when time was last synced */
-	uint32_t time;		 /* s - current time in seconds since epoch */
-	uint32_t uptime;	 /* s - uptime in seconds */
+	uint32_t time;			 /* s - current time in seconds since epoch */
+	uint32_t uptime;		 /* s - uptime in seconds */
 	uint32_t start_time;	 /* s - start time in seconds since epoch */
 	uint32_t last_telemetry; /* s - last telemetry time in seconds since epoch */
 
@@ -109,7 +109,7 @@ struct caniot_device_config {
 		uint32_t period; /* period in milliseconds */
 		union {
 			uint16_t delay_min; /* minimum in milliseconds */
-			uint16_t delay;	    /* delay in milliseconds */
+			uint16_t delay;		/* delay in milliseconds */
 		};
 		uint16_t delay_max; /* maximum in milliseconds */
 	} telemetry;
@@ -154,30 +154,28 @@ struct caniot_device {
 
 	struct {
 		uint8_t request_telemetry_ep : 4u; /* Bitmask represent what endpoint(s)
-						      to send telemetry for */
-		uint8_t initialized : 1u;	   /* Device is initialized */
+							  to send telemetry for */
+		uint8_t initialized : 1u;		   /* Device is initialized */
 	} flags;
 };
 
 typedef int(caniot_telemetry_handler_t)(struct caniot_device *dev,
-					caniot_endpoint_t ep,
-					unsigned char *buf,
-					uint8_t *len);
+										caniot_endpoint_t ep,
+										unsigned char *buf,
+										uint8_t *len);
 
 typedef int(caniot_command_handler_t)(struct caniot_device *dev,
-				      caniot_endpoint_t ep,
-				      const unsigned char *buf,
-				      uint8_t len);
+									  caniot_endpoint_t ep,
+									  const unsigned char *buf,
+									  uint8_t len);
 
 struct caniot_device_api {
 	struct {
 		/* called before configuration will be read */
-		int (*on_read)(struct caniot_device *dev,
-			       struct caniot_device_config *config);
+		int (*on_read)(struct caniot_device *dev, struct caniot_device_config *config);
 
 		/* called after configuration is updated */
-		int (*on_write)(struct caniot_device *dev,
-				struct caniot_device_config *config);
+		int (*on_write)(struct caniot_device *dev, struct caniot_device_config *config);
 	} config;
 
 	struct {
@@ -197,8 +195,8 @@ void caniot_print_device_identification(const struct caniot_device *dev);
 int caniot_device_system_reset(struct caniot_device *dev);
 
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
-				  const struct caniot_frame *req,
-				  struct caniot_frame *resp);
+								  const struct caniot_frame *req,
+								  struct caniot_frame *resp);
 
 caniot_did_t caniot_device_get_id(struct caniot_device *dev);
 
@@ -234,10 +232,10 @@ static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
 {
 	(void)did;
 	return CANIOT_ID(0U,
-			 CANIOT_QUERY,
-			 CANIOT_DID_CLS(CANIOT_DID_BROADCAST),
-			 CANIOT_DID_SID(CANIOT_DID_BROADCAST),
-			 0U);
+					 CANIOT_QUERY,
+					 CANIOT_DID_CLS(CANIOT_DID_BROADCAST),
+					 CANIOT_DID_SID(CANIOT_DID_BROADCAST),
+					 0U);
 }
 
 /**
@@ -275,7 +273,7 @@ void caniot_device_trigger_telemetry_ep(struct caniot_device *dev, caniot_endpoi
 void caniot_device_trigger_periodic_telemetry(struct caniot_device *dev);
 
 bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev,
-					  caniot_endpoint_t ep);
+										  caniot_endpoint_t ep);
 
 bool caniot_device_triggered_telemetry_any(struct caniot_device *dev);
 
@@ -294,41 +292,41 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_ATTR_KEY(section, attr, part)                                             \
 	((section & 0xF) << 12 | (attr & 0xFF) << 4 | (part & 0xF))
 
-#define CANIOT_ATTR_KEY_ID_NODEID	CANIOT_ATTR_KEY(0, 0x0, 0) // 0x0000
-#define CANIOT_ATTR_KEY_ID_VERSION	CANIOT_ATTR_KEY(0, 0x1, 0) // 0x0010
-#define CANIOT_ATTR_KEY_ID_NAME		CANIOT_ATTR_KEY(0, 0x2, 0) // 0x0020
+#define CANIOT_ATTR_KEY_ID_NODEID		CANIOT_ATTR_KEY(0, 0x0, 0) // 0x0000
+#define CANIOT_ATTR_KEY_ID_VERSION		CANIOT_ATTR_KEY(0, 0x1, 0) // 0x0010
+#define CANIOT_ATTR_KEY_ID_NAME			CANIOT_ATTR_KEY(0, 0x2, 0) // 0x0020
 #define CANIOT_ATTR_KEY_ID_MAGIC_NUMBER CANIOT_ATTR_KEY(0, 0x3, 0) // 0x0030
 #define CANIOT_ATTR_KEY_ID_BUILD_DATE	CANIOT_ATTR_KEY(0, 0x4, 0) // 0x0040
 #define CANIOT_ATTR_KEY_ID_BUILD_COMMIT CANIOT_ATTR_KEY(0, 0x5, 0) // 0x0050
-#define CANIOT_ATTR_KEY_ID_FEATURES	CANIOT_ATTR_KEY(0, 0x6, 0) // 0x0060
+#define CANIOT_ATTR_KEY_ID_FEATURES		CANIOT_ATTR_KEY(0, 0x6, 0) // 0x0060
 
-#define CANIOT_ATTR_KEY_SYSTEM_UPTIME_SYNCED	      CANIOT_ATTR_KEY(1, 0x0, 0) // 0x1000
-#define CANIOT_ATTR_KEY_SYSTEM_TIME		      CANIOT_ATTR_KEY(1, 0x1, 0) // 0x1010
-#define CANIOT_ATTR_KEY_SYSTEM_UPTIME		      CANIOT_ATTR_KEY(1, 0x2, 0) // 0x1020
-#define CANIOT_ATTR_KEY_SYSTEM_START_TIME	      CANIOT_ATTR_KEY(1, 0x3, 0) // 0x1030
-#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY	      CANIOT_ATTR_KEY(1, 0x4, 0) // 0x1040
+#define CANIOT_ATTR_KEY_SYSTEM_UPTIME_SYNCED		  CANIOT_ATTR_KEY(1, 0x0, 0) // 0x1000
+#define CANIOT_ATTR_KEY_SYSTEM_TIME					  CANIOT_ATTR_KEY(1, 0x1, 0) // 0x1010
+#define CANIOT_ATTR_KEY_SYSTEM_UPTIME				  CANIOT_ATTR_KEY(1, 0x2, 0) // 0x1020
+#define CANIOT_ATTR_KEY_SYSTEM_START_TIME			  CANIOT_ATTR_KEY(1, 0x3, 0) // 0x1030
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY		  CANIOT_ATTR_KEY(1, 0x4, 0) // 0x1040
 #define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY_MS_MOD  CANIOT_ATTR_KEY(1, 0xB, 0) // 0x10B0
-#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_TOTAL	      CANIOT_ATTR_KEY(1, 0x5, 0) // 0x1050
-#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_READ_ATTR     CANIOT_ATTR_KEY(1, 0x6, 0) // 0x1060
-#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_WRITE_ATTR    CANIOT_ATTR_KEY(1, 0x7, 0) // 0x1070
-#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_COMMAND	      CANIOT_ATTR_KEY(1, 0x8, 0) // 0x1080
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_TOTAL		  CANIOT_ATTR_KEY(1, 0x5, 0) // 0x1050
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_READ_ATTR	  CANIOT_ATTR_KEY(1, 0x6, 0) // 0x1060
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_WRITE_ATTR	  CANIOT_ATTR_KEY(1, 0x7, 0) // 0x1070
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_COMMAND		  CANIOT_ATTR_KEY(1, 0x8, 0) // 0x1080
 #define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_REQ_TELEMETRY CANIOT_ATTR_KEY(1, 0x9, 0) // 0x1090
-#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_IGNORED	      CANIOT_ATTR_KEY(1, 0xA, 0) // 0x10A0
-#define CANIOT_ATTR_KEY_SYSTEM_SENT_TOTAL	      CANIOT_ATTR_KEY(1, 0xC, 0) // 0x10C0
-#define CANIOT_ATTR_KEY_SYSTEM_SENT_TELEMETRY	      CANIOT_ATTR_KEY(1, 0xD, 0) // 0x10D0
-#define CANIOT_ATTR_KEY_SYSTEM_UNUSED4		      CANIOT_ATTR_KEY(1, 0xE, 0) // 0x10E0
-#define CANIOT_ATTR_KEY_SYSTEM_LAST_COMMAND_ERROR     CANIOT_ATTR_KEY(1, 0xF, 0) // 0x10F0
-#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY_ERROR   CANIOT_ATTR_KEY(1, 0x10, 0) // 0x1100
-#define CANIOT_ATTR_KEY_SYSTEM_UNUSED5		      CANIOT_ATTR_KEY(1, 0x11, 0) // 0x1110
-#define CANIOT_ATTR_KEY_SYSTEM_BATTERY		      CANIOT_ATTR_KEY(1, 0x12, 0) // 0x1120
+#define CANIOT_ATTR_KEY_SYSTEM_RECEIVED_IGNORED		  CANIOT_ATTR_KEY(1, 0xA, 0) // 0x10A0
+#define CANIOT_ATTR_KEY_SYSTEM_SENT_TOTAL			  CANIOT_ATTR_KEY(1, 0xC, 0) // 0x10C0
+#define CANIOT_ATTR_KEY_SYSTEM_SENT_TELEMETRY		  CANIOT_ATTR_KEY(1, 0xD, 0) // 0x10D0
+#define CANIOT_ATTR_KEY_SYSTEM_UNUSED4				  CANIOT_ATTR_KEY(1, 0xE, 0) // 0x10E0
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_COMMAND_ERROR	  CANIOT_ATTR_KEY(1, 0xF, 0) // 0x10F0
+#define CANIOT_ATTR_KEY_SYSTEM_LAST_TELEMETRY_ERROR	  CANIOT_ATTR_KEY(1, 0x10, 0) // 0x1100
+#define CANIOT_ATTR_KEY_SYSTEM_UNUSED5				  CANIOT_ATTR_KEY(1, 0x11, 0) // 0x1110
+#define CANIOT_ATTR_KEY_SYSTEM_BATTERY				  CANIOT_ATTR_KEY(1, 0x12, 0) // 0x1120
 
 #define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_PERIOD	   CANIOT_ATTR_KEY(2, 0x0, 0) // 0x2000
 #define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_DELAY	   CANIOT_ATTR_KEY(2, 0x1, 0) // 0x2010
 #define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_DELAY_MIN CANIOT_ATTR_KEY(2, 0x2, 0) // 0x2020
 #define CANIOT_ATTR_KEY_CONFIG_TELEMETRY_DELAY_MAX CANIOT_ATTR_KEY(2, 0x3, 0) // 0x2030
-#define CANIOT_ATTR_KEY_CONFIG_FLAGS		   CANIOT_ATTR_KEY(2, 0x4, 0) // 0x2040
-#define CANIOT_ATTR_KEY_CONFIG_TIMEZONE		   CANIOT_ATTR_KEY(2, 0x5, 0) // 0x2050
-#define CANIOT_ATTR_KEY_CONFIG_LOCATION		   CANIOT_ATTR_KEY(2, 0x6, 0) // 0x2060
+#define CANIOT_ATTR_KEY_CONFIG_FLAGS			   CANIOT_ATTR_KEY(2, 0x4, 0) // 0x2040
+#define CANIOT_ATTR_KEY_CONFIG_TIMEZONE			   CANIOT_ATTR_KEY(2, 0x5, 0) // 0x2050
+#define CANIOT_ATTR_KEY_CONFIG_LOCATION			   CANIOT_ATTR_KEY(2, 0x6, 0) // 0x2060
 #define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_PULSE_DURATION_OC1                              \
 	CANIOT_ATTR_KEY(2, 0x7, 0) // 0x2070
 #define CANIOT_ATTR_KEY_CONFIG_CLS0_GPIO_PULSE_DURATION_OC2                              \
@@ -380,7 +378,7 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_PE1                              \
 	CANIOT_ATTR_KEY(2, 0x1F, 0) // 0x21F0
 #define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_PULSE_DURATION_RESERVED                         \
-	CANIOT_ATTR_KEY(2, 0x20, 0)						// 0x2200
+	CANIOT_ATTR_KEY(2, 0x20, 0)													// 0x2200
 #define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_DIRECTIONS CANIOT_ATTR_KEY(2, 0x21, 0) // 0x2210
 #define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_OUTPUTS_DEFAULT                                 \
 	CANIOT_ATTR_KEY(2, 0x22, 0) // 0x2220
@@ -389,8 +387,8 @@ int caniot_device_verify(struct caniot_device *dev);
 
 enum caniot_device_section {
 	CANIOT_SECTION_DEVICE_IDENTIFICATION = 0,
-	CANIOT_SECTION_DEVICE_SYSTEM	     = 1,
-	CANIOT_SECTION_DEVICE_CONFIG	     = 2
+	CANIOT_SECTION_DEVICE_SYSTEM		 = 1,
+	CANIOT_SECTION_DEVICE_CONFIG		 = 2
 };
 
 struct caniot_device_attribute {
@@ -424,7 +422,7 @@ int caniot_attr_get_by_name(struct caniot_device_attribute *attr, const char *na
  * @note return false to stop iteration
  */
 typedef bool(caniot_device_attribute_handler_t)(struct caniot_device_attribute *attr,
-						void *user_data);
+												void *user_data);
 
 /**
  * @brief Iterate over all existing attributes, call handler for each
@@ -437,53 +435,53 @@ int caniot_attr_iterate(caniot_device_attribute_handler_t *handler, void *user_d
 
 /*____________________________________________________________________________*/
 
-#define CANIOT_CONFIG_DEFAULT_INIT()                                                      \
-	{                                                                                 \
-		.telemetry =                                                              \
-			{                                                                 \
-				.period	   = CANIOT_TELEMETRY_PERIOD_DEFAULT_MS,          \
-				.delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS,       \
-				.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS,       \
-			},                                                                \
-		.flags =                                                                  \
-			{                                                                 \
-				.error_response	     = 1u,                                \
-				.telemetry_delay_rdm = 1u,                                \
-				.telemetry_endpoint  = CANIOT_TELEMETRY_ENDPOINT_DEFAULT, \
-				.telemetry_periodic_enabled = 1u,                         \
-			},                                                                \
-		.timezone = CANIOT_TIMEZONE_DEFAULT,                                      \
-		.location =                                                               \
-			{                                                                 \
-				.region	 = CANIOT_LOCATION_REGION_DEFAULT,                \
-				.country = CANIOT_LOCATION_COUNTRY_DEFAULT,               \
-			},                                                                \
-		.cls0_gpio = {                                                            \
-			.pulse_durations =                                                \
-				{                                                         \
-					[0] = 0u,                                         \
-					[1] = 0u,                                         \
-					[2] = 0u,                                         \
-					[3] = 0u,                                         \
-				},                                                        \
-			.outputs_default     = 0u,                                        \
-			.telemetry_on_change = 0xFFFFFFFFlu,                              \
-		},                                                                        \
+#define CANIOT_CONFIG_DEFAULT_INIT()                                                     \
+	{                                                                                    \
+		.telemetry =                                                                     \
+			{                                                                            \
+				.period	   = CANIOT_TELEMETRY_PERIOD_DEFAULT_MS,                         \
+				.delay_min = CANIOT_TELEMETRY_DELAY_MIN_DEFAULT_MS,                      \
+				.delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS,                      \
+			},                                                                           \
+		.flags =                                                                         \
+			{                                                                            \
+				.error_response				= 1u,                                        \
+				.telemetry_delay_rdm		= 1u,                                        \
+				.telemetry_endpoint			= CANIOT_TELEMETRY_ENDPOINT_DEFAULT,         \
+				.telemetry_periodic_enabled = 1u,                                        \
+			},                                                                           \
+		.timezone = CANIOT_TIMEZONE_DEFAULT,                                             \
+		.location =                                                                      \
+			{                                                                            \
+				.region	 = CANIOT_LOCATION_REGION_DEFAULT,                               \
+				.country = CANIOT_LOCATION_COUNTRY_DEFAULT,                              \
+			},                                                                           \
+		.cls0_gpio = {                                                                   \
+			.pulse_durations =                                                           \
+				{                                                                        \
+					[0] = 0u,                                                            \
+					[1] = 0u,                                                            \
+					[2] = 0u,                                                            \
+					[3] = 0u,                                                            \
+				},                                                                       \
+			.outputs_default	 = 0u,                                                   \
+			.telemetry_on_change = 0xFFFFFFFFlu,                                         \
+		},                                                                               \
 	}
 
 #define CANIOT_DEVICE_API_FULL_INIT(cmd, tlm, cfgr, cfgw, attr, attw)                    \
-	{                                                                                \
-		.config =                                                                \
-			{                                                                \
-				.on_read  = cfgr,                                        \
-				.on_write = cfgw,                                        \
-			},                                                               \
-		.custom_attr =                                                           \
-			{                                                                \
-				.read  = attr,                                           \
-				.write = attw,                                           \
-			},                                                               \
-		.command_handler = cmd, .telemetry_handler = tlm,                        \
+	{                                                                                    \
+		.config =                                                                        \
+			{                                                                            \
+				.on_read  = cfgr,                                                        \
+				.on_write = cfgw,                                                        \
+			},                                                                           \
+		.custom_attr =                                                                   \
+			{                                                                            \
+				.read  = attr,                                                           \
+				.write = attw,                                                           \
+			},                                                                           \
+		.command_handler = cmd, .telemetry_handler = tlm,                                \
 	}
 
 #define CANIOT_DEVICE_API_STD_INIT(cmd, tlm, cfgr, cfgw)                                 \

@@ -26,17 +26,17 @@ enum section_option {
 #define ATTR_OPTION_CLASS_ALL_POS 5u
 
 enum attr_option {
-	HIDDEN	       = 0u,
-	READABLE       = 1 << ATTR_OPTION_READABLE_POS,
-	WRITABLE       = 1 << ATTR_OPTION_WRITABLE_POS,
-	ATTR_CLASS0    = 0u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS1    = 1u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS2    = 2u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS3    = 3u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS4    = 4u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS5    = 5u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS6    = 6u << ATTR_OPTION_CLASS_POS,
-	ATTR_CLASS7    = 7u << ATTR_OPTION_CLASS_POS,
+	HIDDEN		   = 0u,
+	READABLE	   = 1 << ATTR_OPTION_READABLE_POS,
+	WRITABLE	   = 1 << ATTR_OPTION_WRITABLE_POS,
+	ATTR_CLASS0	   = 0u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS1	   = 1u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS2	   = 2u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS3	   = 3u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS4	   = 4u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS5	   = 5u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS6	   = 6u << ATTR_OPTION_CLASS_POS,
+	ATTR_CLASS7	   = 7u << ATTR_OPTION_CLASS_POS,
 	ATTR_CLASS_ALL = 1 << ATTR_OPTION_CLASS_ALL_POS,
 	// OPT_POS6 = 1 << 6u,
 	// OPT_POS7 = 1 << 7u,
@@ -69,20 +69,20 @@ struct attr_section {
 };
 
 #define ATTR_IDENTIFICATION 0
-#define ATTR_SYSTEM	    1
-#define ATTR_CONFIG	    2
+#define ATTR_SYSTEM			1
+#define ATTR_CONFIG			2
 
 #define ATTR_KEY_SECTION_OFFSET 12u
 #define ATTR_KEY_SECTION_SIZE	4u
 #define ATTR_KEY_SECTION_MASK	((1u << ATTR_KEY_SECTION_SIZE) - 1u)
 
 #define ATTR_KEY_ATTR_OFFSET 4u
-#define ATTR_KEY_ATTR_SIZE   8u
-#define ATTR_KEY_ATTR_MASK   ((1u << ATTR_KEY_ATTR_SIZE) - 1u)
+#define ATTR_KEY_ATTR_SIZE	 8u
+#define ATTR_KEY_ATTR_MASK	 ((1u << ATTR_KEY_ATTR_SIZE) - 1u)
 
 #define ATTR_KEY_PART_OFFSET 0u
-#define ATTR_KEY_PART_SIZE   4u
-#define ATTR_KEY_PART_MASK   ((1u << ATTR_KEY_PART_SIZE) - 1u)
+#define ATTR_KEY_PART_SIZE	 4u
+#define ATTR_KEY_PART_MASK	 ((1u << ATTR_KEY_PART_SIZE) - 1u)
 
 #define ATTR_KEY_SECTION_GET(key)                                                        \
 	(((key) >> ATTR_KEY_SECTION_OFFSET) & ATTR_KEY_SECTION_MASK)
@@ -90,14 +90,14 @@ struct attr_section {
 #define ATTR_KEY_PART_GET(key) (((key) >> ATTR_KEY_PART_OFFSET) & ATTR_KEY_PART_MASK)
 
 #define ATTR_KEY_SECTION_SET(key, section)                                               \
-	((key) = ((key) & ~(ATTR_KEY_SECTION_MASK << ATTR_KEY_SECTION_OFFSET)) |         \
-		 ((section & ATTR_KEY_SECTION_MASK) << ATTR_KEY_SECTION_OFFSET))
+	((key) = ((key) & ~(ATTR_KEY_SECTION_MASK << ATTR_KEY_SECTION_OFFSET)) |             \
+			 ((section & ATTR_KEY_SECTION_MASK) << ATTR_KEY_SECTION_OFFSET))
 #define ATTR_KEY_ATTR_SET(key, attr)                                                     \
-	((key) = ((key) & ~(ATTR_KEY_ATTR_MASK << ATTR_KEY_ATTR_OFFSET)) |               \
-		 ((attr & ATTR_KEY_ATTR_MASK) << ATTR_KEY_ATTR_OFFSET))
+	((key) = ((key) & ~(ATTR_KEY_ATTR_MASK << ATTR_KEY_ATTR_OFFSET)) |                   \
+			 ((attr & ATTR_KEY_ATTR_MASK) << ATTR_KEY_ATTR_OFFSET))
 #define ATTR_KEY_PART_SET(key, part)                                                     \
-	((key) = ((key) & ~(ATTR_KEY_PART_MASK << ATTR_KEY_PART_OFFSET)) |               \
-		 ((part & ATTR_KEY_PART_MASK) << ATTR_KEY_PART_OFFSET))
+	((key) = ((key) & ~(ATTR_KEY_PART_MASK << ATTR_KEY_PART_OFFSET)) |                   \
+			 ((part & ATTR_KEY_PART_MASK) << ATTR_KEY_PART_OFFSET))
 
 /* A part is is 4B */
 #define ATTR_KEY_DATA_BYTE_OFFSET(key) (ATTR_KEY_PART_GET(key) << 2)
@@ -116,28 +116,27 @@ static void attr_option_adjust(enum attr_option *attr_opt, enum section_option s
 #if CONFIG_CANIOT_ATTRIBUTE_NAME
 
 #define ATTRIBUTE_HELPER(s, opt, _name, param)                                           \
-	{                                                                                \
-		.offset = (uint8_t)offsetof(s, param),                                   \
-		.size = (uint8_t)MEMBER_SIZEOF(s, param), .option = (uint8_t)(opt),      \
-		.name = _name,                                                           \
+	{                                                                                    \
+		.offset = (uint8_t)offsetof(s, param), .size = (uint8_t)MEMBER_SIZEOF(s, param), \
+		.option = (uint8_t)(opt), .name = _name,                                         \
 	}
 
 #define SECTION(options, _name, array)                                                   \
-	{                                                                                \
-		options, array, ARRAY_SIZE(array), _name                                 \
+	{                                                                                    \
+		options, array, ARRAY_SIZE(array), _name                                         \
 	}
 
 #else
 
 #define ATTRIBUTE_HELPER(s, opt, _name, param)                                           \
-	{                                                                                \
-		.offset = (uint8_t)offsetof(s, param),                                   \
-		.size = (uint8_t)MEMBER_SIZEOF(s, param), .option = (uint8_t)(opt),      \
+	{                                                                                    \
+		.offset = (uint8_t)offsetof(s, param), .size = (uint8_t)MEMBER_SIZEOF(s, param), \
+		.option = (uint8_t)(opt),                                                        \
 	}
 
 #define SECTION(options, _name, array)                                                   \
-	{                                                                                \
-		options, array, ARRAY_SIZE(array)                                        \
+	{                                                                                    \
+		options, array, ARRAY_SIZE(array)                                                \
 	}
 
 #endif
@@ -154,237 +153,225 @@ static const struct attribute identification_attr[] ROM = {
 	[0x0] = ATTRIBUTE(struct caniot_device_id, READABLE, "nodeid", did),
 	[0x1] = ATTRIBUTE(struct caniot_device_id, READABLE, "version", version),
 	[0x2] = ATTRIBUTE(struct caniot_device_id, READABLE, "name", name),
-	[0x3] = ATTRIBUTE(
-		struct caniot_device_id, READABLE, "magic_number", magic_number),
+	[0x3] = ATTRIBUTE(struct caniot_device_id, READABLE, "magic_number", magic_number),
 	[0x4] = ATTRIBUTE(struct caniot_device_id, READABLE, "build_date", build_date),
 	[0x5] = ATTRIBUTE(struct caniot_device_id, READABLE, "build_commit", build_commit),
 	[0x6] = ATTRIBUTE(struct caniot_device_id, READABLE, "features", features),
 };
 
 static const struct attribute system_attr[] ROM = {
-	[0x0] = ATTRIBUTE(
-		struct caniot_device_system, READABLE, "uptime_synced", uptime_synced),
+	[0x0] =
+		ATTRIBUTE(struct caniot_device_system, READABLE, "uptime_synced", uptime_synced),
 	[0x1] = ATTRIBUTE(struct caniot_device_system, READABLE | WRITABLE, "time", time),
 	[0x2] = ATTRIBUTE(struct caniot_device_system, READABLE, "uptime", uptime),
-	[0x3] = ATTRIBUTE(
-		struct caniot_device_system, READABLE, "start_time", start_time),
+	[0x3] = ATTRIBUTE(struct caniot_device_system, READABLE, "start_time", start_time),
 	[0x4] = ATTRIBUTE(
 		struct caniot_device_system, READABLE, "last_telemetry", last_telemetry),
-	[0xB] = ATTRIBUTE(struct caniot_device_system,
-			  READABLE,
-			  "_last_telemetry_ms",
-			  _last_telemetry_ms),
+	[0xB] = ATTRIBUTE(
+		struct caniot_device_system, READABLE, "_last_telemetry_ms", _last_telemetry_ms),
 	[0x5] = ATTRIBUTE(
 		struct caniot_device_system, READABLE, "received.total", received.total),
 	[0x6] = ATTRIBUTE(struct caniot_device_system,
-			  READABLE,
-			  "received.read_attribute",
-			  received.read_attribute),
+					  READABLE,
+					  "received.read_attribute",
+					  received.read_attribute),
 	[0x7] = ATTRIBUTE(struct caniot_device_system,
-			  READABLE,
-			  "received.write_attribute",
-			  received.write_attribute),
-	[0x8] = ATTRIBUTE(struct caniot_device_system,
-			  READABLE,
-			  "received.command",
-			  received.command),
+					  READABLE,
+					  "received.write_attribute",
+					  received.write_attribute),
+	[0x8] = ATTRIBUTE(
+		struct caniot_device_system, READABLE, "received.command", received.command),
 	[0x9] = ATTRIBUTE(struct caniot_device_system,
-			  READABLE,
-			  "received.request_telemetry",
-			  received.request_telemetry),
-	[0xA] = ATTRIBUTE(struct caniot_device_system,
-			  HIDDEN,
-			  "received.ignored",
-			  received.ignored),
-	[0xC] = ATTRIBUTE(
-		struct caniot_device_system, READABLE, "sent.total", sent.total),
+					  READABLE,
+					  "received.request_telemetry",
+					  received.request_telemetry),
+	[0xA] = ATTRIBUTE(
+		struct caniot_device_system, HIDDEN, "received.ignored", received.ignored),
+	[0xC] = ATTRIBUTE(struct caniot_device_system, READABLE, "sent.total", sent.total),
 	[0xD] = ATTRIBUTE(
 		struct caniot_device_system, READABLE, "sent.telemetry", sent.telemetry),
-	[0xE]  = ATTRIBUTE(struct caniot_device_system, HIDDEN, "", _unused4),
-	[0xF]  = ATTRIBUTE(struct caniot_device_system,
-			   READABLE,
-			   "last_command_error",
-			   last_command_error),
+	[0xE] = ATTRIBUTE(struct caniot_device_system, HIDDEN, "", _unused4),
+	[0xF] = ATTRIBUTE(
+		struct caniot_device_system, READABLE, "last_command_error", last_command_error),
 	[0x10] = ATTRIBUTE(struct caniot_device_system,
-			   READABLE,
-			   "last_telemetry_error",
-			   last_telemetry_error),
+					   READABLE,
+					   "last_telemetry_error",
+					   last_telemetry_error),
 	[0x11] = ATTRIBUTE(struct caniot_device_system, HIDDEN, "", _unused5),
 	[0x12] = ATTRIBUTE(struct caniot_device_system, READABLE, "battery", battery),
 };
 
 static const struct attribute config_attr[] ROM = {
 	[0x0] = ATTRIBUTE(struct caniot_device_config,
-			  READABLE | WRITABLE,
-			  "telemetry.period",
-			  telemetry.period), /* ms */
+					  READABLE | WRITABLE,
+					  "telemetry.period",
+					  telemetry.period), /* ms */
 	[0x1] = ATTRIBUTE(struct caniot_device_config,
-			  READABLE | WRITABLE,
-			  "telemetry.delay",
-			  telemetry.delay), /* ms */
+					  READABLE | WRITABLE,
+					  "telemetry.delay",
+					  telemetry.delay), /* ms */
 	[0x2] = ATTRIBUTE(struct caniot_device_config,
-			  READABLE | WRITABLE,
-			  "telemetry.delay_min",
-			  telemetry.delay_min), /* ms */
+					  READABLE | WRITABLE,
+					  "telemetry.delay_min",
+					  telemetry.delay_min), /* ms */
 	[0x3] = ATTRIBUTE(struct caniot_device_config,
-			  READABLE | WRITABLE,
-			  "telemetry.delay_max",
-			  telemetry.delay_max), /* ms */
-	[0x4] = ATTRIBUTE(
-		struct caniot_device_config, READABLE | WRITABLE, "flags", flags),
-	[0x5] = ATTRIBUTE(
-		struct caniot_device_config, READABLE | WRITABLE, "timezone", timezone),
-	[0x6] = ATTRIBUTE(
-		struct caniot_device_config, READABLE | WRITABLE, "location", location),
+					  READABLE | WRITABLE,
+					  "telemetry.delay_max",
+					  telemetry.delay_max), /* ms */
+	[0x4] = ATTRIBUTE(struct caniot_device_config, READABLE | WRITABLE, "flags", flags),
+	[0x5] =
+		ATTRIBUTE(struct caniot_device_config, READABLE | WRITABLE, "timezone", timezone),
+	[0x6] =
+		ATTRIBUTE(struct caniot_device_config, READABLE | WRITABLE, "location", location),
 
 	/* Class 0 */
 	[0x7] = CLASS_ATTR(struct caniot_device_config,
-			   READABLE | WRITABLE,
-			   ATTR_CLASS0,
-			   "cls0_gpio.pulse_duration.oc1",
-			   cls0_gpio.pulse_durations[0u]),
+					   READABLE | WRITABLE,
+					   ATTR_CLASS0,
+					   "cls0_gpio.pulse_duration.oc1",
+					   cls0_gpio.pulse_durations[0u]),
 	[0x8] = CLASS_ATTR(struct caniot_device_config,
-			   READABLE | WRITABLE,
-			   ATTR_CLASS0,
-			   "cls0_gpio.pulse_duration.oc2",
-			   cls0_gpio.pulse_durations[1u]),
+					   READABLE | WRITABLE,
+					   ATTR_CLASS0,
+					   "cls0_gpio.pulse_duration.oc2",
+					   cls0_gpio.pulse_durations[1u]),
 	[0x9] = CLASS_ATTR(struct caniot_device_config,
-			   READABLE | WRITABLE,
-			   ATTR_CLASS0,
-			   "cls0_gpio.pulse_duration.rl1",
-			   cls0_gpio.pulse_durations[2u]),
+					   READABLE | WRITABLE,
+					   ATTR_CLASS0,
+					   "cls0_gpio.pulse_duration.rl1",
+					   cls0_gpio.pulse_durations[2u]),
 	[0xA] = CLASS_ATTR(struct caniot_device_config,
-			   READABLE | WRITABLE,
-			   ATTR_CLASS0,
-			   "cls0_gpio.pulse_duration.rl2",
-			   cls0_gpio.pulse_durations[3u]),
+					   READABLE | WRITABLE,
+					   ATTR_CLASS0,
+					   "cls0_gpio.pulse_duration.rl2",
+					   cls0_gpio.pulse_durations[3u]),
 	[0xB] = CLASS_ATTR(struct caniot_device_config,
-			   READABLE | WRITABLE,
-			   ATTR_CLASS0,
-			   "cls0_gpio.outputs_default",
-			   cls0_gpio.outputs_default),
+					   READABLE | WRITABLE,
+					   ATTR_CLASS0,
+					   "cls0_gpio.outputs_default",
+					   cls0_gpio.outputs_default),
 	[0xC] = CLASS_ATTR(struct caniot_device_config,
-			   READABLE | WRITABLE,
-			   ATTR_CLASS0,
-			   "cls0_gpio.mask.telemetry_on_change",
-			   cls0_gpio.telemetry_on_change),
+					   READABLE | WRITABLE,
+					   ATTR_CLASS0,
+					   "cls0_gpio.mask.telemetry_on_change",
+					   cls0_gpio.telemetry_on_change),
 
 	/* Class 1 */
 	[0xD]  = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pc0",
-			    cls1_gpio.pulse_durations[0u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pc0",
+						cls1_gpio.pulse_durations[0u]),
 	[0xE]  = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pc1",
-			    cls1_gpio.pulse_durations[1u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pc1",
+						cls1_gpio.pulse_durations[1u]),
 	[0xF]  = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pc2",
-			    cls1_gpio.pulse_durations[2u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pc2",
+						cls1_gpio.pulse_durations[2u]),
 	[0x10] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pc3",
-			    cls1_gpio.pulse_durations[3u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pc3",
+						cls1_gpio.pulse_durations[3u]),
 	[0x11] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pd0",
-			    cls1_gpio.pulse_durations[4u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pd0",
+						cls1_gpio.pulse_durations[4u]),
 	[0x12] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pd1",
-			    cls1_gpio.pulse_durations[5u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pd1",
+						cls1_gpio.pulse_durations[5u]),
 	[0x13] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pd2",
-			    cls1_gpio.pulse_durations[6u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pd2",
+						cls1_gpio.pulse_durations[6u]),
 	[0x14] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pd3",
-			    cls1_gpio.pulse_durations[7u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pd3",
+						cls1_gpio.pulse_durations[7u]),
 	[0x15] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei0",
-			    cls1_gpio.pulse_durations[8u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei0",
+						cls1_gpio.pulse_durations[8u]),
 	[0x16] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei1",
-			    cls1_gpio.pulse_durations[9u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei1",
+						cls1_gpio.pulse_durations[9u]),
 	[0x17] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei2",
-			    cls1_gpio.pulse_durations[10u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei2",
+						cls1_gpio.pulse_durations[10u]),
 	[0x18] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei3",
-			    cls1_gpio.pulse_durations[11u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei3",
+						cls1_gpio.pulse_durations[11u]),
 	[0x19] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei4",
-			    cls1_gpio.pulse_durations[12u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei4",
+						cls1_gpio.pulse_durations[12u]),
 	[0x1A] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei5",
-			    cls1_gpio.pulse_durations[13u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei5",
+						cls1_gpio.pulse_durations[13u]),
 	[0x1B] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei6",
-			    cls1_gpio.pulse_durations[14u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei6",
+						cls1_gpio.pulse_durations[14u]),
 	[0x1C] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pei7",
-			    cls1_gpio.pulse_durations[15u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pei7",
+						cls1_gpio.pulse_durations[15u]),
 	[0x1D] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pb0",
-			    cls1_gpio.pulse_durations[16u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pb0",
+						cls1_gpio.pulse_durations[16u]),
 	[0x1E] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pe0",
-			    cls1_gpio.pulse_durations[17u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pe0",
+						cls1_gpio.pulse_durations[17u]),
 	[0x1F] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration.pe1",
-			    cls1_gpio.pulse_durations[18u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration.pe1",
+						cls1_gpio.pulse_durations[18u]),
 	[0x20] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.pulse_duration._reserved",
-			    cls1_gpio.pulse_durations[19u]),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.pulse_duration._reserved",
+						cls1_gpio.pulse_durations[19u]),
 	[0x21] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.directions",
-			    cls1_gpio.directions),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.directions",
+						cls1_gpio.directions),
 	[0x22] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.outputs_default",
-			    cls1_gpio.outputs_default),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.outputs_default",
+						cls1_gpio.outputs_default),
 	[0x23] = CLASS_ATTR(struct caniot_device_config,
-			    READABLE | WRITABLE,
-			    ATTR_CLASS1,
-			    "cls1_gpio.mask.telemetry_on_change",
-			    cls1_gpio.telemetry_on_change),
+						READABLE | WRITABLE,
+						ATTR_CLASS1,
+						"cls1_gpio.mask.telemetry_on_change",
+						cls1_gpio.telemetry_on_change),
 };
 
 static const struct attr_section attr_sections[] ROM = {
@@ -510,7 +497,7 @@ static const struct attr_section *attr_get_section(attr_key_t key)
 }
 
 static const struct attribute *attr_get(attr_key_t key,
-					const struct attr_section *section)
+										const struct attr_section *section)
 {
 	uint8_t index = ATTR_KEY_ATTR_GET(key);
 	if (index < attr_get_section_size(section)) {
@@ -540,10 +527,10 @@ static int attr_resolve(attr_key_t key, struct attr_ref *ref)
 		return -CANIOT_EKEYPART;
 	}
 
-	ref->section	    = ATTR_KEY_SECTION_GET(key);
-	ref->size	    = MIN(attr_size, 4u);
-	ref->offset	    = ATTR_KEY_DATA_BYTE_OFFSET(key) + attr_get_offset(attr);
-	ref->option	    = attr_get_option(attr);
+	ref->section		= ATTR_KEY_SECTION_GET(key);
+	ref->size			= MIN(attr_size, 4u);
+	ref->offset			= ATTR_KEY_DATA_BYTE_OFFSET(key) + attr_get_offset(attr);
+	ref->option			= attr_get_option(attr);
 	ref->section_option = attr_get_section_option(section);
 
 	/* adjust attribute options in function of uppermost section options */
@@ -553,14 +540,14 @@ static int attr_resolve(attr_key_t key, struct attr_ref *ref)
 }
 
 static void read_identificate_attr(struct caniot_device *dev,
-				   const struct attr_ref *ref,
-				   struct caniot_attribute *attr)
+								   const struct attr_ref *ref,
+								   struct caniot_attribute *attr)
 {
 	arch_rom_cpy(&attr->val, (uint8_t *)dev->identification + ref->offset, ref->size);
 }
 
 static void read_rom_identification(struct caniot_device_id *d,
-				    const struct caniot_device_id *p)
+									const struct caniot_device_id *p)
 {
 	arch_rom_cpy_mem(d, p, sizeof(struct caniot_device_id));
 }
@@ -572,10 +559,10 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 	read_rom_identification(&id, dev->identification);
 
 	CANIOT_INF(F("name    = %s\ncls/dev = %d/%d\nversion = %hhx\n"),
-		   id.name,
-		   CANIOT_DID_CLS(id.did),
-		   CANIOT_DID_SID(id.did),
-		   id.version);
+			   id.name,
+			   CANIOT_DID_CLS(id.did),
+			   CANIOT_DID_SID(id.did),
+			   id.version);
 
 	CANIOT_INF(F("commit  = "));
 	for (uint8_t i = 0u; i < 20u; i++) {
@@ -594,7 +581,7 @@ int caniot_device_system_reset(struct caniot_device *dev)
 }
 
 static inline void read_identification_nodeid(struct caniot_device *dev,
-					      caniot_did_t *did)
+											  caniot_did_t *did)
 {
 	arch_rom_cpy_byte(did, (const uint8_t *)&dev->identification->did);
 }
@@ -682,8 +669,8 @@ static int config_written(struct caniot_device *dev)
 }
 
 static int read_config_attr(struct caniot_device *dev,
-			    const struct attr_ref *ref,
-			    struct caniot_attribute *attr)
+							const struct attr_ref *ref,
+							struct caniot_attribute *attr)
 {
 	ASSERT(dev != NULL);
 	ASSERT(ref != NULL);
@@ -700,8 +687,8 @@ static int read_config_attr(struct caniot_device *dev,
 }
 
 static int write_config_attr(struct caniot_device *dev,
-			     const struct attr_ref *ref,
-			     const struct caniot_attribute *attr)
+							 const struct attr_ref *ref,
+							 const struct caniot_attribute *attr)
 {
 	memcpy((uint8_t *)dev->config + ref->offset, &attr->val, ref->size);
 
@@ -709,7 +696,7 @@ static int write_config_attr(struct caniot_device *dev,
 }
 
 static bool device_class_attr_exists(struct caniot_device *dev,
-				     const struct attr_ref *ref)
+									 const struct attr_ref *ref)
 {
 	ASSERT(dev != NULL);
 	ASSERT(ref != NULL);
@@ -723,13 +710,13 @@ static bool device_class_attr_exists(struct caniot_device *dev,
 		caniot_did_t did;
 		read_identification_nodeid(dev, &did);
 		return ((ref->option >> ATTR_OPTION_CLASS_POS) & ATTR_OPTION_CLASS_MSK) ==
-		       CANIOT_DID_CLS(did);
+			   CANIOT_DID_CLS(did);
 	}
 }
 
 static int attribute_read(struct caniot_device *dev,
-			  const struct attr_ref *ref,
-			  struct caniot_attribute *attr)
+						  const struct attr_ref *ref,
+						  struct caniot_attribute *attr)
 {
 	ASSERT(dev != NULL);
 	ASSERT(ref != NULL);
@@ -739,9 +726,9 @@ static int attribute_read(struct caniot_device *dev,
 
 	/* print debug attr_ref */
 	CANIOT_DBG(F("attr_ref: section = %hhu, offset = %hhu, option = %hhu\n"),
-		   ref->section,
-		   ref->offset,
-		   ref->option);
+			   ref->section,
+			   ref->offset,
+			   ref->option);
 
 	if (!device_class_attr_exists(dev, ref)) {
 		return -CANIOT_ECLSATTR;
@@ -771,9 +758,9 @@ static int attribute_read(struct caniot_device *dev,
 }
 
 static void prepare_response(struct caniot_device *dev,
-			     struct caniot_frame *resp,
-			     caniot_frame_type_t resp_type,
-			     caniot_endpoint_t endpoint)
+							 struct caniot_frame *resp,
+							 caniot_frame_type_t resp_type,
+							 caniot_endpoint_t endpoint)
 {
 	ASSERT(dev != NULL);
 	ASSERT(resp != NULL);
@@ -794,10 +781,10 @@ static void prepare_response(struct caniot_device *dev,
 }
 
 static void resp_wrap_error(struct caniot_device *dev,
-			    struct caniot_frame *resp,
-			    const struct caniot_frame *req,
-			    int error_code,
-			    uint32_t *p_error_arg)
+							struct caniot_frame *resp,
+							const struct caniot_frame *req,
+							int error_code,
+							uint32_t *p_error_arg)
 {
 	ASSERT(resp != NULL);
 
@@ -806,23 +793,22 @@ static void resp_wrap_error(struct caniot_device *dev,
 
 	 * otherwise (if it's an attribute error), error frame is RESPONSE/WRITE_ATTR
 	 */
-	prepare_response(
-		dev, resp, caniot_resp_error_for(req->id.type), req->id.endpoint);
+	prepare_response(dev, resp, caniot_resp_error_for(req->id.type), req->id.endpoint);
 
 	resp->err.code = (int32_t)error_code;
 
 	/* Encode the error argument if provided */
 	if (p_error_arg != NULL) {
 		resp->err.arg = *p_error_arg;
-		resp->len     = 8u;
+		resp->len	  = 8u;
 	} else {
 		resp->len = 4u;
 	}
 }
 
 static int handle_read_attribute(struct caniot_device *dev,
-				 struct caniot_frame *resp,
-				 const struct caniot_attribute *attr)
+								 struct caniot_frame *resp,
+								 const struct caniot_attribute *attr)
 {
 	ASSERT(dev != NULL);
 	ASSERT(resp != NULL);
@@ -833,8 +819,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 
 	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), attr->key);
 
-	prepare_response(
-		dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, CANIOT_ENDPOINT_APP);
+	prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, CANIOT_ENDPOINT_APP);
 
 	ret = attr_resolve(attr->key, &ref);
 
@@ -845,7 +830,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 		if (dev->api->custom_attr.read != NULL) {
 			/* temp variable to avoid `-Waddress-of-packed-member` warning */
 			uint32_t tval = (uint32_t)-1;
-			ret	      = dev->api->custom_attr.read(dev, attr->key, &tval);
+			ret			  = dev->api->custom_attr.read(dev, attr->key, &tval);
 			if (ret == 0) {
 				resp->attr.val = tval;
 			}
@@ -856,7 +841,7 @@ static int handle_read_attribute(struct caniot_device *dev,
 
 	/* finalize response */
 	if (ret == 0) {
-		resp->len      = 6u;
+		resp->len	   = 6u;
 		resp->attr.key = attr->key;
 	}
 
@@ -864,8 +849,8 @@ static int handle_read_attribute(struct caniot_device *dev,
 }
 
 static int write_system_attr(struct caniot_device *dev,
-			     const struct attr_ref *ref,
-			     const struct caniot_attribute *attr)
+							 const struct attr_ref *ref,
+							 const struct caniot_attribute *attr)
 {
 	ASSERT(dev != NULL);
 	ASSERT(ref != NULL);
@@ -907,8 +892,8 @@ static int write_system_attr(struct caniot_device *dev,
 }
 
 static int attribute_write(struct caniot_device *dev,
-			   const struct attr_ref *ref,
-			   const struct caniot_attribute *attr)
+						   const struct attr_ref *ref,
+						   const struct caniot_attribute *attr)
 {
 	ASSERT(dev != NULL);
 	ASSERT(ref != NULL);
@@ -922,9 +907,9 @@ static int attribute_write(struct caniot_device *dev,
 
 	/* print debug attr_ref */
 	CANIOT_DBG(F("attr_ref: section = %hhu, offset = %hhu, option = %hhu\n"),
-		   ref->section,
-		   ref->offset,
-		   ref->option);
+			   ref->section,
+			   ref->offset,
+			   ref->option);
 
 	switch (ref->section) {
 	case CANIOT_SECTION_DEVICE_SYSTEM: {
@@ -944,8 +929,8 @@ static int attribute_write(struct caniot_device *dev,
 }
 
 static int handle_write_attribute(struct caniot_device *dev,
-				  const struct caniot_frame *req,
-				  const struct caniot_attribute *attr)
+								  const struct caniot_frame *req,
+								  const struct caniot_attribute *attr)
 {
 	ASSERT(dev != NULL);
 	ASSERT(req != NULL);
@@ -979,8 +964,8 @@ static int handle_command_req(struct caniot_device *dev, const struct caniot_fra
 	const caniot_endpoint_t ep = req->id.endpoint;
 
 	CANIOT_DBG(F("Executing command handler (0x%p) for endpoint %d\n"),
-		   (void *)&dev->api->command_handler,
-		   ep);
+			   (void *)&dev->api->command_handler,
+			   ep);
 
 	if (dev->api->command_handler != NULL) {
 		ret = dev->api->command_handler(dev, ep, req->buf, req->len);
@@ -994,8 +979,8 @@ static int handle_command_req(struct caniot_device *dev, const struct caniot_fra
 }
 
 static int build_telemetry_resp(struct caniot_device *dev,
-				struct caniot_frame *resp,
-				caniot_endpoint_t ep)
+								struct caniot_frame *resp,
+								caniot_endpoint_t ep)
 {
 	ASSERT(dev != NULL);
 	ASSERT(resp != NULL);
@@ -1011,8 +996,8 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	}
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%p) for endpoint %d\n"),
-		   (void *)&dev->api->telemetry_handler,
-		   ep);
+			   (void *)&dev->api->telemetry_handler,
+			   ep);
 
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
@@ -1028,8 +1013,8 @@ static int build_telemetry_resp(struct caniot_device *dev,
 }
 
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
-				  const struct caniot_frame *req,
-				  struct caniot_frame *resp)
+								  const struct caniot_frame *req,
+								  struct caniot_frame *resp)
 {
 	ASSERT(dev != NULL);
 	ASSERT(req != NULL);
@@ -1127,11 +1112,11 @@ uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev)
 		const uint32_t now_ms	   = sec * 1000 + msec;
 		const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
 		CANIOT_DBG(F("now: %u _last_telemetry_ms: %u since last: %u < period: %u "
-			     "? (* ms)\n"),
-			   (FMT_UINT_CAST)now_ms,
-			   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
-			   (FMT_UINT_CAST)ellapsed_ms,
-			   (FMT_UINT_CAST)dev->config->telemetry.period);
+					 "? (* ms)\n"),
+				   (FMT_UINT_CAST)now_ms,
+				   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
+				   (FMT_UINT_CAST)ellapsed_ms,
+				   (FMT_UINT_CAST)dev->config->telemetry.period);
 
 		if (dev->config->telemetry.period <= ellapsed_ms) {
 			remaining = 0u;
@@ -1208,7 +1193,7 @@ bool caniot_device_triggered_telemetry_any(struct caniot_device *dev)
 }
 
 static inline void telemetry_trig_clear_ep(struct caniot_device *dev,
-					   caniot_endpoint_t ep)
+										   caniot_endpoint_t ep)
 {
 	ASSERT(dev != NULL);
 	ASSERT(ep <= CANIOT_ENDPOINT_BOARD_CONTROL);
@@ -1235,20 +1220,20 @@ int caniot_device_process(struct caniot_device *dev)
 	/* Periodic telemetry enabled */
 	if (dev->config->flags.telemetry_periodic_enabled) {
 		/* check if we need to send telemetry (calculated in seconds) */
-		now_ms			   = dev->system.time * 1000 + msec;
+		now_ms					   = dev->system.time * 1000 + msec;
 		const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
 
 		CANIOT_DBG(F("now: %u _last_telemetry_ms: %u ellapsed_ms: %u >= period: "
-			     "%u ? (* "
-			     "ms)\n"),
-			   (FMT_UINT_CAST)now_ms,
-			   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
-			   (FMT_UINT_CAST)ellapsed_ms,
-			   (FMT_UINT_CAST)dev->config->telemetry.period);
+					 "%u ? (* "
+					 "ms)\n"),
+				   (FMT_UINT_CAST)now_ms,
+				   (FMT_UINT_CAST)dev->system._last_telemetry_ms,
+				   (FMT_UINT_CAST)ellapsed_ms,
+				   (FMT_UINT_CAST)dev->config->telemetry.period);
 
 		if (ellapsed_ms >= dev->config->telemetry.period) {
-			caniot_device_trigger_telemetry_ep(
-				dev, dev->config->flags.telemetry_endpoint);
+			caniot_device_trigger_telemetry_ep(dev,
+											   dev->config->flags.telemetry_endpoint);
 
 			CANIOT_DBG(F("Requesting telemetry\n"));
 		}
@@ -1278,16 +1263,14 @@ int caniot_device_process(struct caniot_device *dev)
 			random_delay = true;
 		}
 
-	} else if ((ret == -CANIOT_EAGAIN) &&
-		   caniot_device_triggered_telemetry_any(dev)) {
+	} else if ((ret == -CANIOT_EAGAIN) && caniot_device_triggered_telemetry_any(dev)) {
 		/* if we didn't received a frame but telemetry is requested */
 
 		/* Iterate over all endpoints then prepare the telemetry frame for the
 		 * first found. In the case of multiple endpoints requesting telemetry,
 		 * "board control" has the highest priority.
 		 */
-		for (int8_t ep = CANIOT_ENDPOINT_BOARD_CONTROL; ep >= CANIOT_ENDPOINT_APP;
-		     ep--) {
+		for (int8_t ep = CANIOT_ENDPOINT_BOARD_CONTROL; ep >= CANIOT_ENDPOINT_APP; ep--) {
 			if (caniot_device_triggered_telemetry_ep(dev, ep) == true) {
 				ret = build_telemetry_resp(dev, &resp, ep);
 				break;
@@ -1321,9 +1304,9 @@ int caniot_device_process(struct caniot_device *dev)
 			 * update the last telemetry timestamp.
 			 */
 			if (dev->config->flags.telemetry_periodic_enabled &&
-			    resp.id.endpoint == dev->config->flags.telemetry_endpoint) {
+				resp.id.endpoint == dev->config->flags.telemetry_endpoint) {
 				dev->system._last_telemetry_ms = now_ms;
-				dev->system.last_telemetry     = dev->system.time;
+				dev->system.last_telemetry	   = dev->system.time;
 			}
 		}
 	}
@@ -1342,7 +1325,7 @@ void caniot_app_init(struct caniot_device *dev)
 
 	dev->driv->get_time(&dev->system.start_time, NULL);
 
-	dev->flags.initialized		= 1u;
+	dev->flags.initialized			= 1u;
 	dev->flags.request_telemetry_ep = 0u;
 }
 
@@ -1350,23 +1333,23 @@ void caniot_app_deinit(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
 
-	dev->flags.initialized		= 0u;
+	dev->flags.initialized			= 0u;
 	dev->flags.request_telemetry_ep = 0u;
 }
 
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
 
 static void attribute_copy_from_ref(struct caniot_device_attribute *attr,
-				    struct attr_ref *ref)
+									struct attr_ref *ref)
 {
-	attr->read	 = ref->option & READABLE ? 1u : 0u;
-	attr->write	 = ref->option & WRITABLE ? 1u : 0u;
+	attr->read		 = ref->option & READABLE ? 1u : 0u;
+	attr->write		 = ref->option & WRITABLE ? 1u : 0u;
 	attr->persistent = ref->section_option & PERSISTENT ? 1u : 0u;
 	attr->section	 = ref->section;
 }
 
 static void attribute_copy_name_from_key(struct caniot_device_attribute *attr,
-					 uint16_t key)
+										 uint16_t key)
 {
 #if CONFIG_CANIOT_ATTRIBUTE_NAME
 	const struct attr_section *section = attr_get_section(key);
@@ -1448,16 +1431,16 @@ bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id)
 	if (!ext) {
 		const uint16_t std_id = id & 0x7FFu; /* CAN standard ID mask (11 bits) */
 
-		const uint16_t mask	  = caniot_device_get_mask();
+		const uint16_t mask		  = caniot_device_get_mask();
 		const uint16_t dev_filt	  = caniot_device_get_filter(did);
 		const uint16_t broad_filt = caniot_device_get_filter_broadcast(did);
 
 		CANIOT_DBG(F("mask: 0x%04X, dev_filt: 0x%04X, broad_filt: 0x%04X, "
-			     "std_id: 0x%04X\n"),
-			   mask,
-			   dev_filt,
-			   broad_filt,
-			   std_id);
+					 "std_id: 0x%04X\n"),
+				   mask,
+				   dev_filt,
+				   broad_filt,
+				   std_id);
 
 		if ((std_id & mask) == dev_filt) {
 			targeted = true;

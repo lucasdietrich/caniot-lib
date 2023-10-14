@@ -69,20 +69,20 @@ typedef enum {
 } caniot_complex_digital_cmd_t;
 
 typedef enum {
-	CANIOT_HEATER_NONE	       = 0,
-	CANIOT_HEATER_COMFORT	       = 1,
-	CANIOT_HEATER_COMFORT_MIN_1    = 2,
-	CANIOT_HEATER_COMFORT_MIN_2    = 3,
-	CANIOT_HEATER_ENERGY_SAVING    = 4,
+	CANIOT_HEATER_NONE			   = 0,
+	CANIOT_HEATER_COMFORT		   = 1,
+	CANIOT_HEATER_COMFORT_MIN_1	   = 2,
+	CANIOT_HEATER_COMFORT_MIN_2	   = 3,
+	CANIOT_HEATER_ENERGY_SAVING	   = 4,
 	CANIOT_HEATER_FROST_PROTECTION = 5,
-	CANIOT_HEATER_STOP	       = 6
+	CANIOT_HEATER_STOP			   = 6
 	// 7 is reserved for future use
 } caniot_heating_mode_t;
 
-#define CANIOT_BLC_SYS_RESET_MASK	    0x1u
-#define CANIOT_BLC_SYS_SOFT_RESET_MASK	    0x2u
-#define CANIOT_BLC_SYS_WATCHDOG_RESET_MASK  0x4u
-#define CANIOT_BLC_SYS_WATCHDOG_MASK	    0x18u
+#define CANIOT_BLC_SYS_RESET_MASK			0x1u
+#define CANIOT_BLC_SYS_SOFT_RESET_MASK		0x2u
+#define CANIOT_BLC_SYS_WATCHDOG_RESET_MASK	0x4u
+#define CANIOT_BLC_SYS_WATCHDOG_MASK		0x18u
 #define CANIOT_BLC_SYS_WATCHDOG_ENABLE_MASK 0x10u
 
 struct caniot_blc_sys_command {
@@ -115,13 +115,13 @@ struct caniot_heating_control {
 	caniot_heating_mode_t heater3_cmd : 4u;
 	caniot_heating_mode_t heater4_cmd : 4u;
 	uint8_t power_status : 1u; /* Tells whether power is detected or not, telemetry
-				      only */
+					  only */
 };
 
-#define CANIOT_SHUTTER_CMD_NONE	       0xFFu
+#define CANIOT_SHUTTER_CMD_NONE		   0xFFu
 #define CANIOT_SHUTTER_CMD_OPENNES(_o) (_o)
-#define CANIOT_SHUTTER_CMD_OPEN	       (100u)
-#define CANIOT_SHUTTER_CMD_CLOSE       (0u)
+#define CANIOT_SHUTTER_CMD_OPEN		   (100u)
+#define CANIOT_SHUTTER_CMD_CLOSE	   (0u)
 
 struct caniot_shutters_control {
 	uint8_t shutters_openness[4u];

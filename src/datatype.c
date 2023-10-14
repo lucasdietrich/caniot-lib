@@ -55,9 +55,9 @@ void caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd, uint8_
 {
 	ASSERT(cmd != NULL);
 
-	cmd->reset	    = (byte >> 0) & 0x01u;
+	cmd->reset			= (byte >> 0) & 0x01u;
 	cmd->software_reset = (byte >> 1) & 0x01u;
 	cmd->watchdog_reset = (byte >> 2) & 0x01u;
-	cmd->watchdog	    = (byte >> 3) & 0x03u;
-	cmd->config_reset   = (byte >> 5) & 0x01u;
+	cmd->watchdog		= (byte >> 3) & 0x03u;
+	cmd->config_reset	= (byte >> 5) & 0x01u;
 }

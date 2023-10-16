@@ -146,6 +146,8 @@ struct caniot_device_config {
 struct caniot_device {
 	const struct caniot_device_id *identification;
 	struct caniot_device_system system;
+
+	/* buffer used to store the configuration */
 	struct caniot_device_config *config;
 
 	const struct caniot_device_api *api;
@@ -158,6 +160,7 @@ struct caniot_device {
 		uint8_t request_telemetry_ep : 4u; /* Bitmask represent what endpoint(s)
 							  to send telemetry for */
 		uint8_t initialized : 1u;		   /* Device is initialized */
+		uint8_t config_dirty : 1u;	   /* Settings have been modified */
 	} flags;
 };
 
@@ -174,10 +177,10 @@ typedef int(caniot_command_handler_t)(struct caniot_device *dev,
 struct caniot_device_api {
 	struct {
 		/* called before configuration will be read */
-		int (*on_read)(struct caniot_device *dev, struct caniot_device_config *config);
+		int (*on_read)(struct caniot_device *dev);
 
 		/* called after configuration is updated */
-		int (*on_write)(struct caniot_device *dev, struct caniot_device_config *config);
+		int (*on_write)(struct caniot_device *dev);
 	} config;
 
 	struct {
@@ -193,6 +196,8 @@ struct caniot_device_api {
 };
 
 void caniot_print_device_identification(const struct caniot_device *dev);
+
+void caniot_device_config_mark_dirty(struct caniot_device *dev);
 
 int caniot_device_system_reset(struct caniot_device *dev);
 

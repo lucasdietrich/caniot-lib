@@ -585,6 +585,11 @@ int caniot_device_system_reset(struct caniot_device *dev)
 	return 0;
 }
 
+void caniot_device_config_mark_dirty(struct caniot_device *dev)
+{
+	dev->flags.config_dirty = true;
+}
+
 static inline void read_identification_nodeid(struct caniot_device *dev,
 											  caniot_did_t *did)
 {
@@ -624,14 +629,19 @@ uint16_t caniot_device_get_filter_broadcast(caniot_did_t did)
 
 static int prepare_config_read(struct caniot_device *dev)
 {
+	int ret = 0;
+
 	ASSERT(dev != NULL);
 
 	/* local configuration in RAM should be updated */
-	if (dev->api->config.on_read != NULL) {
-		return dev->api->config.on_read(dev, dev->config);
+	if (dev->flags.config_dirty && dev->api->config.on_read != NULL) {
+		ret = dev->api->config.on_read(dev);
+		if (ret == 0) {
+			dev->flags.config_dirty = false;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int config_written(struct caniot_device *dev)
@@ -652,7 +662,7 @@ static int config_written(struct caniot_device *dev)
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
 
 		/* call application callback to apply the new configuration */
-		ret = dev->api->config.on_write(dev, dev->config);
+		ret = dev->api->config.on_write(dev);
 
 #if CONFIG_CANIOT_DEVICE_DRIVERS_API
 		dev->driv->get_time(&new_sec, &new_msec);
@@ -1330,16 +1340,18 @@ void caniot_app_init(struct caniot_device *dev)
 
 	dev->driv->get_time(&dev->system.start_time, NULL);
 
-	dev->flags.initialized			= 1u;
 	dev->flags.request_telemetry_ep = 0u;
+	dev->flags.config_dirty		= 1u;
+	dev->flags.initialized			= 1u;
 }
 
 void caniot_app_deinit(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
 
-	dev->flags.initialized			= 0u;
 	dev->flags.request_telemetry_ep = 0u;
+	dev->flags.initialized			= 0u;
+	dev->flags.config_dirty		= 1u;
 }
 
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */

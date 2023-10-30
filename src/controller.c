@@ -887,8 +887,8 @@ static int caniot_controller_handle_rx_frame(struct caniot_controller *ctrl,
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!ctrl || !frame) return -CANIOT_EINVAL;
-	if (!caniot_controller_is_target(frame)) return -CANIOT_EUNEXPECTED;
 #endif
+	if (!caniot_controller_is_target(frame)) return -CANIOT_EUNEXPECTED;
 
 	struct pendq *pq;
 	bool orphan			   = true;

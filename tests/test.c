@@ -12,20 +12,21 @@
 #include <time.h>
 
 #include <caniot/caniot_private.h>
+#include <caniot/classes.h>
 #include <caniot/controller.h>
-#include <caniot/device.h>
 #include <caniot/datatype.h>
+#include <caniot/device.h>
 
 #define SEED 0
 
 #define TRUE  true
 #define FALSE false
 
-#define GB(_x, _pos) (((_x) >> (_pos)) & 0x1u)
+#define GB(_x, _pos)		 (((_x) >> (_pos)) & 0x1u)
 #define GBZ(_x, _pos, _size) (((_x) >> (_pos)) & ((1u << (_size)) - 1u))
-#define GB2(_x, _pos) (((_x) >> (_pos)) & 0x3u)
-#define GB3(_x, _pos) (((_x) >> (_pos)) & 0x7u)
-#define GB4(_x, _pos) (((_x) >> (_pos)) & 0xFu)
+#define GB2(_x, _pos)		 (((_x) >> (_pos)) & 0x3u)
+#define GB3(_x, _pos)		 (((_x) >> (_pos)) & 0x7u)
+#define GB4(_x, _pos)		 (((_x) >> (_pos)) & 0xFu)
 
 #define TEST_ASSERT(statement)                                                           \
 	if (!(statement)) {                                                                  \
@@ -248,9 +249,13 @@ bool z_func__caniot_device_get_mask(void)
 
 bool z_func__caniot_device_get_filter_broadcast(void)
 {
-	const caniot_did_t did = gen_rdm_did(false);
+	const uint16_t filter = caniot_device_get_filter_broadcast();
 
-	const uint16_t filter = caniot_device_get_filter_broadcast(did);
+	printf("filter: %x, %d, %d, %d\n",
+		   filter,
+		   CANIOT_ID_GET_CLASS(filter),
+		   CANIOT_ID_GET_SUBID(filter),
+		   CANIOT_ID_GET_QUERY(filter));
 
 	return (CANIOT_ID_GET_CLASS(filter) == CANIOT_CLASS_BROADCAST) &&
 		   (CANIOT_ID_GET_SUBID(filter) == CANIOT_SUBID_BROADCAST) &&
@@ -266,10 +271,8 @@ bool z_func___si_caniot_device_get_filter(void)
 
 bool z_func___si_caniot_device_get_filter_broadcast(void)
 {
-	const caniot_did_t did = gen_rdm_did(false);
-
-	return _si_caniot_device_get_filter_broadcast(did) ==
-		   caniot_device_get_filter_broadcast(did);
+	return _si_caniot_device_get_filter_broadcast() ==
+		   caniot_device_get_filter_broadcast();
 }
 
 /*____________________________________________________________________________*/
@@ -490,25 +493,26 @@ bool z_func_datatype_blc_sys(void)
 {
 	bool success = true;
 
-	for (uint32_t n = 0; n < 2*2*2*4*2; n++)
-	{
+	for (uint32_t n = 0; n < 2 * 2 * 2 * 4 * 2 * 4; n++) {
 		struct caniot_blc_sys_command parsed_cmd;
 		const struct caniot_blc_sys_command cmd = {
-			.reset		  = GB(n, 0),
-			.software_reset = GB(n, 1),
-			.watchdog_reset = GB(n, 2),
-			.watchdog		= GB2(n, 3),
-			.config_reset = GB(n, 5),
+			.reset			 = GB(n, 0),
+			._software_reset = GB(n, 1),
+			._watchdog_reset = GB(n, 2),
+			.watchdog		 = GB2(n, 3),
+			.config_reset	 = GB(n, 5),
+			.inhibit		 = GB2(n, 6),
 		};
 
 		const uint8_t serialized_cmd = caniot_blc_sys_command_to_byte(&cmd);
 		caniot_blc_sys_command_from_byte(&parsed_cmd, serialized_cmd);
 
 		success &= parsed_cmd.reset == cmd.reset;
-		success &= parsed_cmd.software_reset == cmd.software_reset;
-		success &= parsed_cmd.watchdog_reset == cmd.watchdog_reset;
+		success &= parsed_cmd._software_reset == cmd._software_reset;
+		success &= parsed_cmd._watchdog_reset == cmd._watchdog_reset;
 		success &= parsed_cmd.watchdog == cmd.watchdog;
 		success &= parsed_cmd.config_reset == cmd.config_reset;
+		success &= parsed_cmd.inhibit == cmd.inhibit;
 	}
 
 	return success;
@@ -517,10 +521,151 @@ bool z_func_datatype_blc_sys(void)
 bool z_func_datatype_tmperature(void)
 {
 	// Precision is 0.1°C
-	const int16_t temperature16 = rand_range(CANIOT_DT_T16_MIN / 10, CANIOT_DT_T16_MAX / 10) * 10;
-	const uint16_t temperature10 = caniot_dt_T16_to_T10(temperature16);
+	const int16_t temperature16 =
+		rand_range(CANIOT_DT_T16_MIN / 10, CANIOT_DT_T16_MAX / 10) * 10;
+	const uint16_t temperature10  = caniot_dt_T16_to_T10(temperature16);
 	const int16_t temperature16_2 = caniot_dt_T10_to_T16(temperature10);
 	return temperature16 == temperature16_2;
+}
+
+struct test_case_blc0 {
+	const uint8_t buf[9u];
+	struct caniot_blc0_command cmd;
+};
+
+static struct test_case_blc0 tests_blc0[] = {{{0x00u, 0x00u}, {0, 0, 0, 0}},
+											 {{7, 0}, {7, 0, 0, 0}},
+											 {{7 << 3, 0}, {0, 7, 0, 0}},
+											 {{3 << 6, 1}, {0, 0, 7, 0}},
+											 {{0, 7 << 1}, {0, 0, 0, 7}}};
+
+bool z_func_encode_caniot_blc0_command(void)
+{
+	bool success = true;
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests_blc0); i++) {
+		struct test_case_blc0 *tc = &tests_blc0[i];
+
+		uint8_t buf[2];
+		uint8_t len = 2u;
+
+		success &= caniot_blc0_command_ser(&tc->cmd, buf, &len) == 0;
+		success &= len == 2u;
+		success &= (tc->buf[0u] == buf[0u]) && (tc->buf[1u] == buf[1u]);
+
+		if (!success) break;
+	}
+
+	return success;
+}
+
+bool z_func_decode_caniot_blc0_command(void)
+{
+	bool success = true;
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests_blc0); i++) {
+		struct test_case_blc0 *tc = &tests_blc0[i];
+
+		struct caniot_blc0_command cmd;
+		caniot_blc0_command_init(&cmd);
+
+		success &= caniot_blc0_command_get(&cmd, tc->buf, 2u) == 0;
+		success &= cmd.coc1 == tc->cmd.coc1;
+		success &= cmd.coc2 == tc->cmd.coc2;
+		success &= cmd.crl1 == tc->cmd.crl1;
+		success &= cmd.crl2 == tc->cmd.crl2;
+
+		if (!success) break;
+	}
+
+	return success;
+}
+struct test_case_blc1 {
+	const uint8_t buf[7u];
+	struct caniot_blc1_command cmd;
+};
+
+static struct test_case_blc1 tests_blc1[] = {
+	{{0}, {{0}}},
+	{{[0] = 7}, {.gpio_commands = {[0] = 7}}},
+	{{[0] = 7 << 3}, {.gpio_commands = {[1] = 7}}},
+	{{[0] = 3 << 6, [1] = 1}, {.gpio_commands = {[2] = 7}}},
+	{{[1] = 7 << 1}, {.gpio_commands = {[3] = 7}}},
+	{{[1] = 7 << 4}, {.gpio_commands = {[4] = 7}}},
+	{{[1] = 1 << 7, [2] = 3}, {.gpio_commands = {[5] = 7}}},
+	{{[2] = 7 << 2}, {.gpio_commands = {[6] = 7}}},
+	{{[2] = 7 << 5}, {.gpio_commands = {[7] = 7}}},
+	{{[3] = 7}, {.gpio_commands = {[8] = 7}}},
+	{{[3] = 7 << 3}, {.gpio_commands = {[9] = 7}}},
+	{{[3] = 3 << 6, [4] = 1}, {.gpio_commands = {[10] = 7}}},
+	{{[4] = 7 << 1}, {.gpio_commands = {[11] = 7}}},
+	{{[4] = 7 << 4}, {.gpio_commands = {[12] = 7}}},
+	{{[4] = 1 << 7, [5] = 3}, {.gpio_commands = {[13] = 7}}},
+	{{[5] = 7 << 2}, {.gpio_commands = {[14] = 7}}},
+	{{[5] = 7 << 5}, {.gpio_commands = {[15] = 7}}},
+	{{[6] = 7}, {.gpio_commands = {[16] = 7}}},
+	{{[6] = 7 << 3}, {.gpio_commands = {[17] = 7}}},
+	{{[6] = 3 << 6}, {.gpio_commands = {[18] = 3}}},
+};
+
+bool z_func_encode_caniot_blc1_command(void)
+{
+	bool success = true;
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests_blc1); i++) {
+		struct test_case_blc1 *tc = &tests_blc1[i];
+
+		uint8_t buf[7];
+		uint8_t len = 7u;
+
+		success &= caniot_blc1_command_ser(&tc->cmd, buf, &len) == 0;
+		success &= len == 7u;
+		success &= (tc->buf[0u] == buf[0u]) && (tc->buf[1u] == buf[1u]) &&
+				   (tc->buf[2u] == buf[2u]) && (tc->buf[3u] == buf[3u]) &&
+				   (tc->buf[4u] == buf[4u]) && (tc->buf[5u] == buf[5u]) &&
+				   (tc->buf[6u] == buf[6u]);
+
+		if (!success) break;
+	}
+
+	return success;
+}
+
+bool z_func_decode_caniot_blc1_command(void)
+{
+	bool success = true;
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests_blc1); i++) {
+		struct test_case_blc1 *tc = &tests_blc1[i];
+
+		struct caniot_blc1_command cmd;
+		caniot_blc1_command_init(&cmd);
+
+		success &= caniot_blc1_command_get(&cmd, tc->buf, 7u) == 0;
+		success &= cmd.gpio_commands[0] == tc->cmd.gpio_commands[0];
+		success &= cmd.gpio_commands[1] == tc->cmd.gpio_commands[1];
+		success &= cmd.gpio_commands[2] == tc->cmd.gpio_commands[2];
+		success &= cmd.gpio_commands[3] == tc->cmd.gpio_commands[3];
+		success &= cmd.gpio_commands[4] == tc->cmd.gpio_commands[4];
+		success &= cmd.gpio_commands[5] == tc->cmd.gpio_commands[5];
+		success &= cmd.gpio_commands[6] == tc->cmd.gpio_commands[6];
+		success &= cmd.gpio_commands[7] == tc->cmd.gpio_commands[7];
+		success &= cmd.gpio_commands[8] == tc->cmd.gpio_commands[8];
+		success &= cmd.gpio_commands[9] == tc->cmd.gpio_commands[9];
+		success &= cmd.gpio_commands[10] == tc->cmd.gpio_commands[10];
+		success &= cmd.gpio_commands[11] == tc->cmd.gpio_commands[11];
+		success &= cmd.gpio_commands[12] == tc->cmd.gpio_commands[12];
+		success &= cmd.gpio_commands[13] == tc->cmd.gpio_commands[13];
+		success &= cmd.gpio_commands[14] == tc->cmd.gpio_commands[14];
+		success &= cmd.gpio_commands[15] == tc->cmd.gpio_commands[15];
+		success &= cmd.gpio_commands[16] == tc->cmd.gpio_commands[16];
+		success &= cmd.gpio_commands[17] == tc->cmd.gpio_commands[17];
+		success &= cmd.gpio_commands[18] == tc->cmd.gpio_commands[18];
+
+		if (!success) break;
+	}
+
+	return success;
 }
 
 /*____________________________________________________________________________*/
@@ -552,7 +697,7 @@ const struct test tests[] = {
 	TEST(z_func__caniot_device_get_mask, 1U),
 	TEST(z_func__caniot_device_get_filter_broadcast, 1U),
 	TEST(z_func___si_caniot_device_get_filter, 100U),
-	TEST(z_func___si_caniot_device_get_filter_broadcast, 100U),
+	TEST(z_func___si_caniot_device_get_filter_broadcast, 1u),
 	TEST(z_func_ctrl1, 1U),
 	TEST(z_func_ctrl2, 1U),
 	TEST(z_func_ctrl3, 1U),
@@ -560,6 +705,10 @@ const struct test tests[] = {
 	TEST(z_func_dev0, 1U),
 	TEST(z_func_datatype_blc_sys, 1U),
 	TEST(z_func_datatype_tmperature, 100u),
+	TEST(z_func_decode_caniot_blc0_command, 1u),
+	TEST(z_func_encode_caniot_blc0_command, 1u),
+	TEST(z_func_encode_caniot_blc1_command, 1u),
+	TEST(z_func_decode_caniot_blc1_command, 1u),
 };
 
 int main(void)

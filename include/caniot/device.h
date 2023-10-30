@@ -160,7 +160,7 @@ struct caniot_device {
 		uint8_t request_telemetry_ep : 4u; /* Bitmask represent what endpoint(s)
 							  to send telemetry for */
 		uint8_t initialized : 1u;		   /* Device is initialized */
-		uint8_t config_dirty : 1u;	   /* Settings have been modified */
+		uint8_t config_dirty : 1u;		   /* Settings have been modified */
 	} flags;
 };
 
@@ -173,6 +173,28 @@ typedef int(caniot_command_handler_t)(struct caniot_device *dev,
 									  caniot_endpoint_t ep,
 									  const unsigned char *buf,
 									  uint8_t len);
+
+#if CONFIG_CANIOT_DEVICE_HANDLE_BLC_SYS_CMD
+/**
+ * @brief Individual commands for the BLC_SYS command
+ */
+typedef enum {
+	CANIOT_BLC_SYS_CMD_NONE = 0,
+	CANIOT_BLC_SYS_CMD_RESET,
+	CANIOT_BLC_SYS_CMD_SOFT_RESET,
+	CANIOT_BLC_SYS_CMD_WATCHDOG_RESET,
+	CANIOT_BLC_SYS_CMD_WATCHDOG_ENABLE,
+	CANIOT_BLC_SYS_CMD_WATCHDOG_DISABLE,
+	CANIOT_BLC_SYS_CMD_WATCHDOG_TOGGLE,
+	CANIOT_BLC_SYS_CMD_CONFIG_RESET,
+	CANIOT_BLC_SYS_CMD_INHIBIT_ON,
+	CANIOT_BLC_SYS_CMD_INHIBIT_OFF,
+	CANIOT_BLC_SYS_CMD_INHIBIT_PULSE,
+} caniot_blc_sys_cmd_t;
+
+typedef int(caniot_command_blc_sys_handler_t)(struct caniot_device *dev,
+											  caniot_blc_sys_cmd_t sys_cmd);
+#endif
 
 struct caniot_device_api {
 	struct {
@@ -193,6 +215,11 @@ struct caniot_device_api {
 
 	/* Build telemetry */
 	caniot_telemetry_handler_t *telemetry_handler;
+
+#if CONFIG_CANIOT_DEVICE_HANDLE_BLC_SYS_CMD
+	/* Board level control system command handler */
+	caniot_command_blc_sys_handler_t *blc_sys_cmd_handler;
+#endif
 };
 
 void caniot_print_device_identification(const struct caniot_device *dev);
@@ -209,14 +236,38 @@ caniot_did_t caniot_device_get_id(struct caniot_device *dev);
 
 uint32_t caniot_device_telemetry_remaining(struct caniot_device *dev);
 
+/**
+ * @brief Get the mask to receive all frames targeted to devices.
+ *
+ * @return uint16_t
+ */
 static inline uint16_t caniot_device_get_mask(void)
 {
 	return 0x1fc; // 0b00111111100U;
 }
 
+/**
+ * @brief Get the filter for the given device ID
+ *
+ * @param did
+ * @return uint16_t
+ */
 uint16_t caniot_device_get_filter(caniot_did_t did);
 
-uint16_t caniot_device_get_filter_broadcast(caniot_did_t did);
+/**
+ * @brief Get the broadcast filter
+ *
+ * @return uint16_t
+ */
+uint16_t caniot_device_get_filter_broadcast(void);
+
+/**
+ * @brief Get the filter for the given device class
+ *
+ * @param cls
+ * @return uint16_t
+ */
+uint16_t caniot_device_get_filter_by_cls(uint8_t cls);
 
 /**
  * @brief static-inline version of caniot_device_get_filter
@@ -235,9 +286,8 @@ static inline uint16_t _si_caniot_device_get_filter(caniot_did_t did)
  * @param did
  * @return uint16_t
  */
-static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
+static inline uint16_t _si_caniot_device_get_filter_broadcast(void)
 {
-	(void)did;
 	return CANIOT_ID(0U,
 					 CANIOT_QUERY,
 					 CANIOT_DID_CLS(CANIOT_DID_BROADCAST),
@@ -258,6 +308,20 @@ static inline uint16_t _si_caniot_device_get_filter_broadcast(caniot_did_t did)
  * @return false
  */
 bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id);
+
+/**
+ * @brief Verify whether the device class is targeted by the CAN frame (ext, rtr, id)
+ *
+ * This function programmatically verifies if the device is targeted by the frame.
+ *
+ * @param cls
+ * @param ext
+ * @param rtr
+ * @param id
+ * @return true
+ * @return false
+ */
+bool caniot_device_targeted_class(uint8_t cls, bool ext, bool rtr, uint32_t id);
 
 /*____________________________________________________________________________*/
 

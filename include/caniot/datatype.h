@@ -40,6 +40,13 @@ typedef enum {
 } caniot_twostate_cmd_t;
 
 typedef enum {
+	CANIOT_TSP_CMD_NONE = 0,
+	CANIOT_TSP_CMD_ON,
+	CANIOT_TSP_CMD_OFF,
+	CANIOT_TSP_CMD_PULSE,
+} caniot_twostate_pulse_cmd_t;
+
+typedef enum {
 	CANIOT_LIGHT_CMD_NONE = 0,
 	CANIOT_LIGHT_CMD_ON,
 	CANIOT_LIGHT_CMD_OFF,
@@ -79,12 +86,6 @@ typedef enum {
 	// 7 is reserved for future use
 } caniot_heating_mode_t;
 
-#define CANIOT_BLC_SYS_RESET_MASK			0x1u
-#define CANIOT_BLC_SYS_SOFT_RESET_MASK		0x2u
-#define CANIOT_BLC_SYS_WATCHDOG_RESET_MASK	0x4u
-#define CANIOT_BLC_SYS_WATCHDOG_MASK		0x18u
-#define CANIOT_BLC_SYS_WATCHDOG_ENABLE_MASK 0x10u
-
 struct caniot_blc_sys_command {
 	/* in the case of the AVR, proper software reset should use the watchdog :
 	 * https://www.avrfreaks.net/comment/178013#comment-178013
@@ -95,17 +96,35 @@ struct caniot_blc_sys_command {
 	 */
 	caniot_onestate_cmd_t reset : 1;
 
-	/* Software reset by calling reset vector */
-	caniot_onestate_cmd_t software_reset : 1;
+	/* Software reset by calling reset vector
+	 * DEPRECATED, use global reset instead
+	 */
+	caniot_onestate_cmd_t _software_reset : 1;
 
-	/* Reset by forcing the watchdog to timeout */
-	caniot_onestate_cmd_t watchdog_reset : 1;
+	/* Reset by forcing the watchdog to timeout
+	 * DEPRECATED, use global reset instead
+	 */
+	caniot_onestate_cmd_t _watchdog_reset : 1;
 
 	/* Enable/disable the watchdog */
 	caniot_twostate_cmd_t watchdog : 2;
 
 	/* Reset the device configuration */
 	caniot_onestate_cmd_t config_reset : 1;
+
+	/* Set the device in safe configuration.
+
+	 * This mode tupically stops all running actions (like heating, siren, ...)
+	 * and set the device in a safe/inactive state.
+	 *
+	 * - CANIOT_TSP_CMD_ON: Inhibit all actions until CANIOT_TSP_CMD_OFF is
+	 * received.
+	 * - CANIOT_TSP_CMD_OFF: Resume normal operation.
+	 * - CANIOT_TSP_CMD_PULSE: Inhibit all actions momentarily, the mode won't
+	 *   last. The device will resume normal operation after receiving its
+	 *   next event (command, external event, ...).
+	 */
+	caniot_twostate_pulse_cmd_t inhibit : 2;
 };
 
 /* Same for command and telemetry */

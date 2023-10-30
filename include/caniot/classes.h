@@ -23,10 +23,10 @@ struct caniot_blc0_telemetry {
 
 /* Board level control (blc) command */
 struct caniot_blc0_command {
-	uint16_t coc1 : 3u;
-	uint16_t coc2 : 3u;
-	uint16_t crl1 : 3u;
-	uint16_t crl2 : 3u;
+	caniot_complex_digital_cmd_t coc1 : 3u;
+	caniot_complex_digital_cmd_t coc2 : 3u;
+	caniot_complex_digital_cmd_t crl1 : 3u;
+	caniot_complex_digital_cmd_t crl2 : 3u;
 };
 
 struct caniot_blc1_telemetry {
@@ -42,7 +42,7 @@ struct caniot_blc1_telemetry {
 };
 
 struct caniot_blc1_command {
-	uint8_t gpio_commands[CANIOT_CLASS1_IO_COUNT];
+	caniot_complex_digital_cmd_t gpio_commands[CANIOT_CLASS1_IO_COUNT];
 };
 
 void caniot_blc0_command_init(struct caniot_blc0_command *cmd);

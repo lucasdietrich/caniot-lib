@@ -18,20 +18,22 @@ const struct caniot_device_config default_cfg = CANIOT_CONFIG_DEFAULT_INIT();
 
 struct caniot_device devices[DEVICES_COUNT];
 
-static int cb_config_on_read(struct caniot_device *dev,
-							 struct caniot_device_config *config)
+static int cb_config_on_read(struct caniot_device *dev)
 {
-	printf("[DEV CB] cb_config_on_read dev=%p config=%p\n", (void *)dev, (void *)config);
+	printf("[DEV CB] cb_config_on_read dev=%p config=%p\n",
+		   (void *)dev,
+		   (void *)dev->config);
 
 	vtime_inc_const();
 
 	return 0U;
 }
 
-static int cb_config_on_write(struct caniot_device *dev,
-							  struct caniot_device_config *config)
+static int cb_config_on_write(struct caniot_device *dev)
 {
-	printf("[DEV CB] cb_config_on_write dev=%p config=%p\n", (void *)dev, (void *)config);
+	printf("[DEV CB] cb_config_on_write dev=%p config=%p\n",
+		   (void *)dev,
+		   (void *)dev->config);
 
 	vtime_inc_const();
 
@@ -59,10 +61,10 @@ static int cb_attr_write(struct caniot_device *dev, uint16_t key, uint32_t val)
 	return 0U;
 }
 
-static int(cb_telemetry_handler)(struct caniot_device *dev,
-								 caniot_endpoint_t ep,
-								 unsigned char *buf,
-								 uint8_t *len)
+static int cb_telemetry_handler(struct caniot_device *dev,
+								caniot_endpoint_t ep,
+								unsigned char *buf,
+								uint8_t *len)
 {
 	*len = 0U;
 
@@ -78,10 +80,10 @@ static int(cb_telemetry_handler)(struct caniot_device *dev,
 	return 0U;
 }
 
-static int(cb_command_handler)(struct caniot_device *dev,
-							   caniot_endpoint_t ep,
-							   const unsigned char *buf,
-							   uint8_t len)
+static int cb_command_handler(struct caniot_device *dev,
+							  caniot_endpoint_t ep,
+							  const unsigned char *buf,
+							  uint8_t len)
 {
 	printf("[DEV CB] cb_command_handler dev=%p ep=%hhu buf=%p [len = %hhu]\n",
 		   (void *)dev,

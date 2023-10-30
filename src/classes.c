@@ -49,7 +49,7 @@ int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t,
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC0_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	t->dio				= buf[0];
@@ -69,7 +69,7 @@ int caniot_blc0_command_ser(const struct caniot_blc0_command *t,
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || !len || *len < CANIOT_BLC0_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	buf[0] = t->coc1 | (t->coc2 << 3) | ((t->crl1 & 0x03u) << 6);
@@ -87,13 +87,13 @@ int caniot_blc0_command_get(struct caniot_blc0_command *t,
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC0_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	t->coc1 = buf[0] & 0x07u;
 	t->coc2 = (buf[0] >> 3) & 0x07u;
-	t->crl1 = ((buf[0] >> 6) & 0x01u) | ((buf[1] & 0x03u) << 1);
-	t->crl2 = (buf[1] >> 2) & 0x07u;
+	t->crl1 = ((buf[0] >> 6) & 0x03u) | ((buf[1] & 0x01u) << 2);
+	t->crl2 = (buf[1] >> 1) & 0x07u;
 
 	return 0;
 }
@@ -139,7 +139,7 @@ int caniot_blc1_cmd_set_xps(caniot_complex_digital_cmd_t xps,
 	if (!buf || n >= CANIOT_CLASS1_IO_COUNT || len >= CANIOT_BLC1_COMMAND_BUF_LEN)
 		return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	z_blc1_cmd_set_xps(buf, n, xps);
@@ -159,7 +159,7 @@ int caniot_blc1_cmd_parse_xps(caniot_complex_digital_cmd_t *xps,
 		return -CANIOT_EINVAL;
 	}
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	*xps = z_blc1_cmd_parse_xps(buf, n);
@@ -174,7 +174,7 @@ int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || !len || *len < CANIOT_BLC1_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	buf[0] = t->pcpd;
@@ -205,7 +205,7 @@ int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t,
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC1_TELEMETRY_BUF_LEN) return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	t->pcpd = buf[0];
@@ -230,6 +230,8 @@ int caniot_blc1_command_ser(const struct caniot_blc1_command *t,
 	if (!t || !buf || !len || *len < CANIOT_BLC1_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
 #endif
 
+	memset(buf, 0x00u, CANIOT_BLC1_COMMAND_BUF_LEN);
+
 	for (uint8_t i = 0u; i < CANIOT_CLASS1_IO_COUNT; i++) {
 		z_blc1_cmd_set_xps(buf, i, t->gpio_commands[i]);
 	}
@@ -246,7 +248,7 @@ int caniot_blc1_command_get(struct caniot_blc1_command *t,
 #if CONFIG_CANIOT_CHECKS
 	if (!t || !buf || len < CANIOT_BLC1_COMMAND_BUF_LEN) return -CANIOT_EINVAL;
 #else
-	(void) len;
+	(void)len;
 #endif
 
 	for (uint8_t i = 0u; i < CANIOT_CLASS1_IO_COUNT; i++) {

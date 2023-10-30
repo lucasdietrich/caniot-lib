@@ -9,6 +9,7 @@
 
 #include <caniot/caniot.h>
 #include <caniot/caniot_private.h>
+#include <caniot/datatype.h>
 #include <caniot/device.h>
 
 typedef uint16_t attr_key_t;
@@ -572,8 +573,6 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 		CANIOT_INF(F("%02hx"), id.build_commit[i]);
 	}
 #endif
-
-	CANIOT_INF(F("\n\n"));
 }
 
 int caniot_device_system_reset(struct caniot_device *dev)
@@ -614,14 +613,23 @@ uint16_t caniot_device_get_filter(caniot_did_t did)
 	return caniot_id_to_canid(filter);
 }
 
-uint16_t caniot_device_get_filter_broadcast(caniot_did_t did)
+uint16_t caniot_device_get_filter_broadcast(void)
 {
-	(void)did;
-
 	const caniot_id_t filter = {
 		.query = CANIOT_QUERY,
-		.sid   = CANIOT_DID_SID(CANIOT_DID_BROADCAST),
-		.cls   = CANIOT_DID_CLS(CANIOT_DID_BROADCAST),
+		.sid   = CANIOT_SUBID_BROADCAST,
+		.cls   = CANIOT_CLASS_BROADCAST,
+	};
+
+	return caniot_id_to_canid(filter);
+}
+
+uint16_t caniot_device_get_filter_by_cls(uint8_t cls)
+{
+	const caniot_id_t filter = {
+		.query = CANIOT_QUERY,
+		.sid   = 0u,
+		.cls   = CANIOT_DID_CLS(cls),
 	};
 
 	return caniot_id_to_canid(filter);
@@ -635,6 +643,7 @@ static int prepare_config_read(struct caniot_device *dev)
 
 	/* local configuration in RAM should be updated */
 	if (dev->flags.config_dirty && dev->api->config.on_read != NULL) {
+		CANIOT_DBG(F("config read\n"));
 		ret = dev->api->config.on_read(dev);
 		if (ret == 0) {
 			dev->flags.config_dirty = false;
@@ -660,6 +669,8 @@ static int config_written(struct caniot_device *dev)
 		uint16_t prev_msec, new_msec;
 		dev->driv->get_time(&prev_sec, &prev_msec);
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
+
+		CANIOT_DBG(F("config write\n"));
 
 		/* call application callback to apply the new configuration */
 		ret = dev->api->config.on_write(dev);
@@ -970,6 +981,73 @@ static int handle_write_attribute(struct caniot_device *dev,
 	return ret;
 }
 
+#if CONFIG_CANIOT_DEVICE_HANDLE_BLC_SYS_CMD
+static int call_blc_sys_cmd_cb(struct caniot_device *dev, caniot_blc_sys_cmd_t cmd)
+{
+	return call_blc_sys_cmd_cb(dev, cmd);
+}
+
+static int handle_blc_sys_cmd(struct caniot_device *dev,
+							  struct caniot_blc_sys_command *sys_cmd)
+{
+	int ret = 0;
+
+	/* Inhibit has the highest priority */
+	switch (sys_cmd->inhibit) {
+	case CANIOT_TSP_CMD_ON:
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_INHIBIT_ON);
+		break;
+	case CANIOT_TSP_CMD_OFF:
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_INHIBIT_OFF);
+		break;
+	case CANIOT_TSP_CMD_PULSE:
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_INHIBIT_PULSE);
+		break;
+	default:
+		break;
+	}
+	if (ret) goto exit;
+
+	if (sys_cmd->config_reset) {
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_CONFIG_RESET);
+		if (ret) goto exit;
+	}
+
+	switch (sys_cmd->watchdog) {
+	case CANIOT_TS_CMD_ON:
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_WATCHDOG_ENABLE);
+		break;
+	case CANIOT_TS_CMD_OFF:
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_WATCHDOG_DISABLE);
+		break;
+	case CANIOT_TS_CMD_TOGGLE:
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_WATCHDOG_TOGGLE);
+		break;
+	default:
+		break;
+	}
+	if (ret) goto exit;
+
+	if (sys_cmd->reset) {
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_RESET);
+		if (ret) goto exit;
+	}
+
+	if (sys_cmd->_watchdog_reset) {
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_WATCHDOG_RESET);
+		if (ret) goto exit;
+	}
+
+	if (sys_cmd->_software_reset) {
+		ret = call_blc_sys_cmd_cb(dev, CANIOT_BLC_SYS_CMD_SOFT_RESET);
+		if (ret) goto exit;
+	}
+
+exit:
+	return ret;
+}
+#endif
+
 static int handle_command_req(struct caniot_device *dev, const struct caniot_frame *req)
 {
 	ASSERT(dev != NULL);
@@ -982,13 +1060,25 @@ static int handle_command_req(struct caniot_device *dev, const struct caniot_fra
 			   (void *)&dev->api->command_handler,
 			   ep);
 
+#if CONFIG_CANIOT_DEVICE_HANDLE_BLC_SYS_CMD
+	/* Last byte of the BLC command is the system command */
+	if ((ep == CANIOT_ENDPOINT_BOARD_CONTROL) && (req->len > 8u) &&
+		(dev->api->blc_sys_cmd_handler != NULL)) {
+		struct caniot_blc_sys_command sys_cmd;
+		caniot_blc_sys_command_from_byte(&sys_cmd, req->buf[8u]);
+		ret = handle_blc_sys_cmd(dev, &sys_cmd);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+
 	if (dev->api->command_handler != NULL) {
 		ret = dev->api->command_handler(dev, ep, req->buf, req->len);
+		dev->system.last_command_error = ret;
 	} else {
-		return -CANIOT_EHANDLERC;
+		ret = -CANIOT_EHANDLERC;
 	}
-
-	dev->system.last_command_error = ret;
 
 	return ret;
 }
@@ -1261,15 +1351,18 @@ int caniot_device_process(struct caniot_device *dev)
 	/* response delay is not random by default */
 	bool random_delay = false;
 
-	/* if we received a frame */
+#if CONFIG_CANIOT_DEBUG || CONFIG_CANIOT_DEVICE_FILTER_FRAME
 	if (ret == 0) {
-#if CONFIG_CANIOT_DEBUG
 		if (!caniot_device_is_target(caniot_device_get_id(dev), &req)) {
 			dev->system.received.ignored++;
 			CANIOT_ERR(F("Unexpected frame id received: %u\n"));
+			ret = -CANIOT_EUNEXPECTED;
 		}
+	}
 #endif
 
+	/* if we received a frame */
+	if (ret == 0) {
 		/* handle received frame */
 		ret = caniot_device_handle_rx_frame(dev, &req, &resp);
 
@@ -1341,7 +1434,7 @@ void caniot_app_init(struct caniot_device *dev)
 	dev->driv->get_time(&dev->system.start_time, NULL);
 
 	dev->flags.request_telemetry_ep = 0u;
-	dev->flags.config_dirty		= 1u;
+	dev->flags.config_dirty			= 1u;
 	dev->flags.initialized			= 1u;
 }
 
@@ -1351,7 +1444,7 @@ void caniot_app_deinit(struct caniot_device *dev)
 
 	dev->flags.request_telemetry_ep = 0u;
 	dev->flags.initialized			= 0u;
-	dev->flags.config_dirty		= 1u;
+	dev->flags.config_dirty			= 1u;
 }
 
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
@@ -1439,32 +1532,49 @@ exit:
 	return count;
 }
 
-bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id)
+static bool verify_filter_or_broadcast(uint32_t id, uint16_t filter)
 {
-	bool targeted = false;
+	bool targeted;
 
-	(void)rtr;
+	const uint16_t std_id = id & 0x7FFu; /* CAN standard ID mask (11 bits) */
 
-	if (!ext) {
-		const uint16_t std_id = id & 0x7FFu; /* CAN standard ID mask (11 bits) */
+	const uint16_t mask		  = caniot_device_get_mask();
+	const uint16_t broad_filt = caniot_device_get_filter_broadcast();
 
-		const uint16_t mask		  = caniot_device_get_mask();
-		const uint16_t dev_filt	  = caniot_device_get_filter(did);
-		const uint16_t broad_filt = caniot_device_get_filter_broadcast(did);
+	CANIOT_DBG(F("mask: 0x%04X, filt: 0x%04X, broad_filt: 0x%04X, "
+				 "std_id: 0x%04X\n"),
+			   mask,
+			   filter,
+			   broad_filt,
+			   std_id);
 
-		CANIOT_DBG(F("mask: 0x%04X, dev_filt: 0x%04X, broad_filt: 0x%04X, "
-					 "std_id: 0x%04X\n"),
-				   mask,
-				   dev_filt,
-				   broad_filt,
-				   std_id);
-
-		if ((std_id & mask) == dev_filt) {
-			targeted = true;
-		} else if ((std_id & mask) == broad_filt) {
-			targeted = true;
-		}
+	if ((std_id & mask) == filter) {
+		targeted = true;
+	} else if ((std_id & mask) == broad_filt) {
+		targeted = true;
+	} else {
+		targeted = false;
 	}
 
 	return targeted;
+}
+
+bool caniot_device_targeted(caniot_did_t did, bool ext, bool rtr, uint32_t id)
+{
+	(void)rtr;
+
+	if (ext) return false;
+
+	const uint16_t dev_filt = caniot_device_get_filter(did);
+	return verify_filter_or_broadcast(id, dev_filt);
+}
+
+bool caniot_device_targeted_class(uint8_t cls, bool ext, bool rtr, uint32_t id)
+{
+	(void)rtr;
+
+	if (ext) return false;
+
+	const uint16_t cls_filt = caniot_device_get_filter_by_cls(cls);
+	return verify_filter_or_broadcast(id, cls_filt);
 }

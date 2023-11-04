@@ -247,6 +247,16 @@ static inline uint16_t caniot_device_get_mask(void)
 }
 
 /**
+ * @brief Get the mask to receive all frames targeted to class.
+ *
+ * @return uint16_t
+ */
+static inline uint16_t caniot_device_get_mask_by_cls(void)
+{
+	return 0x3c; // 0b00000111100U;
+}
+
+/**
  * @brief Get the filter for the given device ID
  *
  * @param did

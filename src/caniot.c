@@ -198,7 +198,9 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		CANIOT_INF(F(": -%04x"), (uint32_t)-frame->err.code);
+		const uint32_t err = read_le32(frame->buf);
+		const int32_t err2 = *(int32_t *)&err;
+		CANIOT_INF(F(": -%04x"), (uint16_t)-err2);
 		return;
 	}
 
@@ -208,11 +210,16 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("len: %d key: x%02x val: x%04x%04x"),
+		struct caniot_attribute attr = {
+			.key = read_le16(frame->buf),
+			.val = read_le32(frame->buf + 2u),
+		};
+
+		CANIOT_INF(F("len: %d key: x%04x val: x%04x%04x"),
 				   frame->len,
-				   frame->attr.key,
-				   (FMT_UINT_CAST)(frame->attr.val >> 16u),
-				   (FMT_UINT_CAST)(frame->attr.val & 0xFFFFu));
+				   attr.key,
+				   (FMT_UINT_CAST)(attr.val >> 16u),
+				   (FMT_UINT_CAST)(attr.val & 0xFFFFu));
 	}
 }
 
@@ -271,7 +278,9 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	len -= ret;
 
 	if (caniot_is_error_frame(frame->id)) {
-		ret = snprintf(buf, len, ": -%04x", (uint32_t)-frame->err.code);
+		uint32_t err = read_le16(frame->buf);
+		int32_t err2 = *(int32_t *)&err;
+		ret = snprintf(buf, len, ": -%04x", (int16_t)-err2);
 		total += ret;
 		buf += ret;
 		len -= ret;
@@ -295,12 +304,14 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 			len -= ret;
 		}
 	} else {
+		uint16_t key = read_le16(frame->buf);
+		uint32_t val = read_le32(frame->buf + 2u);
 		ret = snprintf(buf,
 					   len,
 					   "len: %d key: x%02x val: x%04x",
 					   frame->len,
-					   frame->attr.key,
-					   frame->attr.val);
+					   key,
+					   val);
 		if (ret > (int)len || ret < 0) {
 			return ret;
 		}
@@ -383,7 +394,7 @@ int caniot_build_query_read_attribute(struct caniot_frame *frame, uint16_t key)
 	frame->id.type	= CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
 	frame->id.query = CANIOT_QUERY;
 	frame->len		= 2u;
-	frame->attr.key = key;
+	write_le16(frame->buf, key);
 
 	return 0;
 }
@@ -399,8 +410,8 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 
 	frame->id.type	= CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
 	frame->len		= 6u;
-	frame->attr.key = key;
-	frame->attr.val = value;
+	write_le16(frame->buf, key);
+	write_le32(frame->buf + 2u, value);
 
 	return 0;
 }

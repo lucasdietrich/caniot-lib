@@ -115,4 +115,29 @@ extern void __assert(bool statement);
 
 #define INDEX_OF(obj, base, _struct) ((_struct *)(obj) - (_struct *)(base))
 
+static inline void write_le16(uint8_t *buf, uint16_t val)
+{
+	buf[0] = (uint8_t)(val & 0xFFU);
+	buf[1] = (uint8_t)((val >> 8U) & 0xFFU);
+}
+
+static inline void write_le32(uint8_t *buf, uint32_t val)
+{
+	buf[0] = (uint8_t)(val & 0xFFU);
+	buf[1] = (uint8_t)((val >> 8U) & 0xFFU);
+	buf[2] = (uint8_t)((val >> 16U) & 0xFFU);
+	buf[3] = (uint8_t)((val >> 24U) & 0xFFU);
+}
+
+static inline uint16_t read_le16(const uint8_t *buf)
+{
+	return (uint16_t)((uint16_t)buf[0] | ((uint16_t)buf[1] << 8U));
+}
+
+static inline uint32_t read_le32(const uint8_t *buf)
+{
+	return (uint32_t)((uint32_t)buf[0] | ((uint32_t)buf[1] << 8U) |
+					  ((uint32_t)buf[2] << 16U) | ((uint32_t)buf[3] << 24U));
+}
+
 #endif /* _CANIOT_PRIVATE_H_ */

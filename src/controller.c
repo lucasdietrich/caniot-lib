@@ -561,7 +561,7 @@ static struct pendq *pendq_alloc_and_prepare(struct caniot_controller *ctrl,
 			break;
 		case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
 		case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE:
-			pq->req_attr = frame->attr.key;
+			pq->req_attr = read_le16(frame->buf);
 			break;
 		default:
 			break;
@@ -736,7 +736,8 @@ is_response_to(const struct caniot_frame *frame, struct pendq *pq, bool *p_is_er
 		if (resp_type == CANIOT_FRAME_TYPE_READ_ATTRIBUTE) {
 			/* If it is a read attribute response, the key is stored in the
 			 * attribute field */
-			if (frame->attr.key == pq->req_attr) {
+			const uint16_t key = read_le16(frame->buf);
+			if (key == pq->req_attr) {
 				match = true;
 			}
 		}
@@ -744,7 +745,8 @@ is_response_to(const struct caniot_frame *frame, struct pendq *pq, bool *p_is_er
 			is_error = true;
 			/* If it is an error, the key which triggered it is
 			 * stored in the error argument field */
-			if ((frame->err.arg & 0xFFFFlu) == (uint32_t)pq->req_attr) {
+			uint32_t arg_key = read_le32(frame->buf + 4u);
+			if ((uint16_t)arg_key == pq->req_attr) {
 				match = true;
 			}
 		}

@@ -409,8 +409,8 @@ bool z_func_ctrl3(void)
 		  CONFIG_CANIOT_MAX_PENDING_QUERIES - 1U);
 
 	memcpy(&x.resp, &x.req, sizeof(x.req));
-	x.resp.id.query = CANIOT_RESPONSE;
-	x.resp.id.type	= caniot_resp_error_for(x.req.id.type);
+	x.resp.id.query	 = CANIOT_RESPONSE;
+	x.resp.id.type	 = caniot_resp_error_for(x.req.id.type);
 	int32_t err_code = -CANIOT_EHANDLERC;
 	write_le32(x.resp.buf, *(uint32_t *)&err_code);
 	write_le32(x.resp.buf + 4, 0x12345678U);

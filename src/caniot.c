@@ -280,7 +280,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	if (caniot_is_error_frame(frame->id)) {
 		uint32_t err = read_le16(frame->buf);
 		int32_t err2 = *(int32_t *)&err;
-		ret = snprintf(buf, len, ": -%04x", (int16_t)-err2);
+		ret			 = snprintf(buf, len, ": -%04x", (int16_t)-err2);
 		total += ret;
 		buf += ret;
 		len -= ret;
@@ -306,12 +306,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	} else {
 		uint16_t key = read_le16(frame->buf);
 		uint32_t val = read_le32(frame->buf + 2u);
-		ret = snprintf(buf,
-					   len,
-					   "len: %d key: x%02x val: x%04x",
-					   frame->len,
-					   key,
-					   val);
+		ret = snprintf(buf, len, "len: %d key: x%02x val: x%04x", frame->len, key, val);
 		if (ret > (int)len || ret < 0) {
 			return ret;
 		}
@@ -408,8 +403,8 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 	/* Endpoint doesn't matter for attributes */
 	frame->id.endpoint = CANIOT_ENDPOINT_APP;
 
-	frame->id.type	= CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
-	frame->len		= 6u;
+	frame->id.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
+	frame->len	   = 6u;
 	write_le16(frame->buf, key);
 	write_le32(frame->buf + 2u, value);
 

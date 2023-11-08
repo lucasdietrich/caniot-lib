@@ -1085,7 +1085,7 @@ static int handle_req_attribute(struct caniot_device *dev,
 	} else if ((dev->api->custom_attr.read != NULL) &&
 			   (dev->api->custom_attr.write != NULL)) {
 		custom_attr = true;
-		ret = 0;
+		ret			= 0;
 	} else {
 		goto exit;
 	}

@@ -143,7 +143,7 @@ typedef struct {
 struct caniot_attribute {
 	uint16_t key;
 	uint32_t val;
-} __PACKED;
+};
 
 struct caniot_error {
 	int32_t code;
@@ -152,7 +152,7 @@ struct caniot_error {
 	 * - if response is an error to an attribute read or write,
 	 * arg is the attribute key */
 	uint32_t arg;
-} __PACKED;
+};
 
 typedef struct caniot_timestamp {
 	uint32_t sec;  /* Integer part of the timestamp (seconds since epoch) */
@@ -161,11 +161,7 @@ typedef struct caniot_timestamp {
 
 struct caniot_frame {
 	caniot_id_t id;
-	union {
-		unsigned char buf[8];
-		struct caniot_attribute attr;
-		struct caniot_error err;
-	};
+	unsigned char buf[8];
 	uint8_t len;
 
 #if CONFIG_CANIOT_FRAME_TIMESTAMP

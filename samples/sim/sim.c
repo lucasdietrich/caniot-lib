@@ -36,6 +36,16 @@ caniot_frame_t qwrite_attr = {
 	.buf = {0x60, 0x20, 'G', 'B', 'E', 'N'},
 };
 
+caniot_frame_t qread_attr = {
+	.id =
+		{
+			.type  = CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
+			.query = CANIOT_QUERY,
+		},
+	.len = 2u,
+	.buf = {0x60, 0x20},
+};
+
 caniot_frame_t qcommand = {
 	.id =
 		{
@@ -72,6 +82,8 @@ struct timed_frame {
 struct timed_frame timed_frames[] = {
 	{100u, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qtelemetry},
 	{100u, 0U, CANIOT_DID_BROADCAST, 1000u, &qtelemetry},
+	{100u, 0u, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qwrite_attr},
+	{100u, 0u, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qread_attr},
 };
 
 int main(void)
@@ -103,8 +115,12 @@ int main(void)
 			 tf++) {
 
 			if (now >= tf->time) {
-				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
-				tf->time = (uint64_t)-1;
+				int ctrl_err = ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
+				if (ctrl_err >= 0) {
+					tf->time = (uint64_t)-1;
+				} else {
+					printf("Query failed: %d\n", ctrl_err);
+				}
 			}
 		}
 

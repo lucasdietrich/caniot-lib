@@ -91,9 +91,10 @@ int ctrl_Q(uint32_t ctrlid,
 	int ret = -EINVAL;
 
 	if (ctrlid < CONTROLLERS_COUNT) {
-		caniot_controller_query(&controllers[ctrlid], did, frame, timeout);
-
-		ret = 0;
+		ret = caniot_controller_query(&controllers[ctrlid], did, frame, timeout);
+		if (ret < 0) {
+			printf("Query failed: %d\n", ret);
+		}
 	}
 
 	return ret;

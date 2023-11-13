@@ -809,69 +809,30 @@ static void prepare_response(struct caniot_device *dev,
 static void resp_wrap_error(struct caniot_device *dev,
 							struct caniot_frame *resp,
 							const struct caniot_frame *req,
-							int error_code,
+							int32_t error_code,
 							uint32_t *p_error_arg)
 {
 	ASSERT(resp != NULL);
 
 	/* if the error occured during a command or query telemetry,
 	 * then the error frame is a RESPONSE/COMMAND
-
+	 *
 	 * otherwise (if it's an attribute error), error frame is RESPONSE/WRITE_ATTR
+	 *
+	 * Use same endpoint as request, even if it may not be relevant
+	 * (e.g. if the error occured during a attribute request)
 	 */
 	prepare_response(dev, resp, caniot_resp_error_for(req->id.type), req->id.endpoint);
 
-	resp->err.code = (int32_t)error_code;
+	write_le32(resp->buf, *(uint32_t *)&error_code);
 
 	/* Encode the error argument if provided */
 	if (p_error_arg != NULL) {
-		resp->err.arg = *p_error_arg;
-		resp->len	  = 8u;
+		write_le32(resp->buf + 4u, *p_error_arg);
+		resp->len = 8u;
 	} else {
 		resp->len = 4u;
 	}
-}
-
-static int handle_read_attribute(struct caniot_device *dev,
-								 struct caniot_frame *resp,
-								 const struct caniot_attribute *attr)
-{
-	ASSERT(dev != NULL);
-	ASSERT(resp != NULL);
-	ASSERT(attr != NULL);
-
-	int ret;
-	struct attr_ref ref;
-
-	CANIOT_DBG(F("Executing read attribute key = 0x%x\n"), attr->key);
-
-	prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, CANIOT_ENDPOINT_APP);
-
-	ret = attr_resolve(attr->key, &ref);
-
-	if (ret == 0) {
-		/* if standard attribute */
-		ret = attribute_read(dev, &ref, &resp->attr);
-	} else { /* if custom attribute */
-		if (dev->api->custom_attr.read != NULL) {
-			/* temp variable to avoid `-Waddress-of-packed-member` warning */
-			uint32_t tval = (uint32_t)-1;
-			ret			  = dev->api->custom_attr.read(dev, attr->key, &tval);
-			if (ret == 0) {
-				resp->attr.val = tval;
-			}
-		} else {
-			ret = -CANIOT_ENOATTR; /* unsupported custom attribute */
-		}
-	}
-
-	/* finalize response */
-	if (ret == 0) {
-		resp->len	   = 6u;
-		resp->attr.key = attr->key;
-	}
-
-	return ret;
 }
 
 static int write_system_attr(struct caniot_device *dev,
@@ -949,33 +910,6 @@ static int attribute_write(struct caniot_device *dev,
 
 	default:
 		ret = -CANIOT_EWRITEATTR;
-	}
-
-	return ret;
-}
-
-static int handle_write_attribute(struct caniot_device *dev,
-								  const struct caniot_frame *req,
-								  const struct caniot_attribute *attr)
-{
-	ASSERT(dev != NULL);
-	ASSERT(req != NULL);
-	ASSERT(attr != NULL);
-
-	int ret;
-	struct attr_ref ref;
-
-	ret = attr_resolve(attr->key, &ref);
-
-	if (ret == 0) {
-		/* if standard attribute */
-		ret = attribute_write(dev, &ref, &req->attr);
-	} else { /* if custom attribute */
-		if (dev->api->custom_attr.read != NULL) {
-			ret = dev->api->custom_attr.write(dev, attr->key, req->attr.val);
-		} else {
-			ret = -CANIOT_ENOATTR; /* unsupported custom attribute */
-		}
 	}
 
 	return ret;
@@ -1117,6 +1051,90 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	return ret;
 }
 
+static int handle_req_attribute(struct caniot_device *dev,
+								const struct caniot_frame *req,
+								struct caniot_frame *resp,
+								bool do_write,
+								uint16_t *key)
+{
+	ASSERT(dev != NULL);
+	ASSERT(req != NULL);
+	ASSERT(resp != NULL);
+	ASSERT(key != NULL);
+
+	int ret;
+	struct attr_ref ref;
+	struct caniot_attribute attr;
+	bool custom_attr;
+
+	// get attribute key from buffer
+	if (req->len >= 2u) {
+		attr.key = read_le16(req->buf);
+	} else {
+		ret = -CANIOT_EFRAME; // invalid frame (key missing for attribute);
+		goto exit;
+	}
+
+	// copy key to output (so that it can be used in error response)
+	*key = attr.key;
+
+	// Resolve attribute location in the system
+	ret = attr_resolve(attr.key, &ref);
+	if (ret == 0) {
+		custom_attr = false;
+	} else if ((dev->api->custom_attr.read != NULL) &&
+			   (dev->api->custom_attr.write != NULL)) {
+		custom_attr = true;
+		ret			= 0;
+	} else {
+		goto exit;
+	}
+
+	// Write attribute request
+	if (do_write) {
+		if (req->len >= 6u) {
+			attr.val = read_le32(req->buf + 2u);
+		} else {
+			ret = -CANIOT_EFRAME; // invalid frame (value missing for attribute write)
+			goto exit;
+		}
+
+		if (!custom_attr) {
+			// standard attribute
+			ret = attribute_write(dev, &ref, &attr);
+		} else {
+			// custom attribute
+			ret = dev->api->custom_attr.write(dev, attr.key, attr.val);
+		}
+	}
+
+	// Read back attribute value
+	if (ret == 0) {
+		if (!custom_attr) {
+			// standard attribute
+			ret = attribute_read(dev, &ref, &attr);
+		} else {
+			// custom attribute
+			ret = dev->api->custom_attr.read(dev, attr.key, &attr.val);
+		}
+	}
+
+	// Prepare response
+	if (ret == 0) {
+		/* Use same endpoint as request, even if this is meaningless for
+		 * attribute request with current specification of the protocol
+		 */
+		prepare_response(dev, resp, CANIOT_FRAME_TYPE_READ_ATTRIBUTE, req->id.endpoint);
+
+		resp->len = 6u;
+		write_le16(resp->buf, attr.key);
+		write_le32(resp->buf + 2u, attr.val);
+	}
+
+exit:
+	return ret;
+}
+
 int caniot_device_handle_rx_frame(struct caniot_device *dev,
 								  const struct caniot_frame *req,
 								  struct caniot_frame *resp)
@@ -1153,31 +1171,31 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 	}
 
 	case CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE: {
+		uint16_t key;
 		dev->system.received.write_attribute++;
-		ret = handle_write_attribute(dev, req, &req->attr);
-		if (ret == 0) {
-			ret = handle_read_attribute(dev, resp, &req->attr);
-		}
-		if (ret != 0) {
-			error_arg = req->attr.key;
+		ret = handle_req_attribute(dev, req, resp, true, &key);
+		if ((ret != 0) && (ret != -CANIOT_EFRAME)) {
+			error_arg = (uint32_t)key;
 			p_arg	  = &error_arg;
 		}
 		break;
 	}
-	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE:
+	case CANIOT_FRAME_TYPE_READ_ATTRIBUTE: {
+		uint16_t key;
 		dev->system.received.read_attribute++;
-		ret = handle_read_attribute(dev, resp, &req->attr);
-		if (ret != 0) {
-			error_arg = req->attr.key;
+		ret = handle_req_attribute(dev, req, resp, false, &key);
+		if ((ret != 0) && (ret != -CANIOT_EFRAME)) {
+			error_arg = (uint32_t)key;
 			p_arg	  = &error_arg;
 		}
 		break;
+	}
 	}
 
 exit:
 	if (ret != 0) {
 		/* prepare error response */
-		resp_wrap_error(dev, resp, req, ret, p_arg);
+		resp_wrap_error(dev, resp, req, (int32_t)ret, p_arg);
 	}
 
 	return ret;

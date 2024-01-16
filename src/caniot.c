@@ -195,6 +195,7 @@ void caniot_explain_id(caniot_id_t id)
 
 void caniot_explain_frame(const struct caniot_frame *frame)
 {
+#if CANIOT_LOG_LEVEL >= 3
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
@@ -221,6 +222,7 @@ void caniot_explain_frame(const struct caniot_frame *frame)
 				   (FMT_UINT_CAST)(attr.val >> 16u),
 				   (FMT_UINT_CAST)(attr.val & 0xFFFFu));
 	}
+#endif
 }
 
 #if !defined(__AVR__)

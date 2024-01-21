@@ -1110,6 +1110,10 @@ static int handle_req_attribute(struct caniot_device *dev,
 
 	// Read back attribute value
 	if (ret == 0) {
+		
+		// clear value
+		attr.val = 0u;
+
 		if (!custom_attr) {
 			// standard attribute
 			ret = attribute_read(dev, &ref, &attr);

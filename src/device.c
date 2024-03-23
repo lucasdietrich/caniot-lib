@@ -572,6 +572,7 @@ void caniot_print_device_identification(const struct caniot_device *dev)
 	for (uint8_t i = 0u; i < 20u; i++) {
 		CANIOT_INF(F("%02hx"), id.build_commit[i]);
 	}
+	CANIOT_INF(F("\n"));
 #endif
 }
 
@@ -1599,4 +1600,20 @@ bool caniot_device_targeted_class(uint8_t cls, bool ext, bool rtr, uint32_t id)
 
 	const uint16_t cls_filt = caniot_device_get_filter_by_cls(cls);
 	return verify_filter_or_broadcast(id, cls_filt);
+}
+
+uint16_t caniot_attr_key_get_root(uint16_t key)
+{
+	return key & ((ATTR_KEY_SECTION_MASK << ATTR_KEY_SECTION_OFFSET) |
+				  (ATTR_KEY_ATTR_MASK << ATTR_KEY_ATTR_OFFSET));
+}
+
+uint8_t caniot_attr_key_get_part(uint16_t key)
+{
+	return (uint8_t)key & ATTR_KEY_PART_MASK;
+}
+
+enum caniot_device_section caniot_attr_key_get_section(uint16_t key)
+{
+	return (enum caniot_device_section)ATTR_KEY_SECTION_GET(key);
 }

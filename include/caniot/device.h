@@ -466,17 +466,22 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_ATTR_KEY_CONFIG_CLS1_GPIO_MASK_TELEMETRY_ON_CHANGE                        \
 	CANIOT_ATTR_KEY(2, 0x23, 0) // 0x2230
 
-#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT			CANIOT_ATTR_KEY(3, 0x00, 0) // 0x3000
-#define CANIOT_ATTR_KEY_DIAG_LAST_RESET_REASON		CANIOT_ATTR_KEY(3, 0x01, 0) // 0x3001
-#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_UNKNOWN	CANIOT_ATTR_KEY(3, 0x02, 0) // 0x3005
-#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_POWER_ON	CANIOT_ATTR_KEY(3, 0x03, 0) // 0x3002
-#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_WATCHDOG	CANIOT_ATTR_KEY(3, 0x04, 0) // 0x3003
-#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_EXTERNAL	CANIOT_ATTR_KEY(3, 0x05, 0) // 0x3004
+#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT		  CANIOT_ATTR_KEY(3, 0x00, 0) // 0x3000
+#define CANIOT_ATTR_KEY_DIAG_LAST_RESET_REASON	  CANIOT_ATTR_KEY(3, 0x01, 0) // 0x3010
+#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_UNKNOWN  CANIOT_ATTR_KEY(3, 0x02, 0) // 0x3020
+#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_POWER_ON CANIOT_ATTR_KEY(3, 0x03, 0) // 0x3030
+#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_WATCHDOG CANIOT_ATTR_KEY(3, 0x04, 0) // 0x3040
+#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_EXTERNAL CANIOT_ATTR_KEY(3, 0x05, 0) // 0x3050
+#define CANIOT_ATTR_KEY_DIAG_LAST_RUNTIME_UPTIME  CANIOT_ATTR_KEY(3, 0x06, 0) // 0x3060
+#define CANIOT_ATTR_KEY_DIAG_LAST_RUNTIME_UPTIME_TOTAL                                   \
+	CANIOT_ATTR_KEY(3, 0x07, 0)											   // 0x3070
+#define CANIOT_ATTR_KEY_DIAG_LAST_RESET_STREAK_COUNT CANIOT_ATTR_KEY(3, 0x08, 0) // 0x3080
 
 enum caniot_device_section {
 	CANIOT_SECTION_DEVICE_IDENTIFICATION = 0,
 	CANIOT_SECTION_DEVICE_SYSTEM		 = 1,
-	CANIOT_SECTION_DEVICE_CONFIG		 = 2
+	CANIOT_SECTION_DEVICE_CONFIG		 = 2,
+	CANIOT_SECTION_DEVICE_DIAG			 = 3,
 };
 
 struct caniot_device_attribute {
@@ -487,6 +492,39 @@ struct caniot_device_attribute {
 	uint8_t persistent : 1u;
 	enum caniot_device_section section : 2u;
 };
+
+/**
+ * @brief Retrieve the section of the attribute
+ * 
+ * Example:
+ * - caniot_attr_key_get_section(0x3047) gives CANIOT_SECTION_DEVICE_DIAG
+ * 
+ * @param key 
+ * @return uint16_t 
+ */
+enum caniot_device_section caniot_attr_key_get_section(uint16_t key);
+
+/**
+ * @brief Retrieve the attribute root
+ * 
+ * Example:
+ * - caniot_attr_key_get_root(0x3047) gives 0x3040
+ * 
+ * @param key 
+ * @return uint8_t 
+ */
+uint16_t caniot_attr_key_get_root(uint16_t key);
+
+/**
+ * @brief Retrieve the attribute part
+ * 
+ * Example:
+ * - caniot_attr_key_get_part(0x3047) gives 7
+ * 
+ * @param key 
+ * @return uint8_t 
+ */
+uint8_t caniot_attr_key_get_part(uint16_t key);
 
 /**
  * @brief Get attribute name by key

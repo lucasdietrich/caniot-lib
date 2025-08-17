@@ -14,6 +14,8 @@ message(STATUS "$CMAKE_CURRENT_BINARY_DIR : ${CMAKE_CURRENT_BINARY_DIR}")
 
 project(caniotlib VERSION 1.0.0 DESCRIPTION "CANIOT lib")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_BUILD_TYPE Debug)
 
 # add debug symbols

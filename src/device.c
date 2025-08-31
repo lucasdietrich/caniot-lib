@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <caniot/caniot.h>
@@ -675,7 +676,7 @@ static int config_written(struct caniot_device *dev)
 		 */
 		uint32_t prev_sec, new_sec;
 		uint16_t prev_msec, new_msec;
-		dev->driv->get_time(&prev_sec, &prev_msec);
+		dev->driv->get_time(dev->driv_data, &prev_sec, &prev_msec);
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */
 
 		CANIOT_DBG(F("config write\n"));
@@ -684,7 +685,7 @@ static int config_written(struct caniot_device *dev)
 		ret = dev->api->config.on_write(dev);
 
 #if CONFIG_CANIOT_DEVICE_DRIVERS_API
-		dev->driv->get_time(&new_sec, &new_msec);
+		dev->driv->get_time(dev->driv_data, &new_sec, &new_msec);
 
 		const int32_t diff_sec	= new_sec - prev_sec;
 		const int32_t diff_msec = diff_sec * 1000u + new_msec - prev_msec;
@@ -855,9 +856,9 @@ static int write_system_attr(struct caniot_device *dev,
 	if (attr->key == 0x1010U) { /* time */
 		uint32_t prev_sec;
 		uint16_t prev_msec;
-		dev->driv->get_time(&prev_sec, &prev_msec);
+		dev->driv->get_time(dev->driv_data, &prev_sec, &prev_msec);
 		const uint32_t epoch_s = attr->val;
-		dev->driv->set_time(epoch_s);
+		dev->driv->set_time(dev->driv_data, epoch_s);
 
 		const uint32_t diff_s = epoch_s - prev_sec;
 
@@ -926,7 +927,7 @@ static int attribute_write(struct caniot_device *dev,
 #if CONFIG_CANIOT_DEVICE_HANDLE_BLC_SYS_CMD
 static int call_blc_sys_cmd_cb(struct caniot_device *dev, caniot_blc_sys_cmd_t cmd)
 {
-	return call_blc_sys_cmd_cb(dev, cmd);
+	return dev->api->blc_sys_cmd_handler(dev, cmd);
 }
 
 static int handle_blc_sys_cmd(struct caniot_device *dev,
@@ -1043,13 +1044,15 @@ static int build_telemetry_resp(struct caniot_device *dev,
 	}
 
 	CANIOT_DBG(F("Executing telemetry handler (0x%p) for endpoint %d\n"),
-			   (void *)&dev->api->telemetry_handler,
+			   (void *)dev->api->telemetry_handler,
 			   ep);
 
 	/* buffer */
 	ret = dev->api->telemetry_handler(dev, ep, resp->buf, &resp->len);
 	if (ret == 0) {
 		dev->system.sent.telemetry++;
+	} else {
+		CANIOT_WRN(F("Telemetry handler error %d\n"), ret);
 	}
 
 	dev->system.last_telemetry_error = ret;
@@ -1238,12 +1241,15 @@ uint32_t caniot_device_time_until_process(struct caniot_device *dev)
 		remaining = 0; /* Startup attributes not sent yet, process immediately */
 	} else if (prepare_config_read(dev) != 0) {
 		remaining = 1000u; /* default 1 second in case of config read error */
+	} else if (dev->flags.request_telemetry_ep != 0u) {
+		/* If any telemetry endpoint is requested, process immediately */
+		remaining = 0u;
 	} else if (!dev->config->flags.telemetry_periodic_enabled) {
 		remaining = (uint32_t)-1; /* Periodic telemetry disabled */
 	} else {
 		uint32_t sec;
 		uint16_t msec;
-		dev->driv->get_time(&sec, &msec);
+		dev->driv->get_time(dev->driv_data, &sec, &msec);
 		const uint32_t now_ms	   = sec * 1000 + msec;
 		const uint32_t ellapsed_ms = now_ms - dev->system._last_telemetry_ms;
 		CANIOT_DBG(F("now: %u _last_telemetry_ms: %u since last: %u < period: %u "
@@ -1278,7 +1284,7 @@ static uint32_t get_response_delay(struct caniot_device *dev, bool random)
 		uint16_t delay_max = CANIOT_TELEMETRY_DELAY_MAX_DEFAULT_MS;
 
 		uint16_t rdm;
-		dev->driv->entropy((uint8_t *)&rdm, sizeof(rdm));
+		dev->driv->entropy(dev->driv_data, (uint8_t *)&rdm, sizeof(rdm));
 
 		/* get parameters from local configuration if possible */
 		int ret = prepare_config_read(dev);
@@ -1349,7 +1355,7 @@ int caniot_device_process(struct caniot_device *dev)
 
 	/* get current time (ms precision) */
 	uint16_t msec;
-	dev->driv->get_time(&dev->system.time, &msec);
+	dev->driv->get_time(dev->driv_data, &dev->system.time, &msec);
 	dev->system.uptime = dev->system.time - dev->system.start_time;
 
 	/* Periodic telemetry enabled */
@@ -1376,7 +1382,7 @@ int caniot_device_process(struct caniot_device *dev)
 
 	/* received any incoming frame */
 	caniot_clear_frame(&req);
-	ret = dev->driv->recv(&req);
+	ret = dev->driv->recv(dev->driv_data, &req, false);
 
 	/* response delay is not random by default */
 	bool random_delay = false;
@@ -1385,7 +1391,7 @@ int caniot_device_process(struct caniot_device *dev)
 	if (ret == 0) {
 		if (!caniot_device_is_target(caniot_device_get_id(dev), &req)) {
 			dev->system.received.ignored++;
-			CANIOT_ERR(F("Unexpected frame id received: %u\n"));
+			CANIOT_ERR(F("Unexpected frame id received\n"));
 			ret = -CANIOT_EUNEXPECTED;
 		}
 	}
@@ -1456,6 +1462,16 @@ int caniot_device_process(struct caniot_device *dev)
 		for (int8_t ep = CANIOT_ENDPOINT_BOARD_CONTROL; ep >= CANIOT_ENDPOINT_APP; ep--) {
 			if (caniot_device_triggered_telemetry_ep(dev, ep) == true) {
 				ret = build_telemetry_resp(dev, &resp, ep);
+				switch (ret) {
+				case -CANIOT_EHANDLERT:
+					/* If the endpoint has no chanced of being served, just clear the
+					 * trigger */
+					telemetry_trig_clear_ep(dev, ep);
+					break;
+				default:
+					/* keep the endpoint triggered */
+					break;
+				}
 				break;
 			}
 		}
@@ -1474,7 +1490,7 @@ int caniot_device_process(struct caniot_device *dev)
 	}
 
 	/* send response or error frame if configured */
-	ret = dev->driv->send(&resp, get_response_delay(dev, random_delay));
+	ret = dev->driv->send(dev->driv_data, &resp, get_response_delay(dev, random_delay));
 	if (ret == 0) {
 		dev->system.sent.total++;
 
@@ -1498,15 +1514,16 @@ exit:
 	return ret;
 }
 
-void caniot_app_init(struct caniot_device *dev)
+void caniot_device_inner_init(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
+	ASSERT(dev->api != NULL);
 	ASSERT(dev->driv != NULL);
 	ASSERT(dev->driv->get_time != NULL);
 
 	memset(&dev->system, 0x00U, sizeof(dev->system));
 
-	dev->driv->get_time(&dev->system.start_time, NULL);
+	dev->driv->get_time(dev->driv_data, &dev->system.start_time, NULL);
 
 	dev->flags.request_telemetry_ep = 0u;
 	dev->flags.config_dirty			= 1u;
@@ -1523,13 +1540,48 @@ void caniot_app_init(struct caniot_device *dev)
 #endif /* CONFIG_CANIOT_DEVICE_STARTUP_ATTRIBUTES */
 }
 
-void caniot_app_deinit(struct caniot_device *dev)
+int caniot_device_init(struct caniot_device *dev,
+					   const struct caniot_device_id *id,
+					   const struct caniot_device_api *api,
+					   void *api_data,
+					   struct caniot_device_config *config,
+					   const struct caniot_drivers_api *driv,
+					   const void *driv_ctx)
+{
+	if (dev == NULL || api == NULL || id == NULL || config == NULL || driv == NULL ||
+		driv->get_time == NULL) {
+		return -CANIOT_EINVAL;
+	}
+
+	memset(dev, 0x00u, sizeof(*dev));
+
+	dev->identification = id;
+	dev->driv			= driv;
+	dev->driv_data		= (void *)driv_ctx;
+
+	dev->api	  = api;
+	dev->api_data = api_data;
+
+	dev->config = config;
+
+	caniot_device_inner_init(dev);
+
+	return 0;
+}
+
+void caniot_app_inner_deinit(struct caniot_device *dev)
 {
 	ASSERT(dev != NULL);
 
 	dev->flags.request_telemetry_ep = 0u;
 	dev->flags.initialized			= 0u;
 	dev->flags.config_dirty			= 1u;
+}
+
+int caniot_device_deinit(struct caniot_device *dev)
+{
+	caniot_app_inner_deinit(dev);
+	return 0;
 }
 
 #endif /* CONFIG_CANIOT_DEVICE_DRIVERS_API */

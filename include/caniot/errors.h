@@ -15,18 +15,20 @@
 #define CANIOT_ERROR_DEVICE_MASK 0x0080U
 
 typedef enum {
-	CANIOT_OK	  = 0x0000,
-	CANIOT_EINVAL = CANIOT_ERROR_BASE, /* Invalid argument */
-	CANIOT_ENPROC,					   /*  UNPROCESSABLE */
-	CANIOT_ECMD,					   /*  COMMAND */
-	CANIOT_EKEY,					   /*  KEY (read/write-attribute) */
-	CANIOT_ETIMEOUT,				   /*  TIMEOUT */
-	CANIOT_EAGAIN,					   /*  BUSY / EAGAIN */
-	CANIOT_EFMT,					   /*  FORMAT */
-	CANIOT_EHANDLERC,				   /*  UNDEFINED COMMAND HANDLER  */
-	CANIOT_EHANDLERT,				   /*  UNDEFINED TELEMETRY HANDLER */
-	CANIOT_ETELEMETRY,				   /*  TELEMETRY */
-	CANIOT_EUNEXPECTED,				   /*  Unexpected frame */
+	CANIOT_OK = 0x0000,
+
+	/* Invalid argument */
+	CANIOT_EINVAL = CANIOT_ERROR_BASE,
+	CANIOT_ENPROC,		/*  UNPROCESSABLE */
+	CANIOT_ECMD,		/*  COMMAND */
+	CANIOT_EKEY,		/*  KEY (read/write-attribute) */
+	CANIOT_ETIMEOUT,	/*  TIMEOUT */
+	CANIOT_EAGAIN,		/*  BUSY / EAGAIN */
+	CANIOT_EFMT,		/*  FORMAT */
+	CANIOT_EHANDLERC,	/*  UNDEFINED COMMAND HANDLER  */
+	CANIOT_EHANDLERT,	/*  UNDEFINED TELEMETRY HANDLER */
+	CANIOT_ETELEMETRY,	/*  TELEMETRY */
+	CANIOT_EUNEXPECTED, /*  Unexpected frame */
 
 	CANIOT_EEP,	   /*  ENDPOINT */
 	CANIOT_ECMDEP, /*  ILLEGAL COMMAND, BROADCAST TO ALL ENDPOINTS */
@@ -90,6 +92,8 @@ typedef enum {
  * @return caniot_error_t
  */
 caniot_error_t caniot_interpret_error(int err, bool *forwarded);
+
+const char *caniot_error_to_string(caniot_error_t err);
 
 static inline int caniot_forward_device_error(int cterr)
 {

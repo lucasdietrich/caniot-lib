@@ -29,11 +29,11 @@ int ctrl_Q(uint32_t ctrlid,
 		   uint32_t timeout);
 int ctrl_C(uint32_t ctrlid, uint8_t handle, bool suppress);
 
-int can_send(const struct caniot_frame *frame, uint32_t delay_ms);
-int can_recv(struct caniot_frame *frame);
+int can_send(void *ctx, const struct caniot_frame *frame, uint32_t delay_ms);
+int can_recv(void *ctx, struct caniot_frame *frame, bool blocking);
 
 void get_time(uint32_t *sec, uint16_t *ms);
-void vtime_get(uint32_t *sec, uint16_t *ms);
+void vtime_get(void *ctx, uint32_t *sec, uint16_t *ms);
 void vtime_inc(uint32_t inc_ms);
 static inline void vtime_inc_const(void)
 {

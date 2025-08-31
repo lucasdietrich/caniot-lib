@@ -330,7 +330,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 /*____________________________________________________________________________*/
 
-caniot_did_t caniot_frame_get_did(struct caniot_frame *frame)
+caniot_did_t caniot_frame_get_did(const struct caniot_frame *frame)
 {
 	ASSERT(frame != NULL);
 
@@ -556,4 +556,70 @@ caniot_error_t caniot_interpret_error(int err, bool *forwarded)
 	}
 
 	return (caniot_error_t)(err);
+}
+
+#define EE(_err, _description, _details)                                                 \
+	case _err:                                                                           \
+		str = _details " (" _description ")";                                            \
+		break;
+
+const char *caniot_error_to_string(caniot_error_t err)
+{
+	const char *str = NULL;
+
+	switch (err) {
+		EE(CANIOT_OK, "OK", "No error");
+		EE(CANIOT_EINVAL, "EINVAL", "Invalid argument");
+		EE(CANIOT_ENPROC, "ENPROC", "Unprocessable");
+		EE(CANIOT_ECMD, "ECMD", "Command error");
+		EE(CANIOT_EKEY, "EKEY", "Key error (read/write-attribute)");
+		EE(CANIOT_ETIMEOUT, "ETIMEOUT", "Timeout");
+		EE(CANIOT_EAGAIN, "EAGAIN", "Busy / Try again");
+		EE(CANIOT_EFMT, "EFMT", "Format error");
+		EE(CANIOT_EHANDLERC, "EHANDLERC", "Undefined command handler");
+		EE(CANIOT_EHANDLERT, "EHANDLERT", "Undefined telemetry handler");
+		EE(CANIOT_ETELEMETRY, "ETELEMETRY", "Telemetry error");
+		EE(CANIOT_EUNEXPECTED, "EUNEXPECTED", "Unexpected frame");
+		EE(CANIOT_EEP, "EEP", "Endpoint error");
+		EE(CANIOT_ECMDEP, "ECMDEP", "Illegal command, broadcast to all endpoints");
+		EE(CANIOT_ENOINIT, "ENOINIT", "Not initialized");
+		EE(CANIOT_EDRIVER, "EDRIVER", "Driver error");
+		EE(CANIOT_EAPI, "EAPI", "API error");
+		EE(CANIOT_EKEYSECTION, "EKEYSECTION", "Unknown attributes section");
+		EE(CANIOT_EKEYATTR, "EKEYATTR", "Unknown attribute");
+		EE(CANIOT_EKEYPART, "EKEYPART", "Unknown attribute part");
+		EE(CANIOT_ENOATTR, "ENOATTR", "No attribute");
+		EE(CANIOT_ECLSATTR,
+		   "ECLSATTR",
+		   "Class attribute not accessible for current device");
+		EE(CANIOT_EREADONLY, "EREADONLY", "Read-only");
+		EE(CANIOT_ENULL, "ENULL", "Null pointer");
+		EE(CANIOT_ENULLDRV, "ENULLDRV", "Null driver");
+		EE(CANIOT_ENULLAPI, "ENULLAPI", "Null API");
+		EE(CANIOT_ENULLID, "ENULLID", "Null ID");
+		EE(CANIOT_ENULLDEV, "ENULLDEV", "Null device");
+		EE(CANIOT_ENULLCFG, "ENULLCFG", "Null config");
+		EE(CANIOT_ENULLCTRL, "ENULLCTRL", "Null controller");
+		EE(CANIOT_ENULLCTRLCB, "ENULLCTRLCB", "Null controller callback");
+		EE(CANIOT_EROATTR, "EROATTR", "Read-only attribute");
+		EE(CANIOT_EREADATTR, "EREADATTR", "Query read attribute");
+		EE(CANIOT_EWRITEATTR, "EWRITEATTR", "Query write attribute");
+		EE(CANIOT_EENOCB, "EENOCB", "No event handler");
+		EE(CANIOT_EECB, "EECB", "ECCB error");
+		EE(CANIOT_EPQALLOC, "EPQALLOC", "Pending query allocation");
+		EE(CANIOT_ENOPQ, "ENOPQ", "No pending query");
+		EE(CANIOT_ENOHANDLE, "ENOHANDLE", "No handler");
+		EE(CANIOT_EDEVICE, "EDEVICE", "Device error");
+		EE(CANIOT_EFRAME, "EFRAME", "Frame error (not a valid CANIOT frame)");
+		EE(CANIOT_EMLFRM, "EMLFRM", "Malformed frame");
+		EE(CANIOT_ECLASS, "ECLASS", "Invalid class");
+		EE(CANIOT_ECFG, "ECFG", "Invalid configuration");
+		EE(CANIOT_EHYST, "EHYST", "Invalid hysteresis structure");
+		EE(CANIOT_ENOTSUP, "ENOTSUP", "Not supported");
+		EE(CANIOT_ENIMPL, "ENIMPL", "Not implemented");
+	default:
+		str = "<Unknown Error>";
+	}
+
+	return str;
 }

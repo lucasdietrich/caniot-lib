@@ -5,4 +5,4 @@ target_sources(sample_attr PUBLIC ${SOURCES})
 
 target_include_directories(sample_attr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 
-target_link_libraries(sample_attr caniotlib)
+target_link_libraries(sample_attr caniot)

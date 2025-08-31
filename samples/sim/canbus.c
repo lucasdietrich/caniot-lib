@@ -37,8 +37,9 @@ struct {
  * @param delay_ms ignored, frame is always without delay
  * @return int 0 on success
  */
-int can_send(const struct caniot_frame *frame, uint32_t delay_ms)
+int can_send(void *ctx, const struct caniot_frame *frame, uint32_t delay_ms)
 {
+	(void)ctx;
 	int ret = -CANIOT_EINVAL;
 
 	(void)delay_ms;
@@ -72,8 +73,12 @@ int can_send(const struct caniot_frame *frame, uint32_t delay_ms)
  * @param frame Should point to a valid memory space
  * @return int 0 on success
  */
-int can_recv(struct caniot_frame *frame)
+int can_recv(void *ctx, struct caniot_frame *frame, bool blocking)
 {
+	(void)ctx;
+
+	if (blocking == true) return -CANIOT_ENOTSUP;
+
 	int ret = -CANIOT_EINVAL;
 
 	if (frame != NULL) {

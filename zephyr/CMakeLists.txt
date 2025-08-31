@@ -12,6 +12,15 @@ if(CONFIG_CANIOT_LIB)
 
 	zephyr_include_directories(${lib}/include)
 	
+	set(sources 	"${lib}/src/caniot.c"
+					"${lib}/src/classes.c"
+					"${lib}/src/controller.c"
+					"${lib}/src/datatype.c"
+					"${lib}/src/device.c"
+					"${lib}/src/fake.c"
+					"${lib}/src/phys.c"
+		)
+
 	FILE(GLOB_RECURSE sources ${lib}/src/*.c*)
 	zephyr_library_sources(${sources})
 

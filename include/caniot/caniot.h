@@ -158,25 +158,10 @@ struct caniot_error {
 	uint32_t arg;
 };
 
-typedef struct caniot_timestamp {
-	uint32_t sec;  /* Integer part of the timestamp (seconds since epoch) */
-	uint16_t frac; /* Fractional part of the timestamp (milliseconds) */
-} caniot_timestamp_t;
-
 struct caniot_frame {
 	caniot_id_t id;
 	unsigned char buf[8];
 	uint8_t len;
-
-#if CONFIG_CANIOT_FRAME_TIMESTAMP
-	/**
-	 * @brief Timestamp of the frame.
-	 *
-	 * This should be set by the driver when the frame is received (with
-	 * driv->recv()). This variable is transparent to the library.
-	 */
-	caniot_timestamp_t timestamp;
-#endif
 };
 
 typedef struct caniot_frame caniot_frame_t;
@@ -184,13 +169,13 @@ typedef struct caniot_frame caniot_frame_t;
 struct caniot_drivers_api {
 
 	/* Fill the buffer with random data */
-	void (*entropy)(uint8_t *buf, size_t len);
+	void (*entropy)(void *ctx, uint8_t *buf, size_t len);
 
 	/* Get the current time in seconds (since epoch) */
-	void (*get_time)(uint32_t *sec, uint16_t *ms);
+	void (*get_time)(void *ctx, uint32_t *sec, uint16_t *ms);
 
 	/* Set the current time in seconds (since epoch) */
-	void (*set_time)(uint32_t sec);
+	void (*set_time)(void *ctx, uint32_t sec);
 
 	/**
 	 * @brief Send a CANIOT frame
@@ -201,18 +186,31 @@ struct caniot_drivers_api {
 	 *
 	 * Return 0 on success, any other value on error.
 	 */
-	int (*send)(const struct caniot_frame *frame, uint32_t delay_ms);
+	int (*send)(void *ctx, const struct caniot_frame *frame, uint32_t delay_ms);
 
 	/**
 	 * @brief Receive a CANIOT frame.
 	 *
+	 * @param ctx Context pointer
+	 * @param frame Pointer to the frame to receive
+	 * @param blocking Whether to block until a frame is available
+	 *
 	 * Note:
-	 * 	- Should not block.
 	 * 	- Should be thread safe (in a multi-threaded environment).
 	 *
 	 * Return 0 on success, -CANIOT_EAGAIN if no frame is available.
 	 */
-	int (*recv)(struct caniot_frame *frame);
+	int (*recv)(void *ctx, struct caniot_frame *frame, bool blocking);
+
+#if CONFIG_CANIOT_POSIX
+	/**
+	 * @brief Get the file descriptor for the driver.
+	 *
+	 * @param ctx Context pointer
+	 * @return int File descriptor or -1 on error
+	 */
+	int (*get_fd)(void *ctx);
+#endif
 };
 
 // Return if deviceid is broadcast
@@ -270,7 +268,7 @@ int caniot_build_query_write_attribute(struct caniot_frame *frame,
 									   uint16_t key,
 									   uint32_t value);
 
-caniot_did_t caniot_frame_get_did(struct caniot_frame *frame);
+caniot_did_t caniot_frame_get_did(const struct caniot_frame *frame);
 
 void caniot_frame_set_did(struct caniot_frame *frame, caniot_did_t did);
 

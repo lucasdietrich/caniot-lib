@@ -70,7 +70,8 @@ void init_controllers(void)
 
 	for (ctrl = controllers; ctrl < controllers + ARRAY_SIZE(controllers); ctrl++) {
 		ctrl->driv = &driv;
-		caniot_controller_driv_init(ctrl, &driv, ctrl_event_cb, NULL);
+		caniot_controller_driv_init(
+			ctrl, &driv, NULL, ctrl_event_cb, NULL, CANIOT_CONTROLLER_FLAG_NONE);
 	}
 }
 

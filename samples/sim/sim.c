@@ -104,7 +104,7 @@ int main(void)
 		/* Get current time */
 		uint32_t sec;
 		uint16_t ms;
-		vtime_get(&sec, &ms);
+		vtime_get(NULL, &sec, &ms);
 		const uint64_t now = (uint64_t)sec * 1000U + ms;
 		char chr;
 		ssize_t ret;
@@ -151,7 +151,7 @@ int main(void)
 		last_time			 = now;
 
 		/* Process a single frame */
-		ret = can_recv(&frame);
+		ret = can_recv(NULL, &frame, false);
 		if (ret == 0U) {
 			// caniot_show_frame(&frame);
 			caniot_explain_frame(&frame);

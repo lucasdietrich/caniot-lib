@@ -337,7 +337,8 @@ bool z_func_ctrl1(void)
 	x.desired.status   = CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT;
 	x.desired.resp_set = false;
 
-	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	CHECK_0(
+		caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x, CANIOT_CONTROLLER_FLAG_NONE));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
 	CHECK_STRICTLY_POSITIVE(
 		x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
@@ -367,7 +368,8 @@ bool z_func_ctrl2(void)
 	x.desired.status   = CANIOT_CONTROLLER_EVENT_STATUS_OK;
 	x.desired.resp_set = true;
 
-	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	CHECK_0(
+		caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x, CANIOT_CONTROLLER_FLAG_NONE));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
 	CHECK_STRICTLY_POSITIVE(
 		x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
@@ -400,7 +402,8 @@ bool z_func_ctrl3(void)
 	x.desired.status   = CANIOT_CONTROLLER_EVENT_STATUS_ERROR;
 	x.desired.resp_set = true;
 
-	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	CHECK_0(
+		caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x, CANIOT_CONTROLLER_FLAG_NONE));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
 	CHECK_STRICTLY_POSITIVE(
 		x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
@@ -437,7 +440,8 @@ bool z_func_ctrl4(void)
 	x.desired.status   = CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED;
 	x.desired.resp_set = false;
 
-	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	CHECK_0(
+		caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x, CANIOT_CONTROLLER_FLAG_NONE));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
 	CHECK_STRICTLY_POSITIVE(
 		x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));
@@ -468,7 +472,8 @@ bool z_func_dev0(void)
 	x.desired.status   = CANIOT_CONTROLLER_EVENT_STATUS_OK;
 	x.desired.resp_set = true;
 
-	CHECK_0(caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x));
+	CHECK_0(
+		caniot_controller_init(&x.ctrl, z_func_ctrl_cb, &x, CANIOT_CONTROLLER_FLAG_NONE));
 	caniot_build_query_telemetry(&x.req, CANIOT_ENDPOINT_BOARD_CONTROL);
 	CHECK_STRICTLY_POSITIVE(
 		x.handle = caniot_controller_query_register(&x.ctrl, x.did, &x.req, 1000U));

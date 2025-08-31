@@ -151,9 +151,11 @@ struct caniot_device {
 	struct caniot_device_config *config;
 
 	const struct caniot_device_api *api;
+	void *api_data;
 
 #if CONFIG_CANIOT_DEVICE_DRIVERS_API
 	const struct caniot_drivers_api *driv;
+	void *driv_data;
 #endif
 
 #if CONFIG_CANIOT_DEVICE_STARTUP_ATTRIBUTES
@@ -235,36 +237,36 @@ struct caniot_device_api {
 
 /**
  * @brief Log the device identification
- * 
- * @param dev 
+ *
+ * @param dev
  */
 void caniot_print_device_identification(const struct caniot_device *dev);
 
 /**
  * @brief Read the first 4 bytes of the device identification
- * 
- * @param dev 
+ *
+ * @param dev
  */
 uint32_t caniot_read_rom_build_commit(const struct caniot_device *dev);
 
 /**
  * @brief Mark the device configuration as dirty
- * 
- * @param dev 
+ *
+ * @param dev
  */
 void caniot_device_config_mark_dirty(struct caniot_device *dev);
 
 /**
  * @brief Clear device system statistics
- * 
- * @param dev 
- * @return int 
+ *
+ * @param dev
+ * @return int
  */
 int caniot_device_system_reset(struct caniot_device *dev);
 
 /**
  * @brief Handle incoming CANIOT frame
- * 
+ *
  * @param dev device
  * @param req Incoming frame
  * @param resp Response frame
@@ -275,19 +277,20 @@ int caniot_device_handle_rx_frame(struct caniot_device *dev,
 								  struct caniot_frame *resp);
 
 /**
- * @brief Returns the device caniot ID 
- * @param dev 
- * @return caniot_did_t 
+ * @brief Returns the device caniot ID
+ * @param dev
+ * @return caniot_did_t
  */
 caniot_did_t caniot_device_get_id(struct caniot_device *dev);
 
 /**
- * @brief Returns the time in milliseconds until the next process function should 
+ * @brief Returns the time in milliseconds until the next process function should
  * be called.
  * The device can be put to sleep until this time.
- * 
- * @param dev 
- * @return uint32_t 
+ *
+ * @param dev
+ * @return uint32_t Milliseconds until next process, otherwise U32_MAX if no process is
+ * needed
  */
 uint32_t caniot_device_time_until_process(struct caniot_device *dev);
 
@@ -390,9 +393,19 @@ bool caniot_device_targeted_class(uint8_t cls, bool ext, bool rtr, uint32_t id);
 
 /*____________________________________________________________________________*/
 
-void caniot_app_init(struct caniot_device *dev);
+int caniot_device_init(struct caniot_device *dev,
+					   const struct caniot_device_id *id,
+					   const struct caniot_device_api *api,
+					   void *api_data,
+					   struct caniot_device_config *config,
+					   const struct caniot_drivers_api *driv,
+					   const void *driv_ctx);
 
-void caniot_app_deinit(struct caniot_device *dev);
+int caniot_device_deinit(struct caniot_device *dev);
+
+void caniot_device_inner_init(struct caniot_device *dev);
+
+void caniot_app_inner_deinit(struct caniot_device *dev);
 
 /**
  * @brief Receive incoming CANIOT message if any and handle it
@@ -404,40 +417,40 @@ int caniot_device_process(struct caniot_device *dev);
 
 /**
  * @brief Return whether the device time has been synced
- * 
- * @param dev 
- * @return true 
- * @return false 
+ *
+ * @param dev
+ * @return true
+ * @return false
  */
 bool caniot_device_time_synced(struct caniot_device *dev);
 
 /**
  * @brief Request the device to send telemetry for the given endpoint
- * 
- * @param dev 
- * @param ep 
+ *
+ * @param dev
+ * @param ep
  */
 void caniot_device_trigger_telemetry_ep(struct caniot_device *dev, caniot_endpoint_t ep);
 
 /**
  * @brief Request the device to immediately send configured periodic telemetry
- * 
- * @param dev 
+ *
+ * @param dev
  */
 void caniot_device_trigger_periodic_telemetry(struct caniot_device *dev);
 
 /**
  * @brief Returns whether the device has triggered telemetry for the given endpoint
- * 
- * @param dev 
+ *
+ * @param dev
  */
 bool caniot_device_triggered_telemetry_ep(struct caniot_device *dev,
 										  caniot_endpoint_t ep);
 
 /**
  * @brief Returns whether the device has triggered telemetry for any endpoint
- * 
- * @param dev 
+ *
+ * @param dev
  */
 bool caniot_device_triggered_telemetry_any(struct caniot_device *dev);
 
@@ -559,7 +572,7 @@ int caniot_device_verify(struct caniot_device *dev);
 #define CANIOT_ATTR_KEY_DIAG_LAST_RUNTIME_UPTIME_TOTAL                                   \
 	CANIOT_ATTR_KEY(3, 0x07, 0)													 // 0x3070
 #define CANIOT_ATTR_KEY_DIAG_LAST_RESET_STREAK_COUNT CANIOT_ATTR_KEY(3, 0x08, 0) // 0x3080
-#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_BROWN_OUT CANIOT_ATTR_KEY(3, 0x09, 0) // 0x3090
+#define CANIOT_ATTR_KEY_DIAG_RESET_COUNT_BROWN_OUT	 CANIOT_ATTR_KEY(3, 0x09, 0) // 0x3090
 
 #define CANIOT_ATTR_KEY_DIAG_BOOT_SIGNAL CANIOT_ATTR_KEY(3, 0x10, 0) // 0x3100
 

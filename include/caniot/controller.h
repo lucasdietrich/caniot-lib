@@ -80,6 +80,11 @@ struct caniot_pendq {
 	uint64_t notified;
 
 	/**
+	 * @brief Timeout for the query in milliseconds
+	 */
+	uint32_t timeout;
+
+	/**
 	 * @brief User context
 	 *
 	 * Set using caniot_controller_query_user_data_set() function
@@ -169,6 +174,11 @@ typedef struct {
 	uint8_t handle;
 
 	/**
+	 * @brief Duration of the query in milliseconds
+	 */
+	uint32_t duration;
+
+	/**
 	 * @brief Pointer to the response frame if status is:
 	 * - CANIOT_CONTROLLER_EVENT_STATUS_OK
 	 * - CANIOT_CONTROLLER_EVENT_STATUS_ERROR
@@ -240,6 +250,8 @@ struct caniot_discovery_params {
 	} data;
 };
 
+#define CANIOT_CONTROLLER_FLAG_NONE (0u)
+
 struct caniot_controller {
 	struct {
 		/* Pool of queries to be allocated */
@@ -280,7 +292,13 @@ struct caniot_controller {
 	 * caniot_controller_driv_init()
 	 */
 	const struct caniot_drivers_api *driv;
+
+	/* Driver data */
+	void *driv_data;
 #endif
+
+	/* Controller configuration flags */
+	uint8_t flags;
 };
 
 typedef struct caniot_controller caniot_controller_t;
@@ -295,21 +313,25 @@ typedef struct caniot_controller caniot_controller_t;
  */
 int caniot_controller_init(struct caniot_controller *ctrl,
 						   caniot_controller_event_cb_t cb,
-						   void *user_data);
+						   void *user_data,
+						   uint8_t flags);
 
 /**
  * @brief Initialize a controller, provide functions API, cb and user data
  *
  * @param ctrl
  * @param driv Driver API to directly send/receive frames get current time, etc.
+ * @param driv_ctx
  * @param cb
  * @param user_data
  * @return int
  */
 int caniot_controller_driv_init(struct caniot_controller *ctrl,
 								const struct caniot_drivers_api *driv,
+								const void *driv_ctx,
 								caniot_controller_event_cb_t cb,
-								void *user_data);
+								void *user_data,
+								uint8_t flags);
 
 /**
  * @brief Deinitialize a controller

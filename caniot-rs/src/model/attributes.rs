@@ -1,6 +1,6 @@
 use num_derive::FromPrimitive;
 
-use super::ProtocolError;
+use crate::ProtocolError;
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, FromPrimitive)]

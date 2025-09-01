@@ -1,26 +1,14 @@
 use thiserror::Error;
 
-pub mod attributes;
 pub mod controller;
-pub mod datatypes;
 pub mod device;
-pub mod did;
 pub mod driver;
-pub mod error;
 pub mod frame;
-pub mod payload;
-pub mod sys_control;
-pub mod types;
 pub mod utils;
+pub mod model;
 
-#[cfg(test)]
-mod attributes_test;
-
-#[cfg(test)]
-mod sys_control_test;
-
-#[cfg(test)]
-mod datatypes_test;
+pub use model::*;
+pub use driver::*;
 
 #[derive(Error, Debug)]
 pub enum ProtocolError {

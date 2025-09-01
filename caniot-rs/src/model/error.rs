@@ -7,7 +7,7 @@ pub struct FailCode {
 }
 
 impl FailCode {
-    pub unsafe fn new_unchecked(code: u32) -> Self {
+    pub(crate) unsafe fn new_unchecked(code: u32) -> Self {
         FailCode {
             code: unsafe { NonZeroU32::new_unchecked(code) },
         }

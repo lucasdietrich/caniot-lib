@@ -1,6 +1,6 @@
 use num::FromPrimitive;
 
-use crate::datatypes::{TS, TSP};
+use super::datatypes::{TS, TSP};
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct SysCtrl {

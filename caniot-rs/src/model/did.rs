@@ -26,7 +26,7 @@ impl DeviceId {
         sub_id: 0x7,
     };
 
-    pub unsafe fn new_unchecked(class: u8, sub_id: u8) -> Self {
+    pub(crate) unsafe fn new_unchecked(class: u8, sub_id: u8) -> Self {
         DeviceId { class, sub_id }
     }
 
@@ -38,7 +38,7 @@ impl DeviceId {
         }
     }
 
-    pub unsafe fn new_from_raw_unchecked(did: u8) -> Self {
+    pub(crate) unsafe fn new_from_raw_unchecked(did: u8) -> Self {
         unsafe { Self::new_unchecked(did & 0x7, (did >> 3) & 0x7) }
     }
 

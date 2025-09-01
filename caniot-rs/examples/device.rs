@@ -3,7 +3,7 @@ use std::{os::fd::AsFd, vec};
 use caniot::{
     device::{
         Device, StaticConfig,
-        implementation::{ApiError, DeviceApi},
+        implementation::{DeviceApi, TelemetryError},
     },
     driver::LinuxDriver,
     types::Endpoint,
@@ -14,16 +14,16 @@ use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
 pub struct Sensor;
 
 impl DeviceApi for Sensor {
-    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, ApiError> {
+    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, TelemetryError> {
         info!("Sensor telemetry request for endpoint {:?}", ep);
 
         match ep {
             Endpoint::ApplicationDefault => Ok(vec![0x01, 0x02, 0x03]),
-            _ => Err(ApiError::NotSupported),
+            _ => Err(TelemetryError::NotSupported),
         }
     }
 
-    fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), ApiError> {
+    fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), TelemetryError> {
         info!(
             "Sensor command received for endpoint {:?} with data {:?}",
             ep, data

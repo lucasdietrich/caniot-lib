@@ -1,4 +1,4 @@
-use crate::datatypes::{Temperature, Xps};
+use super::datatypes::{Temperature, Xps};
 
 #[test]
 fn set_xps() {

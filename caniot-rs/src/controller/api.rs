@@ -1,6 +1,6 @@
 use crate::controller::implementation::ControllerApi;
 
-pub(super) struct ControllerApiWrapper {
+pub(crate) struct ControllerApiWrapper {
     data: Box<Box<dyn ControllerApi>>, // Box<dyn ..> is a fat pointer, so wrap it again in a Box
 }
 

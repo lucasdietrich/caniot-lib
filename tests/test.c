@@ -534,6 +534,149 @@ bool z_func_datatype_tmperature(void)
 	return temperature16 == temperature16_2;
 }
 
+struct test_case_blc0_telemetry {
+	struct caniot_blc0_telemetry t;
+
+	bool oc1;
+	bool oc2;
+	bool rl1;
+	bool rl2;
+	bool in1;
+	bool in2;
+	bool in3;
+	bool in4;
+	bool poc1;
+	bool poc2;
+	bool prl1;
+	bool prl2;
+
+	uint16_t temp_int;
+	uint16_t temp_ext1;
+	uint16_t temp_ext2;
+	uint16_t temp_ext3;
+};
+
+static struct test_case_blc0_telemetry tests_blc0_telemetry[] = {
+	{{0u, 0u, 0u, 0u, 0u, 0u},
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 false,
+	 0u,
+	 0u,
+	 0u,
+	 0u,
+	 0u},
+	{{0xFFu, 0xFu, 0u, 0u, 0u, 0u},
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 true,
+	 0u,
+	 0u,
+	 0u,
+	 0u},
+};
+
+bool z_func_build_caniot_blc0_telemetry(void)
+{
+	bool success = true;
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests_blc0_telemetry); i++) {
+		struct test_case_blc0_telemetry *tc = &tests_blc0_telemetry[i];
+		struct caniot_blc0_telemetry t;
+		caniot_blc0_telemetry_defaults(&t);
+
+		success &=
+			caniot_blc0_telemetry_set_temperature(&t, CANIOT_TEMP_INT, tc->temp_int) == 0;
+		success &= caniot_blc0_telemetry_set_temperature(
+					   &t, CANIOT_TEMP_EXT1, tc->temp_ext1) == 0;
+		success &= caniot_blc0_telemetry_set_temperature(
+					   &t, CANIOT_TEMP_EXT2, tc->temp_ext2) == 0;
+		success &= caniot_blc0_telemetry_set_temperature(
+					   &t, CANIOT_TEMP_EXT3, tc->temp_ext3) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_OC1, tc->oc1) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_OC2, tc->oc2) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_RELAY1, tc->rl1) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_RELAY2, tc->rl2) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_IN1, tc->in1) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_IN2, tc->in2) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_IN3, tc->in3) == 0;
+		success &= caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_IN4, tc->in4) == 0;
+		success &=
+			caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_OC1_PULSE_ACTIVE, tc->poc1) == 0;
+		success &=
+			caniot_blc0_telemetry_set_io(&t, CANIOT_BLC0_OC2_PULSE_ACTIVE, tc->poc2) == 0;
+		success &= caniot_blc0_telemetry_set_io(
+					   &t, CANIOT_BLC0_RELAY1_PULSE_ACTIVE, tc->prl1) == 0;
+		success &= caniot_blc0_telemetry_set_io(
+					   &t, CANIOT_BLC0_RELAY2_PULSE_ACTIVE, tc->prl2) == 0;
+
+		uint16_t ttemp;
+		success &=
+			caniot_blc0_telemetry_get_temperature(&t, CANIOT_TEMP_INT, &ttemp) == 0;
+		success &= ttemp == tc->temp_int;
+		success &=
+			caniot_blc0_telemetry_get_temperature(&t, CANIOT_TEMP_EXT1, &ttemp) == 0;
+		success &= ttemp == tc->temp_ext1;
+		success &=
+			caniot_blc0_telemetry_get_temperature(&t, CANIOT_TEMP_EXT2, &ttemp) == 0;
+		success &= ttemp == tc->temp_ext2;
+		success &=
+			caniot_blc0_telemetry_get_temperature(&t, CANIOT_TEMP_EXT3, &ttemp) == 0;
+		success &= ttemp == tc->temp_ext3;
+
+		bool tstate;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_OC1, &tstate) == 0;
+		success &= tstate == tc->oc1;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_OC2, &tstate) == 0;
+		success &= tstate == tc->oc2;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_RELAY1, &tstate) == 0;
+		success &= tstate == tc->rl1;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_RELAY2, &tstate) == 0;
+		success &= tstate == tc->rl2;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_IN1, &tstate) == 0;
+		success &= tstate == tc->in1;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_IN2, &tstate) == 0;
+		success &= tstate == tc->in2;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_IN3, &tstate) == 0;
+		success &= tstate == tc->in3;
+		success &= caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_IN4, &tstate) == 0;
+		success &= tstate == tc->in4;
+		success &=
+			caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_OC1_PULSE_ACTIVE, &tstate) == 0;
+		success &= tstate == tc->poc1;
+		success &=
+			caniot_blc0_telemetry_get_io(&t, CANIOT_BLC0_OC2_PULSE_ACTIVE, &tstate) == 0;
+		success &= tstate == tc->poc2;
+		success &= caniot_blc0_telemetry_get_io(
+					   &t, CANIOT_BLC0_RELAY1_PULSE_ACTIVE, &tstate) == 0;
+		success &= tstate == tc->prl1;
+		success &= caniot_blc0_telemetry_get_io(
+					   &t, CANIOT_BLC0_RELAY2_PULSE_ACTIVE, &tstate) == 0;
+		success &= tstate == tc->prl2;
+
+		if (!success) break;
+	}
+
+	return success;
+}
+
 struct test_case_blc0 {
 	const uint8_t buf[9u];
 	struct caniot_blc0_command cmd;
@@ -573,7 +716,7 @@ bool z_func_decode_caniot_blc0_command(void)
 		struct test_case_blc0 *tc = &tests_blc0[i];
 
 		struct caniot_blc0_command cmd;
-		caniot_blc0_command_init(&cmd);
+		caniot_blc0_command_defaults(&cmd);
 
 		success &= caniot_blc0_command_get(&cmd, tc->buf, 2u) == 0;
 		success &= cmd.coc1 == tc->cmd.coc1;
@@ -645,7 +788,7 @@ bool z_func_decode_caniot_blc1_command(void)
 		struct test_case_blc1 *tc = &tests_blc1[i];
 
 		struct caniot_blc1_command cmd;
-		caniot_blc1_command_init(&cmd);
+		caniot_blc1_command_defaults(&cmd);
 
 		success &= caniot_blc1_command_get(&cmd, tc->buf, 7u) == 0;
 		success &= cmd.gpio_commands[0] == tc->cmd.gpio_commands[0];
@@ -715,6 +858,7 @@ const struct test tests[] = {
 	TEST(z_func_encode_caniot_blc0_command, 1u),
 	TEST(z_func_encode_caniot_blc1_command, 1u),
 	TEST(z_func_decode_caniot_blc1_command, 1u),
+	TEST(z_func_build_caniot_blc0_telemetry, 1u),
 };
 
 int main(void)

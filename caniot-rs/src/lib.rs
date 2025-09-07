@@ -4,11 +4,11 @@ pub mod controller;
 pub mod device;
 pub mod driver;
 pub mod frame;
-pub mod utils;
 pub mod model;
+pub mod utils;
 
-pub use model::*;
 pub use driver::*;
+pub use model::*;
 
 #[derive(Error, Debug)]
 pub enum ProtocolError {

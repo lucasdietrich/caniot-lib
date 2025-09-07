@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "caniot-rs","caniot-sys"]
+members = [ "caniot-emu", "caniot-rs","caniot-sys"]
 
 [profile.release]
 debug = true

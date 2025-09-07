@@ -7,7 +7,9 @@ pub struct FailCode {
 }
 
 impl FailCode {
-    pub(crate) unsafe fn new_unchecked(code: u32) -> Self {
+    pub const EINVAL: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EINVAL) };
+
+    pub(crate) const unsafe fn new_unchecked(code: u32) -> Self {
         FailCode {
             code: unsafe { NonZeroU32::new_unchecked(code) },
         }
@@ -18,6 +20,10 @@ impl FailCode {
             code if code >= 0 => Ok(code as u32),
             code => Err(unsafe { FailCode::new_unchecked((-code) as u32) }),
         }
+    }
+
+    pub fn to_errno(ret: i32) -> Result<(), FailCode> {
+        Self::to_result(ret).map(|_| ())
     }
 
     pub fn is_eagain(&self) -> bool {

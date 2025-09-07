@@ -75,6 +75,8 @@ typedef enum {
 	CANIOT_XPS_PULSE_CANCEL,
 } caniot_complex_digital_cmd_t;
 
+#define caniot_xps_t caniot_complex_digital_cmd_t
+
 typedef enum {
 	CANIOT_HEATER_NONE			   = 0,
 	CANIOT_HEATER_COMFORT		   = 1,
@@ -159,6 +161,10 @@ int16_t caniot_dt_T10_to_T16(uint16_t T);
 /* constants */
 #define CANIOT_DT_T16_MIN ((int16_t)-2800)
 #define CANIOT_DT_T16_MAX ((int16_t)7200)
+
+#define CANIOT_DT_T16_MASK ((int16_t)0x7FFF)
+#define CANIOT_DT_T10_MASK ((uint16_t)0x03FFU)
+#define CANIOT_DT_T8_MASK  ((uint8_t)0xFFU)
 
 #define CANIOT_DT_T16_INVALID ((int16_t)INT16_MAX)
 #define CANIOT_DT_T10_INVALID ((uint16_t)0x3FFU)

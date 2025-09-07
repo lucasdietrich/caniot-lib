@@ -44,8 +44,15 @@ const CONF: &[&str] = &[
     "-DCONFIG_CANIOT_POSIX=1",
 ];
 
+const OPAQUE_TYPES: &[&str] = &[
+    "caniot_blc0_telemetry",
+    "caniot_blc0_command",
+    "caniot_blc1_telemetry",
+    "caniot_blc1_command",
+];
+
 fn bindgen() {
-    let bindings = bindgen::Builder::default()
+    let mut bindings = bindgen::Builder::default()
         .layout_tests(false)
         .use_core()
         .formatter(bindgen::Formatter::Rustfmt)
@@ -55,7 +62,14 @@ fn bindgen() {
         .clang_arg("-I../include")
         .allowlist_item("CANIOT.*")
         .allowlist_item("linux_driver_api_ptr")
-        .allowlist_item("dummy_driver_api_ptr");
+        .allowlist_item("dummy_driver_api_ptr")
+        .derive_eq(true)
+        .derive_partialeq(true)
+        .layout_tests(true);
+
+    for opaque_type in OPAQUE_TYPES {
+        bindings = bindings.opaque_type(*opaque_type);
+    }
 
     let bindings = HEADERS_WORLD
         .iter()

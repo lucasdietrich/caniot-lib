@@ -879,10 +879,14 @@ static void pendq_handle_broadcast_resp(struct caniot_controller *ctrl,
 	 * per device */
 	if (pq->notified & (1U << device_id)) {
 		/* Already notified for this device, ignore ... */
-		DBG("broacast pq, device %u already notified, notified: %lu \n", device_id, pq->notified);
+		DBG("broacast pq, device %u already notified, notified: %lu \n",
+			device_id,
+			pq->notified);
 		return;
 	} else {
-		DBG("broacast pq, device %u not notified yet, notified: %lu \n", device_id, pq->notified);
+		DBG("broacast pq, device %u not notified yet, notified: %lu \n",
+			device_id,
+			pq->notified);
 		pq->notified |= (1U << device_id);
 	}
 

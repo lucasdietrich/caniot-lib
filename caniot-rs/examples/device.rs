@@ -1,6 +1,10 @@
-use std::{os::fd::AsFd, vec};
+use std::os::fd::AsFd;
 
 use caniot::{
+    class::{
+        class0::{self, IO},
+        llpayload::LLPayload,
+    },
     device::{
         Device, StaticConfig,
         implementation::{DeviceApi, TelemetryError},
@@ -17,8 +21,12 @@ impl DeviceApi for Sensor {
     fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, TelemetryError> {
         info!("Sensor telemetry request for endpoint {:?}", ep);
 
+        let mut telem = class0::Telemetry::default();
+
+        telem.set_io(IO::Input3, true).unwrap();
+
         match ep {
-            Endpoint::ApplicationDefault => Ok(vec![0x01, 0x02, 0x03]),
+            Endpoint::ApplicationDefault => Ok(telem.serialize().unwrap()),
             _ => Err(TelemetryError::NotSupported),
         }
     }

@@ -5,6 +5,7 @@ use caniot_sys as ll;
 pub enum TelemetryError {
     Invalid = ll::caniot_error_t::CANIOT_EINVAL as isize,
     NotSupported = ll::caniot_error_t::CANIOT_ENOTSUP as isize,
+    Frame = ll::caniot_error_t::CANIOT_EFRAME as isize,
 }
 
 impl From<TelemetryError> for FailCode {

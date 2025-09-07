@@ -1,19 +1,7 @@
+#include <string.h>
+
 #include <caniot/caniot_private.h>
 #include <caniot/classes.h>
-
-void caniot_blc0_command_init(struct caniot_blc0_command *cmd)
-{
-	ASSERT(cmd != NULL);
-
-	memset(cmd, 0x00U, sizeof(struct caniot_blc0_command));
-}
-
-void caniot_blc1_command_init(struct caniot_blc1_command *cmd)
-{
-	ASSERT(cmd != NULL);
-
-	memset(cmd, 0x00U, sizeof(struct caniot_blc1_command));
-}
 
 int caniot_blc0_telemetry_ser(const struct caniot_blc0_telemetry *t,
 							  uint8_t *buf,
@@ -62,6 +50,176 @@ int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t,
 	return 0;
 }
 
+int caniot_blc0_telemetry_defaults(struct caniot_blc0_telemetry *t)
+{
+	if (!t) return -CANIOT_EINVAL;
+
+	memset(t, 0x00U, sizeof(struct caniot_blc0_telemetry));
+
+	t->dio				= 0x00u;
+	t->pdio				= 0x00u;
+	t->int_temperature	= CANIOT_DT_T10_INVALID;
+	t->ext_temperature	= CANIOT_DT_T10_INVALID;
+	t->ext_temperature2 = CANIOT_DT_T10_INVALID;
+	t->ext_temperature3 = CANIOT_DT_T10_INVALID;
+
+	return 0;
+}
+
+int caniot_blc0_telemetry_get_temperature(const struct caniot_blc0_telemetry *t,
+										  caniot_temp_sens_t sensor,
+										  uint16_t *temperature)
+{
+	if (!t || !temperature) return -CANIOT_EINVAL;
+
+	switch (sensor) {
+	case CANIOT_TEMP_INT:
+		*temperature = t->int_temperature;
+		break;
+	case CANIOT_TEMP_EXT1:
+		*temperature = t->ext_temperature;
+		break;
+	case CANIOT_TEMP_EXT2:
+		*temperature = t->ext_temperature2;
+		break;
+	case CANIOT_TEMP_EXT3:
+		*temperature = t->ext_temperature3;
+		break;
+	default:
+		*temperature = CANIOT_DT_T10_INVALID;
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	if (*temperature == CANIOT_DT_T10_INVALID) return -1;
+
+	return 0;
+}
+
+int caniot_blc0_telemetry_set_temperature(struct caniot_blc0_telemetry *t,
+										  caniot_temp_sens_t sensor,
+										  uint16_t temperature)
+{
+	if (!t) return -CANIOT_EINVAL;
+	if ((temperature & CANIOT_DT_T10_MASK) == CANIOT_DT_T10_INVALID)
+		return -CANIOT_EINVAL;
+
+	switch (sensor) {
+	case CANIOT_TEMP_INT:
+		t->int_temperature = temperature;
+		break;
+	case CANIOT_TEMP_EXT1:
+		t->ext_temperature = temperature;
+		break;
+	case CANIOT_TEMP_EXT2:
+		t->ext_temperature2 = temperature;
+		break;
+	case CANIOT_TEMP_EXT3:
+		t->ext_temperature3 = temperature;
+		break;
+	default:
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	return 0;
+}
+
+int caniot_blc0_telemetry_clear_temperature(struct caniot_blc0_telemetry *t,
+											caniot_temp_sens_t sensor)
+{
+	if (!t) return -CANIOT_EINVAL;
+
+	switch (sensor) {
+	case CANIOT_TEMP_INT:
+		t->int_temperature = CANIOT_DT_T10_INVALID;
+		break;
+	case CANIOT_TEMP_EXT1:
+		t->ext_temperature = CANIOT_DT_T10_INVALID;
+		break;
+	case CANIOT_TEMP_EXT2:
+		t->ext_temperature2 = CANIOT_DT_T10_INVALID;
+		break;
+	case CANIOT_TEMP_EXT3:
+		t->ext_temperature3 = CANIOT_DT_T10_INVALID;
+		break;
+	default:
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	return 0;
+}
+
+int caniot_blc0_telemetry_get_io(const struct caniot_blc0_telemetry *t,
+								 caniot_blc0_io_t io,
+								 bool *state)
+{
+	if (!t || !state) return -CANIOT_EINVAL;
+
+	switch (io) {
+	case CANIOT_BLC0_OC1:
+	case CANIOT_BLC0_OC2:
+	case CANIOT_BLC0_RELAY1:
+	case CANIOT_BLC0_RELAY2:
+	case CANIOT_BLC0_IN1:
+	case CANIOT_BLC0_IN2:
+	case CANIOT_BLC0_IN3:
+	case CANIOT_BLC0_IN4:
+		*state = (t->dio & (1u << io)) ? true : false;
+		break;
+	case CANIOT_BLC0_OC1_PULSE_ACTIVE:
+	case CANIOT_BLC0_OC2_PULSE_ACTIVE:
+	case CANIOT_BLC0_RELAY1_PULSE_ACTIVE:
+	case CANIOT_BLC0_RELAY2_PULSE_ACTIVE:
+		*state = (t->pdio & (1u << (io - 8u))) ? true : false;
+		break;
+	default:
+		*state = false;
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	return 0;
+}
+
+int caniot_blc0_telemetry_set_io(struct caniot_blc0_telemetry *t,
+								 caniot_blc0_io_t io,
+								 bool state)
+{
+	if (!t) return -CANIOT_EINVAL;
+
+	switch (io) {
+	case CANIOT_BLC0_OC1:
+	case CANIOT_BLC0_OC2:
+	case CANIOT_BLC0_RELAY1:
+	case CANIOT_BLC0_RELAY2:
+	case CANIOT_BLC0_IN1:
+	case CANIOT_BLC0_IN2:
+	case CANIOT_BLC0_IN3:
+	case CANIOT_BLC0_IN4:
+		if (state)
+			t->dio |= (1u << io);
+		else
+			t->dio &= ~(1u << io);
+		break;
+	case CANIOT_BLC0_OC1_PULSE_ACTIVE:
+	case CANIOT_BLC0_OC2_PULSE_ACTIVE:
+	case CANIOT_BLC0_RELAY1_PULSE_ACTIVE:
+	case CANIOT_BLC0_RELAY2_PULSE_ACTIVE:
+		if (state)
+			t->pdio |= (1u << (io - 8u));
+		else
+			t->pdio &= ~(1u << (io - 8u));
+		break;
+	default:
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	return 0;
+}
+
 int caniot_blc0_command_ser(const struct caniot_blc0_command *t,
 							uint8_t *buf,
 							uint8_t *len)
@@ -98,6 +256,75 @@ int caniot_blc0_command_get(struct caniot_blc0_command *t,
 	return 0;
 }
 
+int caniot_blc0_command_defaults(struct caniot_blc0_command *c)
+{
+	if (!c) return -CANIOT_EINVAL;
+
+	memset(c, 0x00U, sizeof(struct caniot_blc0_command));
+
+	c->coc1 = CANIOT_XPS_NONE;
+	c->coc2 = CANIOT_XPS_NONE;
+	c->crl1 = CANIOT_XPS_NONE;
+	c->crl2 = CANIOT_XPS_NONE;
+
+	return 0;
+}
+
+int caniot_blc0_command_set_xps(struct caniot_blc0_command *cmd,
+								caniot_blc0_io_t io,
+								caniot_complex_digital_cmd_t xps)
+{
+	if (!cmd) return -CANIOT_EINVAL;
+	
+	switch (io) {
+	case CANIOT_BLC0_OC1:
+		cmd->coc1 = xps;
+		break;
+	case CANIOT_BLC0_OC2:
+		cmd->coc2 = xps;
+		break;
+	case CANIOT_BLC0_RELAY1:
+		cmd->crl1 = xps;
+		break;
+	case CANIOT_BLC0_RELAY2:
+		cmd->crl2 = xps;
+		break;
+	default:
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	return 0;
+}
+
+int caniot_blc0_command_get_xps(const struct caniot_blc0_command *cmd,
+								caniot_blc0_io_t io,
+								caniot_complex_digital_cmd_t *xps)
+{
+	if (!cmd || !xps) return -CANIOT_EINVAL;
+
+	switch (io) {
+	case CANIOT_BLC0_OC1:
+		*xps = cmd->coc1;
+		break;
+	case CANIOT_BLC0_OC2:
+		*xps = cmd->coc2;
+		break;
+	case CANIOT_BLC0_RELAY1:
+		*xps = cmd->crl1;
+		break;
+	case CANIOT_BLC0_RELAY2:
+		*xps = cmd->crl2;
+		break;
+	default:
+		*xps = CANIOT_XPS_NONE;
+		return -CANIOT_EINVAL;
+		break;
+	}
+
+	return 0;
+}
+
 static void z_blc1_cmd_set_xps(uint8_t *buf, uint8_t n, caniot_complex_digital_cmd_t xps)
 {
 	const uint8_t msb_index	   = n * 3u;
@@ -130,10 +357,10 @@ static caniot_complex_digital_cmd_t z_blc1_cmd_parse_xps(const uint8_t *buf, uin
 	return xps;
 }
 
-int caniot_blc1_cmd_set_xps(caniot_complex_digital_cmd_t xps,
-							uint8_t *buf,
-							uint8_t len,
-							uint8_t n)
+int caniot_blc1_cmd_buf_set_xps(caniot_complex_digital_cmd_t xps,
+								uint8_t *buf,
+								uint8_t len,
+								uint8_t n)
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!buf || n >= CANIOT_CLASS1_IO_COUNT || len >= CANIOT_BLC1_COMMAND_BUF_LEN)
@@ -147,10 +374,10 @@ int caniot_blc1_cmd_set_xps(caniot_complex_digital_cmd_t xps,
 	return 0;
 }
 
-int caniot_blc1_cmd_parse_xps(caniot_complex_digital_cmd_t *xps,
-							  const uint8_t *buf,
-							  uint8_t len,
-							  uint8_t n)
+int caniot_blc1_cmd_buf_parse_xps(caniot_complex_digital_cmd_t *xps,
+								  const uint8_t *buf,
+								  uint8_t len,
+								  uint8_t n)
 {
 #if CONFIG_CANIOT_CHECKS
 	if (!buf || !xps || n >= CANIOT_CLASS1_IO_COUNT ||
@@ -222,6 +449,25 @@ int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t,
 	return 0;
 }
 
+int caniot_blc1_telemetry_defaults(struct caniot_blc1_telemetry *t)
+{
+	if (!t) return -CANIOT_EINVAL;
+
+	memset(t, 0x00U, sizeof(struct caniot_blc1_telemetry));
+
+	t->pcpd				= 0x00u;
+	t->eio				= 0x00u;
+	t->pb0				= 0x00u;
+	t->pe0				= 0x00u;
+	t->pe1				= 0x00u;
+	t->int_temperature	= CANIOT_DT_T10_INVALID;
+	t->ext_temperature	= CANIOT_DT_T10_INVALID;
+	t->ext_temperature2 = CANIOT_DT_T10_INVALID;
+	t->ext_temperature3 = CANIOT_DT_T10_INVALID;
+
+	return 0;
+}
+
 int caniot_blc1_command_ser(const struct caniot_blc1_command *t,
 							uint8_t *buf,
 							uint8_t *len)
@@ -253,6 +499,19 @@ int caniot_blc1_command_get(struct caniot_blc1_command *t,
 
 	for (uint8_t i = 0u; i < CANIOT_CLASS1_IO_COUNT; i++) {
 		t->gpio_commands[i] = z_blc1_cmd_parse_xps(buf, i);
+	}
+
+	return 0;
+}
+
+int caniot_blc1_command_defaults(struct caniot_blc1_command *c)
+{
+	if (!c) return -CANIOT_EINVAL;
+
+	memset(c, 0x00U, sizeof(struct caniot_blc1_command));
+
+	for (uint8_t i = 0u; i < CANIOT_CLASS1_IO_COUNT; i++) {
+		c->gpio_commands[i] = CANIOT_XPS_NONE;
 	}
 
 	return 0;

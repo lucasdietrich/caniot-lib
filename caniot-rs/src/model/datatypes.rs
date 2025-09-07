@@ -1,3 +1,5 @@
+use caniot_sys as ll;
+
 use core::{
     cmp::{max, min},
     fmt::{Debug, Display},
@@ -5,6 +7,8 @@ use core::{
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
+
+use crate::error::FailCode;
 
 #[derive(Clone, Copy, PartialEq, Default)]
 pub struct Temperature(Option<i16>);
@@ -150,6 +154,37 @@ pub enum Xps {
     PulseOn = 5,
     PulseOff = 6,
     PulseCancel = 7,
+}
+
+impl From<ll::caniot_complex_digital_cmd_t::Type> for Xps {
+    fn from(value: ll::caniot_complex_digital_cmd_t::Type) -> Self {
+        match value {
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_NONE => Xps::None,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_SET_ON => Xps::SetOn,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_SET_OFF => Xps::SetOff,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_TOGGLE => Xps::Toggle,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_RESET => Xps::Reset,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_PULSE_ON => Xps::PulseOn,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_PULSE_OFF => Xps::PulseOff,
+            ll::caniot_complex_digital_cmd_t::CANIOT_XPS_PULSE_CANCEL => Xps::PulseCancel,
+            _ => panic!("Invalid caniot_complex_digital_cmd_t value"),
+        }
+    }
+}
+
+impl From<Xps> for ll::caniot_complex_digital_cmd_t::Type {
+    fn from(value: Xps) -> Self {
+        match value {
+            Xps::None => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_NONE,
+            Xps::SetOn => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_SET_ON,
+            Xps::SetOff => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_SET_OFF,
+            Xps::Toggle => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_TOGGLE,
+            Xps::Reset => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_RESET,
+            Xps::PulseOn => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_PULSE_ON,
+            Xps::PulseOff => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_PULSE_OFF,
+            Xps::PulseCancel => ll::caniot_complex_digital_cmd_t::CANIOT_XPS_PULSE_CANCEL,
+        }
+    }
 }
 
 impl Xps {

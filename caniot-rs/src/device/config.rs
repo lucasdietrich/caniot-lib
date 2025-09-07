@@ -19,7 +19,7 @@ impl StaticConfig {
 
         config
             .flags
-            .set_telemetry_endpoint(Endpoint::ApplicationDefault.into());
+            .set_telemetry_endpoint(Endpoint::BoardControl.into());
         config.flags.set_telemetry_periodic_enabled(1);
 
         config.timezone = 3600;

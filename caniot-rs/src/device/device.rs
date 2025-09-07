@@ -13,24 +13,24 @@ use crate::{
 };
 use caniot_sys as ll;
 
-pub struct Device<D: Driver> {
+pub struct Device<D: Driver, A: DeviceApi + 'static> {
     device: ll::caniot_device,
     config: Box<StaticConfig>,
     identity: Identity,
-    api: DeviceApiWrapper, // addr shouldn't move, device has pointers which reference api handlers
+    api: DeviceApiWrapper<A>, // addr shouldn't move, device has pointers which reference api handlers
     driver: D,
 }
 
-unsafe impl<D: Driver> Send for Device<D> {}
-unsafe impl<D: Driver> Sync for Device<D> {}
+unsafe impl<D: Driver, A: DeviceApi + 'static> Send for Device<D, A> {}
+unsafe impl<D: Driver, A: DeviceApi + 'static> Sync for Device<D, A> {}
 
-impl<D: Driver> Device<D> {
-    pub fn init<A: DeviceApi + 'static>(
+impl<D: Driver, A: DeviceApi + 'static> Device<D, A> {
+    pub fn init(
         mut driver: D,
         did: u8,
         api: A,
         config: StaticConfig,
-    ) -> Result<Device<D>, FailCode> {
+    ) -> Result<Device<D, A>, FailCode> {
         let mut device: MaybeUninit<ll::caniot_device> = MaybeUninit::uninit();
         let mut config = Box::new(config);
         let identity = Identity::new(did);
@@ -93,14 +93,14 @@ impl<D: Driver> Device<D> {
 }
 
 #[cfg(feature = "std")]
-impl<D: Driver + AsRawFd> AsRawFd for Device<D> {
+impl<D: Driver + AsRawFd, A: DeviceApi + 'static> AsRawFd for Device<D, A> {
     fn as_raw_fd(&self) -> RawFd {
         self.driver.as_raw_fd()
     }
 }
 
 #[cfg(feature = "std")]
-impl<D: Driver + AsFd> AsFd for Device<D> {
+impl<D: Driver + AsFd, A: DeviceApi + 'static> AsFd for Device<D, A> {
     fn as_fd(&self) -> BorrowedFd<'_> {
         self.driver.as_fd()
     }

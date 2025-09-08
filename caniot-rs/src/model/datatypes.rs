@@ -98,7 +98,7 @@ impl Temperature {
 
     #[cfg(feature = "std")]
     pub fn random_full_range() -> Self {
-        let rand = rand::random::<u16>() % Self::VALUE_U10_MAX_VALID;
+        let rand = (rand::random::<u16>() % (Self::VALUE_U10_MAX_VALID - 1)) + 1;
         Temperature::from_raw_u10(rand)
     }
 

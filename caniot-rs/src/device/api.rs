@@ -132,14 +132,18 @@ impl<A: DeviceApi + 'static> DeviceApiWrapper<A> {
         }
     }
 
-    pub fn get_api(&self) -> NonNull<ll::caniot_device_api> {
+    pub fn as_mut(&mut self) -> &mut A {
+        &mut self.data
+    }
+
+    pub fn get_api_vtable(&self) -> NonNull<ll::caniot_device_api> {
         unsafe {
             NonNull::new_unchecked(self.callbacks.as_ref() as *const ll::caniot_device_api
                 as *mut ll::caniot_device_api)
         }
     }
 
-    pub fn get_data(&mut self) -> *mut ::core::ffi::c_void {
+    pub fn get_api_data(&mut self) -> *mut ::core::ffi::c_void {
         self.data.as_mut() as *mut A as *mut ::core::ffi::c_void
     }
 }

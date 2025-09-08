@@ -4,13 +4,9 @@ use caniot::{
     class::{
         class0::{self, IO},
         llpayload::LLPayload,
-    },
-    device::{
-        Device, StaticConfig,
-        implementation::{DeviceApi, TelemetryError},
-    },
-    driver::LinuxDriver,
-    types::Endpoint,
+    }, device::{
+        implementation::DeviceApi, Device, StaticConfig
+    }, did::DeviceId, driver::LinuxDriver, error::FailCode, types::Endpoint
 };
 use log::{debug, error, info, warn};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
@@ -18,7 +14,7 @@ use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
 pub struct Sensor;
 
 impl DeviceApi for Sensor {
-    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, TelemetryError> {
+    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, FailCode> {
         info!("Sensor telemetry request for endpoint {:?}", ep);
 
         let mut telem = class0::Telemetry::default();
@@ -27,11 +23,11 @@ impl DeviceApi for Sensor {
 
         match ep {
             Endpoint::ApplicationDefault => Ok(telem.serialize().unwrap()),
-            _ => Err(TelemetryError::NotSupported),
+            _ => Err(FailCode::ENOTSUP),
         }
     }
 
-    fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), TelemetryError> {
+    fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), FailCode> {
         info!(
             "Sensor command received for endpoint {:?} with data {:?}",
             ep, data
@@ -49,16 +45,16 @@ fn main() {
     let config1 = StaticConfig::new();
     let driver1 = LinuxDriver::init(DEV).expect("Failed to initialize Linux driver");
 
-    let mut device1 =
-        Device::init(driver1, 8, sensor1, config1).expect("Failed to initialize device");
+    let mut device1 = Device::init(driver1, DeviceId::try_from(8).unwrap(), sensor1, config1)
+        .expect("Failed to initialize device");
     device1.request_endpoint_telemetry(Endpoint::ApplicationDefault);
 
     let sensor2 = Sensor;
     let config2 = StaticConfig::new();
     let driver2 = LinuxDriver::init(DEV).expect("Failed to initialize Linux driver");
 
-    let mut device2 =
-        Device::init(driver2, 10, sensor2, config2).expect("Failed to initialize device");
+    let mut device2 = Device::init(driver2, DeviceId::try_from(10).unwrap(), sensor2, config2)
+        .expect("Failed to initialize device");
     device2.request_endpoint_telemetry(Endpoint::ApplicationDefault);
 
     let handle = std::thread::spawn(move || {

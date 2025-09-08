@@ -7,6 +7,7 @@ use crate::{
     device::{
         api::DeviceApiWrapper, config::StaticConfig, identity::Identity, implementation::DeviceApi,
     },
+    did::DeviceId,
     driver::Driver,
     error::FailCode,
     types::Endpoint,
@@ -27,7 +28,7 @@ unsafe impl<D: Driver, A: DeviceApi + 'static> Sync for Device<D, A> {}
 impl<D: Driver, A: DeviceApi + 'static> Device<D, A> {
     pub fn init(
         mut driver: D,
-        did: u8,
+        did: DeviceId,
         api: A,
         config: StaticConfig,
     ) -> Result<Device<D, A>, FailCode> {
@@ -39,8 +40,8 @@ impl<D: Driver, A: DeviceApi + 'static> Device<D, A> {
             ll::caniot_device_init(
                 device.as_mut_ptr(),
                 identity.as_ref(),
-                api.get_api().as_ptr(),
-                api.get_data(),
+                api.get_api_vtable().as_ptr(),
+                api.get_api_data(),
                 config.as_mut().as_mut(),
                 driver.get_api().as_ptr(),
                 driver.get_data(),
@@ -61,7 +62,7 @@ impl<D: Driver, A: DeviceApi + 'static> Device<D, A> {
     //     &mut self.device
     // }
 
-    pub fn as_ptr(&self) -> *const ll::caniot_device {
+    fn as_ptr(&self) -> *const ll::caniot_device {
         &self.device
     }
 
@@ -89,6 +90,10 @@ impl<D: Driver, A: DeviceApi + 'static> Device<D, A> {
         loop {
             self.run_once()?;
         }
+    }
+
+    pub fn get_api_mut(&mut self) -> &mut A {
+        self.api.as_mut()
     }
 }
 

@@ -26,11 +26,11 @@ impl DeviceId {
         sub_id: 0x7,
     };
 
-    pub(crate) unsafe fn new_unchecked(class: u8, sub_id: u8) -> Self {
+    pub(crate) const unsafe fn new_unchecked(class: u8, sub_id: u8) -> Self {
         DeviceId { class, sub_id }
     }
 
-    pub fn new(class: u8, sub_id: u8) -> Result<Self, ProtocolError> {
+    pub const fn new(class: u8, sub_id: u8) -> Result<Self, ProtocolError> {
         if class > 0x7 || sub_id > 0x7 {
             Err(ProtocolError::DeviceIdCreationError)
         } else {

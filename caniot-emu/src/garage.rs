@@ -2,18 +2,13 @@ use std::time::{Duration, Instant};
 
 use caniot::{
     class::{
-        TempSensType,
-        class0::{self, IO},
-        llpayload::LLPayload,
-    },
-    datatypes::{Temperature, Xps},
-    device::implementation::{DeviceApi, TelemetryError},
-    types::Endpoint,
+        class0::{self, IO}, llpayload::LLPayload, TempSensType
+    }, datatypes::{Temperature, Xps}, device::implementation::DeviceApi, error::FailCode, types::Endpoint
 };
 use expirable::Expirable;
 use log::debug;
 
-use crate::Node;
+use crate::NodeApi;
 
 #[derive(Default, Debug)]
 enum Door {
@@ -64,23 +59,27 @@ impl Door {
         }
     }
 
-    fn update_state(&mut self, now: &Instant) {
+    // Returns whether the state was updated
+    fn update_state(&mut self, now: &Instant) -> bool {
         debug!("Updating state {:?}", self);
         match self {
             Door::Opening(Some(start)) => {
                 if *now - *start >= Self::OPENNING_DURATION {
                     debug!("Door opened");
                     *self = Door::Open;
+                    return true;
                 }
             }
             Door::Closing(Some(start)) => {
                 if *now - *start >= Self::CLOSING_DURATION {
                     debug!("Door closed");
                     *self = Door::Closed;
+                    return true;
                 }
             }
             _ => (),
         }
+        false
     }
 
     fn is_open(&self) -> bool {
@@ -112,71 +111,60 @@ impl Default for GarageController {
     }
 }
 
-impl Node for GarageController {
-    fn next_timeout(&self, now: &Instant) -> Option<Duration> {
+impl NodeApi for GarageController {
+    fn app_next_timeout(&self, now: &Instant) -> Option<Duration> {
         [&self.left_door, &self.right_door].iter().ttl(now)
     }
 
-    fn process(&mut self, now: &Instant) -> Option<Endpoint> {
-        self.left_door.update_state(now);
-        self.right_door.update_state(now);
-        Some(Endpoint::BoardControl)
+    fn app_process(&mut self, now: &Instant) -> Option<Endpoint> {
+        let mut state_changed = false;
+        state_changed |= self.left_door.update_state(now);
+        state_changed |= self.right_door.update_state(now);
+        match state_changed {
+            true => Some(Endpoint::BoardControl),
+            false => None,
+        }
     }
 }
 
 impl DeviceApi for GarageController {
-    fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), TelemetryError> {
+    fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), FailCode> {
         if !matches!(ep, Endpoint::BoardControl) {
-            return Err(TelemetryError::NotSupported);
+            return Err(FailCode::ENOTSUP);
         }
 
-        let command = class0::Command::try_from_raw(data).map_err(|_| TelemetryError::Frame)?;
+        let command =
+            class0::Command::try_from_raw(&data[0..2])?;
 
-        if command.get_io_xps(IO::Relay1) == Ok(Xps::PulseOn) {
+        if command.get_io_xps(IO::Relay1)? == Xps::PulseOn {
             self.left_door.pulse_relay();
         }
 
-        if command.get_io_xps(IO::Relay2) == Ok(Xps::PulseOn) {
+        if command.get_io_xps(IO::Relay2)? == Xps::PulseOn {
             self.right_door.pulse_relay();
         }
 
         Ok(())
     }
 
-    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, TelemetryError> {
+    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, FailCode> {
         if !matches!(ep, Endpoint::BoardControl) {
-            return Err(TelemetryError::NotSupported);
+            return Err(FailCode::ENOTSUP);
         }
-        let mut telemetry = class0::Telemetry::default();
+        let mut t = class0::Telemetry::default();
 
-        telemetry
-            .set_io(IO::Input1, true)
-            .expect("Failed to set IO");
-        telemetry
-            .set_io(IO::Input2, self.gate_open)
-            .expect("Failed to set IO");
-        telemetry
-            .set_io(IO::Input3, self.left_door.is_open())
-            .expect("Failed to set IO");
-        telemetry
-            .set_io(IO::Input4, self.right_door.is_open())
-            .expect("Failed to set IO");
-        telemetry
-            .set_temperature(
-                TempSensType::BoardSensor,
-                Temperature::random_full_range().to_celsius().unwrap(),
-            )
-            .expect("Failed to set temperature");
-        telemetry
-            .clear_temperature(TempSensType::ExternalSensor(0))
-            .unwrap();
-        telemetry
-            .clear_temperature(TempSensType::ExternalSensor(1))
-            .unwrap();
-        telemetry
-            .clear_temperature(TempSensType::ExternalSensor(2))
-            .unwrap();
+        t.set_io(IO::Input1, true)?;
+        t.set_io(IO::Input2, self.gate_open)?;
+        t.set_io(IO::Input3, self.left_door.is_open())?;
+        t.set_io(IO::Input4, self.right_door.is_open())?;
+        t.set_temperature(
+            TempSensType::BoardSensor,
+            Temperature::random_full_range().to_celsius().unwrap(),
+        )?;
+        t.clear_temperature(TempSensType::ExternalSensor(0))?;
+        t.clear_temperature(TempSensType::ExternalSensor(1))?;
+        t.clear_temperature(TempSensType::ExternalSensor(2))?;
 
-        Ok(telemetry.serialize().unwrap())
+        Ok(t.serialize().unwrap())
     }
 }

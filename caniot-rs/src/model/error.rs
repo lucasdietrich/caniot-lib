@@ -8,6 +8,11 @@ pub struct FailCode {
 
 impl FailCode {
     pub const EINVAL: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EINVAL) };
+    pub const EAGAIN: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EAGAIN) };
+    pub const ENOTSUP: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_ENOTSUP) };
+    pub const EFRAME: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EFRAME) };
+    pub const ENOATTR: Self =
+        unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_ENOATTR) };
 
     pub(crate) const unsafe fn new_unchecked(code: u32) -> Self {
         FailCode {

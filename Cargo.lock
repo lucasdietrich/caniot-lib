@@ -87,6 +87,7 @@ dependencies = [
  "expirable",
  "log",
  "nix",
+ "num",
  "simple_logger",
 ]
 

@@ -10,10 +10,11 @@ expirable = { git = "https://github.com/lucasdietrich/expirable-rs.git", rev = "
 
 nix = { version = "0.30.1", features = ["poll"] }
 simple_logger = "5.0.0"
+num = "0.4.3"
 
 [dev-dependencies]
 simple_logger = "5.0.0"
 
 [[bin]]
-name = "garage"
-path = "nodes/garage.rs"
+name = "emu"
+path = "nodes/emu.rs"

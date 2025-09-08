@@ -90,8 +90,12 @@ impl<'a> ControllerEvent<'a> {
                             let payload = Frame::from_ll_unchecked((*inner).response);
                             QueryResult::Error { payload }
                         }
-                        ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT => QueryResult::Timeout,
-                        ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED => QueryResult::Cancelled,
+                        ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT => {
+                            QueryResult::Timeout
+                        }
+                        ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_CANCELLED => {
+                            QueryResult::Cancelled
+                        }
                         _ => panic!("Unknown status"),
                     };
                     let duration = Duration::from_millis((*inner).duration as u64);

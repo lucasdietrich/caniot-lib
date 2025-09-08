@@ -5,22 +5,18 @@ use super::class0::*;
 #[test]
 fn telemetry_ios() {
     let mut t = Telemetry::default();
-    t.set_io(IO::Oc1, true).expect("Failed to set IO");
-    t.set_io(IO::Oc2, false).expect("Failed to set IO");
-    t.set_io(IO::Relay1, true).expect("Failed to set IO");
-    t.set_io(IO::Relay2, false).expect("Failed to set IO");
-    t.set_io(IO::Input1, true).expect("Failed to set IO");
-    t.set_io(IO::Input2, false).expect("Failed to set IO");
-    t.set_io(IO::Input3, true).expect("Failed to set IO");
-    t.set_io(IO::Input4, false).expect("Failed to set IO");
-    t.set_io(IO::Oc1PulseActive, true)
-        .expect("Failed to set IO");
-    t.set_io(IO::Oc2PulseActive, false)
-        .expect("Failed to set IO");
-    t.set_io(IO::Relay1PulseActive, true)
-        .expect("Failed to set IO");
-    t.set_io(IO::Relay2PulseActive, false)
-        .expect("Failed to set IO");
+    t.set_io(IO::Oc1, true).unwrap();
+    t.set_io(IO::Oc2, false).unwrap();
+    t.set_io(IO::Relay1, true).unwrap();
+    t.set_io(IO::Relay2, false).unwrap();
+    t.set_io(IO::Input1, true).unwrap();
+    t.set_io(IO::Input2, false).unwrap();
+    t.set_io(IO::Input3, true).unwrap();
+    t.set_io(IO::Input4, false).unwrap();
+    t.set_io(IO::Oc1PulseActive, true).unwrap();
+    t.set_io(IO::Oc2PulseActive, false).unwrap();
+    t.set_io(IO::Relay1PulseActive, true).unwrap();
+    t.set_io(IO::Relay2PulseActive, false).unwrap();
 
     assert_eq!(t.get_io(IO::Oc1), Some(true));
     assert_eq!(t.get_io(IO::Oc2), Some(false));

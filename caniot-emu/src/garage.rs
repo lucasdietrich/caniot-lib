@@ -165,6 +165,6 @@ impl DeviceApi for GarageController {
         t.clear_temperature(TempSensType::ExternalSensor(1))?;
         t.clear_temperature(TempSensType::ExternalSensor(2))?;
 
-        Ok(t.serialize().unwrap())
+        Ok(t.serialize()?)
     }
 }

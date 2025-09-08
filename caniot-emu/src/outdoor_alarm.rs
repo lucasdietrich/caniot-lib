@@ -64,7 +64,7 @@ impl DeviceApi for OutdoorAlarmController {
         self.presence_sensors[0] = false;
         self.presence_sensors[1] = false;
 
-        Ok(telemetry.serialize().unwrap())
+        Ok(telemetry.serialize()?)
     }
 
     fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), FailCode> {

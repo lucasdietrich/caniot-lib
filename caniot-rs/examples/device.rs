@@ -22,7 +22,7 @@ impl DeviceApi for Sensor {
         telem.set_io(IO::Input3, true).unwrap();
 
         match ep {
-            Endpoint::ApplicationDefault => Ok(telem.serialize().unwrap()),
+            Endpoint::ApplicationDefault => Ok(telem.serialize()?),
             _ => Err(FailCode::ENOTSUP),
         }
     }

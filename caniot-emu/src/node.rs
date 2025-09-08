@@ -14,12 +14,12 @@ use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
 
 pub trait NodeApi {
     // Return the duration until the next action is required, or None if no action is required.
-    fn app_next_timeout(&self, now: &Instant) -> Option<Duration> {
+    fn app_next_timeout(&self, _now: &Instant) -> Option<Duration> {
         None
     }
 
     // Process any pending actions. Return the endpoint that needs to be notified, if any.
-    fn app_process(&mut self, now: &Instant) -> Option<Endpoint> {
+    fn app_process(&mut self, _now: &Instant) -> Option<Endpoint> {
         None
     }
 }

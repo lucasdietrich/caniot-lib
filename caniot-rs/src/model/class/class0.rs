@@ -1,12 +1,66 @@
 use core::ops::Deref;
+use std::ops::DerefMut;
 
 use caniot_sys as ll;
 
 use crate::{
-    class::{TempSensType, llpayload::LLPayload},
-    datatypes::{Temperature, Xps},
+    class::{
+        llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry}
+    },
     error::FailCode,
 };
+
+impl LLPayload for ll::caniot_blc0_telemetry {
+    const SER_SIZE: u8 = ll::CANIOT_BLC0_TELEMETRY_BUF_LEN as u8;
+
+    const SER_FN: unsafe extern "C" fn(
+        t: *const Self,
+        buf: *mut u8,
+        len: *mut u8,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_ser;
+
+    const DESER_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        buf: *const u8,
+        len: u8,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_get;
+
+    const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int =
+        ll::caniot_blc0_telemetry_defaults;
+}
+
+impl LLTelemetry for ll::caniot_blc0_telemetry {
+    type IOType = ll::caniot_blc0_io_t::Type;
+
+    const GET_TEMP_FN: unsafe extern "C" fn(
+        t: *const Self,
+        sensor: caniot_sys::caniot_temp_sens_t::Type,
+        temperature: *mut u16,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_get_temperature;
+
+    const SET_TEMP_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        sensor: caniot_sys::caniot_temp_sens_t::Type,
+        temperature: u16,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_set_temperature;
+
+    const CLEAR_TEMP_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        sensor: caniot_sys::caniot_temp_sens_t::Type,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_clear_temperature;
+
+    const GET_IO_FN: unsafe extern "C" fn(
+        t: *const Self,
+        io: Self::IOType,
+        state: *mut bool,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_get_io;
+
+    const SET_IO_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        io: Self::IOType,
+        state: bool,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_set_io;
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -17,6 +71,12 @@ impl Deref for Telemetry {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for Telemetry {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -85,45 +145,41 @@ impl TryFrom<IO> for ll::caniot_blc0_io_t::Type {
     }
 }
 
-impl Telemetry {
-    pub fn set_temperature(&mut self, sensor: TempSensType, celsius: f32) -> Result<(), FailCode> {
-        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
-        let temperature = Temperature::from_celsius(celsius);
+impl LLPayload for ll::caniot_blc0_command {
+    const SER_SIZE: u8 = ll::CANIOT_BLC0_COMMAND_BUF_LEN as u8;
 
-        let ret = unsafe {
-            ll::caniot_blc0_telemetry_set_temperature(&mut self.0, sensor, temperature.to_raw_u10())
-        };
-        FailCode::to_errno(ret)
-    }
+    const SER_FN: unsafe extern "C" fn(
+        t: *const Self,
+        buf: *mut u8,
+        len: *mut u8,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_command_ser;
 
-    pub fn clear_temperature(&mut self, sensor: TempSensType) -> Result<(), FailCode> {
-        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
-        let ret = unsafe { ll::caniot_blc0_telemetry_clear_temperature(&mut self.0, sensor) };
-        FailCode::to_errno(ret)
-    }
+    const DESER_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        buf: *const u8,
+        len: u8,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_command_get;
 
-    pub fn get_temperature(&self, sensor: TempSensType) -> Option<f32> {
-        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor).ok()?;
-        let mut temperature: u16 = 0;
-        let ret =
-            unsafe { ll::caniot_blc0_telemetry_get_temperature(&self.0, sensor, &mut temperature) };
-        FailCode::to_errno(ret).ok()?;
-        Temperature::from_raw_u10(temperature).to_celsius()
-    }
+    const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int =
+        ll::caniot_blc0_command_defaults;
+}
 
-    pub fn set_io(&mut self, io: IO, state: bool) -> Result<(), FailCode> {
-        let io = ll::caniot_blc0_io_t::Type::try_from(io)?;
-        let ret = unsafe { ll::caniot_blc0_telemetry_set_io(&mut self.0, io, state) };
-        FailCode::to_errno(ret)
-    }
+impl HasEffect for ll::caniot_blc0_command {}
 
-    pub fn get_io(&self, io: IO) -> Option<bool> {
-        let io = ll::caniot_blc0_io_t::Type::try_from(io).ok()?;
-        let mut state = false;
-        let ret = unsafe { ll::caniot_blc0_telemetry_get_io(&self.0, io, &mut state) };
-        FailCode::to_result(ret).ok()?;
-        Some(state)
-    }
+impl LLCommand for ll::caniot_blc0_command {
+    type IOType = ll::caniot_blc0_io_t::Type;
+
+    const GET_IO_XPS_FN: unsafe extern "C" fn(
+        t: *const Self,
+        io: Self::IOType,
+        xps: *mut ll::caniot_complex_digital_cmd_t::Type,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_command_get_xps;
+
+    const SET_IO_XPS_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        io: Self::IOType,
+        xps: ll::caniot_complex_digital_cmd_t::Type,
+    ) -> ::core::ffi::c_int = ll::caniot_blc0_command_set_xps;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -138,6 +194,12 @@ impl Deref for Command {
     }
 }
 
+impl DerefMut for Command {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl Default for Command {
     fn default() -> Self {
         Command(ll::caniot_blc0_command::default())
@@ -148,20 +210,5 @@ impl Command {
     pub fn try_from_raw(data: impl AsRef<[u8]>) -> Result<Self, FailCode> {
         let command = ll::caniot_blc0_command::deserialize(data.as_ref())?;
         Ok(Command(command))
-    }
-
-    pub fn set_io_xps(&mut self, io: IO, xps: Xps) -> Result<(), FailCode> {
-        let io = ll::caniot_blc0_io_t::Type::try_from(io)?;
-        let xps = xps.into();
-        let ret = unsafe { ll::caniot_blc0_command_set_xps(&mut self.0, io, xps) };
-        FailCode::to_errno(ret)
-    }
-
-    pub fn get_io_xps(&self, io: IO) -> Result<Xps, FailCode> {
-        let io = ll::caniot_blc0_io_t::Type::try_from(io)?;
-        let mut xps = ll::caniot_complex_digital_cmd_t::CANIOT_XPS_NONE;
-        let ret = unsafe { ll::caniot_blc0_command_get_xps(&self.0, io, &mut xps) };
-        FailCode::to_errno(ret)?;
-        Ok(Xps::from(xps))
     }
 }

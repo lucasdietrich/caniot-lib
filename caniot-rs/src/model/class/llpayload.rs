@@ -1,6 +1,6 @@
 use std::mem::MaybeUninit;
 
-use crate::error::FailCode;
+use crate::{class::TempSensType, datatypes::{Temperature, Xps}, error::FailCode};
 
 use caniot_sys as ll;
 
@@ -58,85 +58,108 @@ pub trait LLPayload: Sized + PartialEq + Eq + Clone {
     }
 }
 
-impl LLPayload for ll::caniot_blc0_telemetry {
-    const SER_SIZE: u8 = ll::CANIOT_BLC0_TELEMETRY_BUF_LEN as u8;
+pub trait LLTelemetry: LLPayload {
+    type IOType;
 
-    const SER_FN: unsafe extern "C" fn(
+    const GET_TEMP_FN: unsafe extern "C" fn(
         t: *const Self,
-        buf: *mut u8,
-        len: *mut u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_ser;
+        sensor: ll::caniot_temp_sens_t::Type,
+        temperature: *mut u16,
+    ) -> ::core::ffi::c_int;
 
-    const DESER_FN: unsafe extern "C" fn(
+    const SET_TEMP_FN: unsafe extern "C" fn(
         t: *mut Self,
-        buf: *const u8,
-        len: u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc0_telemetry_get;
+        sensor: ll::caniot_temp_sens_t::Type,
+        temperature: u16,
+    ) -> ::core::ffi::c_int;
 
-    const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int =
-        ll::caniot_blc0_telemetry_defaults;
+    const CLEAR_TEMP_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        sensor: ll::caniot_temp_sens_t::Type,
+    ) -> ::core::ffi::c_int;
+
+    const GET_IO_FN: unsafe extern "C" fn(
+        t: *const Self,
+        io: Self::IOType,
+        state: *mut bool,
+    ) -> ::core::ffi::c_int;
+
+    const SET_IO_FN: unsafe extern "C" fn(
+        t: *mut Self,
+        io: Self::IOType,
+        state: bool,
+    ) -> ::core::ffi::c_int;
+
+    fn set_temperature(&mut self, sensor: TempSensType, celsius: f32) -> Result<(), FailCode> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
+        let temperature = Temperature::from_celsius(celsius);
+
+        let ret = unsafe {
+            (Self::SET_TEMP_FN)(self, sensor, temperature.to_raw_u10())
+        };
+        FailCode::to_errno(ret)
+    }
+
+    fn clear_temperature(&mut self, sensor: TempSensType) -> Result<(), FailCode> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
+        let ret = unsafe { (Self::CLEAR_TEMP_FN)(self, sensor) };
+        FailCode::to_errno(ret)
+    }
+
+    fn get_temperature(&self, sensor: TempSensType) -> Option<f32> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor).ok()?;
+        let mut temperature: u16 = 0;
+        let ret =
+            unsafe { (Self::GET_TEMP_FN)(self, sensor, &mut temperature) };
+        FailCode::to_errno(ret).ok()?;
+        Temperature::from_raw_u10(temperature).to_celsius()
+    }
+
+    fn set_io(&mut self, io: impl TryInto<Self::IOType, Error = FailCode>, state: bool) -> Result<(), FailCode> {
+        let io = io.try_into()?;
+        let ret = unsafe { (Self::SET_IO_FN)(self, io, state) };
+        FailCode::to_errno(ret)
+    }
+
+    fn get_io(&self, io: impl TryInto<Self::IOType, Error = FailCode>) -> Option<bool> {
+        let io = io.try_into().ok()?;
+        let mut state = false;
+        let ret = unsafe { (Self::GET_IO_FN)(self, io, &mut state) };
+        FailCode::to_result(ret).ok()?;
+        Some(state)
+    }
 }
 
-impl LLPayload for ll::caniot_blc0_command {
-    const SER_SIZE: u8 = ll::CANIOT_BLC0_COMMAND_BUF_LEN as u8;
+pub trait LLCommand: LLPayload {
+    type IOType;
 
-    const SER_FN: unsafe extern "C" fn(
+    const GET_IO_XPS_FN: unsafe extern "C" fn(
         t: *const Self,
-        buf: *mut u8,
-        len: *mut u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc0_command_ser;
+        io: Self::IOType,
+        xps: *mut ll::caniot_complex_digital_cmd_t::Type,
+    ) -> ::core::ffi::c_int;
 
-    const DESER_FN: unsafe extern "C" fn(
+    const SET_IO_XPS_FN: unsafe extern "C" fn(
         t: *mut Self,
-        buf: *const u8,
-        len: u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc0_command_get;
+        io: Self::IOType,
+        xps: ll::caniot_complex_digital_cmd_t::Type,
+    ) -> ::core::ffi::c_int;
 
-    const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int =
-        ll::caniot_blc0_command_defaults;
+    fn set_io_xps(&mut self, io: impl TryInto<Self::IOType, Error = FailCode>, xps: Xps) -> Result<(), FailCode> {
+        let io = io.try_into()?;
+        let xps = xps.into();
+        let ret = unsafe { (Self::SET_IO_XPS_FN)(self, io, xps) };
+        FailCode::to_errno(ret)
+    }
+
+    fn get_io_xps(&self, io: impl TryInto<Self::IOType, Error = FailCode>) -> Result<Xps, FailCode> {
+        let io = io.try_into()?;
+        let mut xps = ll::caniot_complex_digital_cmd_t::CANIOT_XPS_NONE;
+        let ret = unsafe { (Self::GET_IO_XPS_FN)(self, io, &mut xps) };
+        FailCode::to_errno(ret)?;
+        Ok(Xps::from(xps))
+    }
 }
-
-impl HasEffect for ll::caniot_blc0_command {}
-
-impl LLPayload for ll::caniot_blc1_telemetry {
-    const SER_SIZE: u8 = ll::CANIOT_BLC1_TELEMETRY_BUF_LEN as u8;
-
-    const SER_FN: unsafe extern "C" fn(
-        t: *const Self,
-        buf: *mut u8,
-        len: *mut u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc1_telemetry_ser;
-
-    const DESER_FN: unsafe extern "C" fn(
-        t: *mut Self,
-        buf: *const u8,
-        len: u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc1_telemetry_get;
-
-    const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int =
-        ll::caniot_blc1_telemetry_defaults;
-}
-
-impl LLPayload for ll::caniot_blc1_command {
-    const SER_SIZE: u8 = ll::CANIOT_BLC1_COMMAND_BUF_LEN as u8;
-
-    const SER_FN: unsafe extern "C" fn(
-        t: *const Self,
-        buf: *mut u8,
-        len: *mut u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc1_command_ser;
-
-    const DESER_FN: unsafe extern "C" fn(
-        t: *mut Self,
-        buf: *const u8,
-        len: u8,
-    ) -> ::core::ffi::c_int = ll::caniot_blc1_command_get;
-
-    const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int =
-        ll::caniot_blc1_command_defaults;
-}
-
-impl HasEffect for ll::caniot_blc1_command {}
 
 #[cfg(test)]
 mod tests {

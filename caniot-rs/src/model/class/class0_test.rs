@@ -1,4 +1,4 @@
-use crate::{class::TempSensType, datatypes::Xps};
+use crate::{class::{llpayload::{LLCommand, LLTelemetry}, TempSensType}, datatypes::Xps};
 
 use super::class0::*;
 

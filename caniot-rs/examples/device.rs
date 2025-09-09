@@ -3,9 +3,9 @@ use std::os::fd::AsFd;
 use caniot::{
     class::{
         class0::{self, IO},
-        llpayload::LLPayload,
+        llpayload::{LLPayload, LLTelemetry},
     },
-    device::{Device, StaticConfig, implementation::DeviceApi},
+    device::{implementation::DeviceApi, Device, StaticConfig},
     did::DeviceId,
     driver::LinuxDriver,
     error::FailCode,

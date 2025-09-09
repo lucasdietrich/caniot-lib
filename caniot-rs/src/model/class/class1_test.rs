@@ -1,4 +1,4 @@
-use crate::{class::TempSensType, datatypes::Xps};
+use crate::{class::{llpayload::{LLCommand, LLTelemetry}, TempSensType}, datatypes::Xps};
 
 use super::class1::*;
 
@@ -43,15 +43,24 @@ fn telemetry_temperature() {
     let mut t = Telemetry::default();
 
     t.set_temperature(TempSensType::BoardSensor, base).unwrap();
-    t.set_temperature(TempSensType::ExternalSensor(0), base + 1.0).unwrap();
-    t.set_temperature(TempSensType::ExternalSensor(1), base + 2.0).unwrap();
-    t.set_temperature(TempSensType::ExternalSensor(2), base + 3.0).unwrap();
+    t.set_temperature(TempSensType::ExternalSensor(0), base + 1.0)
+        .unwrap();
+    t.set_temperature(TempSensType::ExternalSensor(1), base + 2.0)
+        .unwrap();
+    t.set_temperature(TempSensType::ExternalSensor(2), base + 3.0)
+        .unwrap();
 
     let eps = f32::EPSILON;
     assert!((t.get_temperature(TempSensType::BoardSensor).unwrap() - base).abs() < eps);
-    assert!((t.get_temperature(TempSensType::ExternalSensor(0)).unwrap() - (base + 1.0)).abs() < eps);
-    assert!((t.get_temperature(TempSensType::ExternalSensor(1)).unwrap() - (base + 2.0)).abs() < eps);
-    assert!((t.get_temperature(TempSensType::ExternalSensor(2)).unwrap() - (base + 3.0)).abs() < eps);
+    assert!(
+        (t.get_temperature(TempSensType::ExternalSensor(0)).unwrap() - (base + 1.0)).abs() < eps
+    );
+    assert!(
+        (t.get_temperature(TempSensType::ExternalSensor(1)).unwrap() - (base + 2.0)).abs() < eps
+    );
+    assert!(
+        (t.get_temperature(TempSensType::ExternalSensor(2)).unwrap() - (base + 3.0)).abs() < eps
+    );
 }
 
 #[test]

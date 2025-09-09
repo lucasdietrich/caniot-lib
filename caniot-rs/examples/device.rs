@@ -4,9 +4,12 @@ use caniot::{
     class::{
         class0::{self, IO},
         llpayload::LLPayload,
-    }, device::{
-        implementation::DeviceApi, Device, StaticConfig
-    }, did::DeviceId, driver::LinuxDriver, error::FailCode, types::Endpoint
+    },
+    device::{Device, StaticConfig, implementation::DeviceApi},
+    did::DeviceId,
+    driver::LinuxDriver,
+    error::FailCode,
+    types::Endpoint,
 };
 use log::{debug, error, info, warn};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
@@ -19,7 +22,7 @@ impl DeviceApi for Sensor {
 
         let mut telem = class0::Telemetry::default();
 
-        telem.set_io(IO::Input3, true).unwrap();
+        telem.set_io(IO::Input3, true)?;
 
         match ep {
             Endpoint::ApplicationDefault => Ok(telem.serialize()?),

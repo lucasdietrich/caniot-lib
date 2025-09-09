@@ -52,7 +52,8 @@ impl<'a> Frame<'a> {
 
         let did = unsafe { DeviceId::new_unchecked(frame.id.cls() as u8, frame.id.sid() as u8) };
         let endpoint = Endpoint::try_from(frame.id.endpoint()).unwrap();
-        let payload = unsafe { std::slice::from_raw_parts(frame.buf.as_ptr(), frame.len as usize) };
+        let payload =
+            unsafe { core::slice::from_raw_parts(frame.buf.as_ptr(), frame.len as usize) };
 
         Frame {
             did,
@@ -93,7 +94,7 @@ impl<'a> Frame<'a> {
 }
 
 impl<'a> Debug for Frame<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Frame")
             .field("did", &self.did)
             .field("direction", &self.direction)

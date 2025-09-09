@@ -1,6 +1,6 @@
 use num_derive::FromPrimitive;
 
-use crate::ProtocolError;
+use crate::error::FailCode;
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, FromPrimitive)]
@@ -76,7 +76,7 @@ pub enum Attribute {
 }
 
 impl TryFrom<u16> for Attribute {
-    type Error = ProtocolError;
+    type Error = FailCode;
 
     fn try_from(mut value: u16) -> Result<Self, Self::Error> {
         // 4 lsb are the attribute part
@@ -84,7 +84,7 @@ impl TryFrom<u16> for Attribute {
 
         match num_traits::FromPrimitive::from_u16(value) {
             Some(attr) => Ok(attr),
-            None => Err(ProtocolError::UnknownAttributeKey),
+            None => Err(FailCode::ENOATTR),
         }
     }
 }

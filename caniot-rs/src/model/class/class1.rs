@@ -1,204 +1,188 @@
-// use serde::Serialize;
-// use strum::{EnumIter, IntoEnumIterator};
+use core::ops::Deref;
 
-// use crate::{
-//     caniot::{ClCd, Payload, ProtocolError, Temperature, Ty, Xps},
-//     utils::math::avg_of_slice_opt,
-// };
+use caniot_sys as ll;
 
-// use super::traits::{Class, ClassCommandTrait, ClassTelemetryTrait, TempSensType};
+use crate::{
+    class::{TempSensType, llpayload::LLPayload},
+    datatypes::{Temperature, Xps},
+    error::FailCode,
+};
 
-// pub const CLASS1_IO_COUNT: usize = 19;
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Telemetry(ll::caniot_blc1_telemetry);
 
-// #[derive(Debug, Default, Clone, Copy, PartialEq, Serialize)]
-// pub struct Telemetry {
-//     pub ios: [bool; CLASS1_IO_COUNT],
+impl Deref for Telemetry {
+    type Target = ll::caniot_blc1_telemetry;
 
-//     pub temp_in: Temperature,
-//     pub temp_out: [Temperature; 3],
-// }
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
-// impl ClassTelemetryTrait for Telemetry {
-//     fn get_temperature(&self, sensor: TempSensType) -> Option<f32> {
-//         match sensor {
-//             TempSensType::BoardSensor => self.temp_in.to_celsius(),
-//             TempSensType::ExternalSensor(index) => self
-//                 .temp_out
-//                 .get(index as usize)
-//                 .and_then(|t| t.to_celsius()),
-//             TempSensType::AnyExternal => self.temp_out.iter().find_map(|t| t.to_celsius()),
-//             TempSensType::AvgExternal => avg_of_slice_opt(&self.temp_out.map(|t| t.to_celsius())),
-//             TempSensType::Any => self.temp_in.to_celsius(),
-//         }
-//     }
-// }
+impl Default for Telemetry {
+    fn default() -> Self {
+        Telemetry(ll::caniot_blc1_telemetry::default())
+    }
+}
 
-// impl TryFrom<&Payload<Ty>> for Telemetry {
-//     type Error = ProtocolError;
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum IO {
+    Pc0,
+    Pc1,
+    Pc2,
+    Pc3,
+    Pd4,
+    Pd5,
+    Pd6,
+    Pd7,
+    Eio0,
+    Eio1,
+    Eio2,
+    Eio3,
+    Eio4,
+    Eio5,
+    Eio6,
+    Eio7,
+    Pb0,
+    Pe0,
+    Pe1,
+}
 
-//     fn try_from(payload: &Payload<Ty>) -> Result<Self, ProtocolError> {
-//         let payload = payload.as_ref();
-//         if payload.len() >= 8 {
-//             Ok(Telemetry {
-//                 ios: [
-//                     payload[0] & 0b0000_0001 != 0, // pc0
-//                     payload[0] & 0b0000_0010 != 0, // pc1
-//                     payload[0] & 0b0000_0100 != 0, // pc2
-//                     payload[0] & 0b0000_1000 != 0, // pc3
-//                     payload[0] & 0b0001_0000 != 0, // pd0
-//                     payload[0] & 0b0010_0000 != 0, // pd1
-//                     payload[0] & 0b0100_0000 != 0, // pd2
-//                     payload[0] & 0b1000_0000 != 0, // pd3
-//                     payload[1] & 0b0000_0001 != 0, // eio0
-//                     payload[1] & 0b0000_0010 != 0, // eio1
-//                     payload[1] & 0b0000_0100 != 0, // eio2
-//                     payload[1] & 0b0000_1000 != 0, // eio3
-//                     payload[1] & 0b0001_0000 != 0, // eio4
-//                     payload[1] & 0b0010_0000 != 0, // eio5
-//                     payload[1] & 0b0100_0000 != 0, // eio6
-//                     payload[1] & 0b1000_0000 != 0, // eio7
-//                     payload[2] & 0b0000_0001 != 0, // pb0
-//                     payload[2] & 0b0000_0010 != 0, // pe0
-//                     payload[2] & 0b0000_0100 != 0, // pe1
-//                 ],
-//                 temp_in: Temperature::from_raw_u10(u16::from_le_bytes([
-//                     payload[3],
-//                     payload[4] & 0b0000_0011,
-//                 ])),
-//                 temp_out: [
-//                     Temperature::from_raw_u10(u16::from_le_bytes([
-//                         (payload[4] >> 2) | (payload[5] & 0b0000_0011) << 6,
-//                         (payload[5] & 0b0000_1100) >> 2,
-//                     ])),
-//                     Temperature::from_raw_u10(u16::from_le_bytes([
-//                         (payload[5] >> 4) | (payload[6] & 0b0000_1111) << 4,
-//                         (payload[6] & 0b0011_0000) >> 4,
-//                     ])),
-//                     Temperature::from_raw_u10(u16::from_le_bytes([
-//                         (payload[6] >> 6) | (payload[7] & 0b0011_1111) << 2,
-//                         (payload[7] & 0b1100_0000) >> 6,
-//                     ])),
-//                 ],
-//             })
-//         } else {
-//             Err(ProtocolError::PayloadDecodeError)
-//         }
-//     }
-// }
+impl TryFrom<ll::caniot_blc1_io_t::Type> for IO {
+    type Error = FailCode;
 
-// impl Into<Payload<Ty>> for Telemetry {
-//     fn into(self) -> Payload<Ty> {
-//         let mut payload = Vec::with_capacity(8);
+    fn try_from(value: ll::caniot_blc1_io_t::Type) -> Result<Self, Self::Error> {
+        match value {
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PC0 => Ok(IO::Pc0),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PC1 => Ok(IO::Pc1),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PC2 => Ok(IO::Pc2),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PC3 => Ok(IO::Pc3),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PD4 => Ok(IO::Pd4),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PD5 => Ok(IO::Pd5),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PD6 => Ok(IO::Pd6),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PD7 => Ok(IO::Pd7),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO0 => Ok(IO::Eio0),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO1 => Ok(IO::Eio1),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO2 => Ok(IO::Eio2),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO3 => Ok(IO::Eio3),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO4 => Ok(IO::Eio4),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO5 => Ok(IO::Eio5),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO6 => Ok(IO::Eio6),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_EIO7 => Ok(IO::Eio7),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PB0 => Ok(IO::Pb0),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PE0 => Ok(IO::Pe0),
+            ll::caniot_blc1_io_t::CANIOT_BLC1_PE1 => Ok(IO::Pe1),
+            _ => Err(FailCode::EINVAL),
+        }
+    }
+}
 
-//         payload.push(
-//             (self.ios[0] as u8)
-//                 | (self.ios[1] as u8) << 1
-//                 | (self.ios[2] as u8) << 2
-//                 | (self.ios[3] as u8) << 3
-//                 | (self.ios[4] as u8) << 4
-//                 | (self.ios[5] as u8) << 5
-//                 | (self.ios[6] as u8) << 6
-//                 | (self.ios[7] as u8) << 7,
-//         );
-//         payload.push(
-//             (self.ios[8] as u8)
-//                 | (self.ios[9] as u8) << 1
-//                 | (self.ios[10] as u8) << 2
-//                 | (self.ios[11] as u8) << 3
-//                 | (self.ios[12] as u8) << 4
-//                 | (self.ios[13] as u8) << 5
-//                 | (self.ios[14] as u8) << 6
-//                 | (self.ios[15] as u8) << 7,
-//         );
-//         payload.push((self.ios[16] as u8) | (self.ios[17] as u8) << 1 | (self.ios[18] as u8) << 2);
-//         let temp_in = self.temp_in.to_raw_u10_bytes();
-//         let temp_out = [
-//             self.temp_out[0].to_raw_u10_bytes(),
-//             self.temp_out[1].to_raw_u10_bytes(),
-//             self.temp_out[2].to_raw_u10_bytes(),
-//         ];
+impl TryFrom<IO> for ll::caniot_blc1_io_t::Type {
+    type Error = FailCode;
 
-//         payload.push(temp_in[0]);
-//         payload.push(temp_in[1] | (temp_out[0][0] << 2));
-//         payload.push(temp_out[0][0] >> 6 | (temp_out[0][1] << 2) | (temp_out[1][0] << 4));
-//         payload.push(temp_out[1][0] >> 4 | (temp_out[1][1] << 4) | (temp_out[2][0] << 6));
-//         payload.push(temp_out[2][0] >> 2 | (temp_out[2][1] << 6));
+    fn try_from(value: IO) -> Result<Self, Self::Error> {
+        match value {
+            IO::Pc0 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PC0),
+            IO::Pc1 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PC1),
+            IO::Pc2 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PC2),
+            IO::Pc3 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PC3),
+            IO::Pd4 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PD4),
+            IO::Pd5 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PD5),
+            IO::Pd6 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PD6),
+            IO::Pd7 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PD7),
+            IO::Eio0 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO0),
+            IO::Eio1 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO1),
+            IO::Eio2 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO2),
+            IO::Eio3 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO3),
+            IO::Eio4 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO4),
+            IO::Eio5 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO5),
+            IO::Eio6 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO6),
+            IO::Eio7 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_EIO7),
+            IO::Pb0 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PB0),
+            IO::Pe0 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PE0),
+            IO::Pe1 => Ok(ll::caniot_blc1_io_t::CANIOT_BLC1_PE1),
+        }
+    }
+}
 
-//         Payload::<Ty>::new(payload).unwrap()
-//     }
-// }
+impl Telemetry {
+    pub fn set_temperature(&mut self, sensor: TempSensType, celsius: f32) -> Result<(), FailCode> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
+        let temperature = Temperature::from_celsius(celsius);
 
-// #[repr(u8)]
-// #[derive(EnumIter)]
-// pub enum Class1CommandFields {
-//     Poc0,
-//     Poc1,
-//     Poc2,
-//     Poc3,
-//     Pd0,
-//     Pd1,
-//     Pd2,
-//     Pd3,
-//     Eio0,
-//     Eio1,
-//     Eio2,
-//     Eio3,
-//     Eio4,
-//     Eio5,
-//     Eio6,
-//     Eio7,
-//     Pb0,
-//     Ee0,
-//     Ee1,
-// }
+        let ret = unsafe {
+            ll::caniot_blc1_telemetry_set_temperature(&mut self.0, sensor, temperature.to_raw_u10())
+        };
+        FailCode::to_errno(ret)
+    }
 
-// #[derive(Debug, Default, Clone, Copy, PartialEq, Serialize)]
-// pub struct Command {
-//     pub ios: [Xps; CLASS1_IO_COUNT],
-// }
+    pub fn clear_temperature(&mut self, sensor: TempSensType) -> Result<(), FailCode> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
+        let ret = unsafe { ll::caniot_blc1_telemetry_clear_temperature(&mut self.0, sensor) };
+        FailCode::to_errno(ret)
+    }
 
-// impl<'a> ClassCommandTrait for Command {
-//     fn has_effect(&self) -> bool {
-//         self.ios.iter().any(|&x| x != Xps::None)
-//     }
-// }
+    pub fn get_temperature(&self, sensor: TempSensType) -> Option<f32> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor).ok()?;
+        let mut temperature: u16 = 0;
+        let ret =
+            unsafe { ll::caniot_blc1_telemetry_get_temperature(&self.0, sensor, &mut temperature) };
+        FailCode::to_errno(ret).ok()?;
+        Temperature::from_raw_u10(temperature).to_celsius()
+    }
 
-// impl Into<Payload<ClCd>> for Command {
-//     fn into(self) -> Payload<ClCd> {
-//         let mut payload = vec![0; 7];
-//         for (i, field) in self.ios.iter().enumerate() {
-//             field.set_at(&mut payload, i).unwrap();
-//         }
+    pub fn set_io(&mut self, io: IO, state: bool) -> Result<(), FailCode> {
+        let io = ll::caniot_blc0_io_t::Type::try_from(io)?;
+        let ret = unsafe { ll::caniot_blc1_telemetry_set_io(&mut self.0, io, state) };
+        FailCode::to_errno(ret)
+    }
 
-//         Payload::<ClCd>::new(payload).unwrap()
-//     }
-// }
+    pub fn get_io(&self, io: IO) -> Option<bool> {
+        let io = ll::caniot_blc0_io_t::Type::try_from(io).ok()?;
+        let mut state = false;
+        let ret = unsafe { ll::caniot_blc1_telemetry_get_io(&self.0, io, &mut state) };
+        FailCode::to_result(ret).ok()?;
+        Some(state)
+    }
+}
 
-// impl TryFrom<&Payload<ClCd>> for Command {
-//     type Error = ProtocolError;
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Command(ll::caniot_blc1_command);
 
-//     // Convert a Class1 command serialized payload into a Command struct
-//     fn try_from(payload: &Payload<ClCd>) -> Result<Self, ProtocolError> {
-//         let payload = payload.as_ref();
-//         if payload.len() >= 7 {
-//             Ok(Command {
-//                 ios: Class1CommandFields::iter()
-//                     .map(|field| Xps::get_at(payload, field as usize).unwrap_or_default())
-//                     .collect::<Vec<Xps>>()
-//                     .try_into()
-//                     .unwrap(),
-//             })
-//         } else {
-//             Err(ProtocolError::PayloadDecodeError)
-//         }
-//     }
-// }
+impl Deref for Command {
+    type Target = ll::caniot_blc1_command;
 
-// pub struct Class1;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
-// impl Class for Class1 {
-//     const CLASS_ID: u8 = 1;
+impl Default for Command {
+    fn default() -> Self {
+        Command(ll::caniot_blc1_command::default())
+    }
+}
 
-//     type Telemetry = Telemetry;
-//     type Command = Command;
-// }
+impl Command {
+    pub fn try_from_raw(data: impl AsRef<[u8]>) -> Result<Self, FailCode> {
+        let command = ll::caniot_blc1_command::deserialize(data.as_ref())?;
+        Ok(Command(command))
+    }
+
+    pub fn set_io_xps(&mut self, io: IO, xps: Xps) -> Result<(), FailCode> {
+        let io = ll::caniot_blc1_io_t::Type::try_from(io)?;
+        let xps = xps.into();
+        let ret = unsafe { ll::caniot_blc1_command_set_xps(&mut self.0, io, xps) };
+        FailCode::to_errno(ret)
+    }
+
+    pub fn get_io_xps(&self, io: IO) -> Result<Xps, FailCode> {
+        let io = ll::caniot_blc1_io_t::Type::try_from(io)?;
+        let mut xps = ll::caniot_complex_digital_cmd_t::CANIOT_XPS_NONE;
+        let ret = unsafe { ll::caniot_blc1_command_get_xps(&self.0, io, &mut xps) };
+        FailCode::to_errno(ret)?;
+        Ok(Xps::from(xps))
+    }
+}

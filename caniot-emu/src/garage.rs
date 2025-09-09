@@ -2,8 +2,14 @@ use std::time::{Duration, Instant};
 
 use caniot::{
     class::{
-        class0::{self, IO}, llpayload::LLPayload, TempSensType
-    }, datatypes::{Temperature, Xps}, device::implementation::DeviceApi, error::FailCode, types::Endpoint
+        TempSensType,
+        class0::{self, IO},
+        llpayload::LLPayload,
+    },
+    datatypes::{Temperature, Xps},
+    device::implementation::DeviceApi,
+    error::FailCode,
+    types::Endpoint,
 };
 use expirable::Expirable;
 use log::debug;
@@ -133,8 +139,7 @@ impl DeviceApi for GarageController {
             return Err(FailCode::ENOTSUP);
         }
 
-        let command =
-            class0::Command::try_from_raw(&data[0..2])?;
+        let command = class0::Command::try_from_raw(&data[0..2])?;
 
         if command.get_io_xps(IO::Relay1)? == Xps::PulseOn {
             self.left_door.pulse_relay();

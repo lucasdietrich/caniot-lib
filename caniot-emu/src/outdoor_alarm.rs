@@ -1,11 +1,19 @@
 use std::time::Duration;
 
 use caniot::{
-    class::{class0::{self, IO}, llpayload::LLPayload, TempSensType}, datatypes::{Temperature, Xps}, device::implementation::DeviceApi, error::FailCode, types::Endpoint
+    class::{
+        TempSensType,
+        class0::{self, IO},
+        llpayload::LLPayload,
+    },
+    datatypes::{Temperature, Xps},
+    device::implementation::DeviceApi,
+    error::FailCode,
+    types::Endpoint,
 };
 use expirable::Expirable;
 
-use crate::{helpers::EmuXps, NodeApi};
+use crate::{NodeApi, helpers::EmuXps};
 
 const LIGHTS_PULSE_DURATION: Duration = Duration::from_secs(30);
 const SIREN_PULSE_DURATION: Duration = Duration::from_secs(20);
@@ -40,25 +48,23 @@ impl DeviceApi for OutdoorAlarmController {
 
         let mut telemetry = class0::Telemetry::default();
 
-        telemetry
-            .set_io(IO::Input1, self.presence_sensors[0])?;
-        telemetry
-            .set_io(IO::Input2, self.presence_sensors[1])?;
+        telemetry.set_io(IO::Input1, self.presence_sensors[0])?;
+        telemetry.set_io(IO::Input2, self.presence_sensors[1])?;
         telemetry.set_io(IO::Input4, self.sabotage)?;
-        telemetry
-            .set_io(IO::Oc1, self.lights[0].get_state())?;
-        telemetry
-            .set_io(IO::Oc1PulseActive, self.lights[0].pulse_pending())?;
-        telemetry
-            .set_io(IO::Oc2, self.lights[1].get_state())?;
-        telemetry
-            .set_io(IO::Oc2PulseActive, self.lights[1].pulse_pending())?;
-        telemetry
-            .set_io(IO::Relay1, self.siren.get_state())?;
-        telemetry
-            .set_io(IO::Relay1PulseActive, self.siren.pulse_pending())?;
-        telemetry.set_temperature(TempSensType::BoardSensor, Temperature::random_full_range().to_celsius().unwrap())?;
-        telemetry.set_temperature(TempSensType::ExternalSensor(0), Temperature::random_full_range().to_celsius().unwrap())?;
+        telemetry.set_io(IO::Oc1, self.lights[0].get_state())?;
+        telemetry.set_io(IO::Oc1PulseActive, self.lights[0].pulse_pending())?;
+        telemetry.set_io(IO::Oc2, self.lights[1].get_state())?;
+        telemetry.set_io(IO::Oc2PulseActive, self.lights[1].pulse_pending())?;
+        telemetry.set_io(IO::Relay1, self.siren.get_state())?;
+        telemetry.set_io(IO::Relay1PulseActive, self.siren.pulse_pending())?;
+        telemetry.set_temperature(
+            TempSensType::BoardSensor,
+            Temperature::random_full_range().to_celsius().unwrap(),
+        )?;
+        telemetry.set_temperature(
+            TempSensType::ExternalSensor(0),
+            Temperature::random_full_range().to_celsius().unwrap(),
+        )?;
 
         // Reset detector after sending telemetry as it is a one-shot event
         self.presence_sensors[0] = false;
@@ -72,8 +78,7 @@ impl DeviceApi for OutdoorAlarmController {
             return Err(FailCode::ENOTSUP);
         }
 
-        let command =
-            class0::Command::try_from_raw(&data[0..2])?;
+        let command = class0::Command::try_from_raw(&data[0..2])?;
 
         self.lights[0].apply(&command.get_io_xps(IO::Oc1).unwrap());
         self.lights[1].apply(&command.get_io_xps(IO::Oc2).unwrap());

@@ -1,4 +1,4 @@
-use caniot::{ProtocolError, datatypes::HeatingMode};
+use caniot::{datatypes::HeatingMode, error::FailCode};
 use num::FromPrimitive;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -7,9 +7,9 @@ pub struct HeatingControllerCommand {
 }
 
 impl TryFrom<&[u8]> for HeatingControllerCommand {
-    type Error = ProtocolError;
+    type Error = FailCode;
 
-    fn try_from(payload: &[u8]) -> Result<Self, ProtocolError> {
+    fn try_from(payload: &[u8]) -> Result<Self, FailCode> {
         if payload.len() >= 2 {
             Ok(HeatingControllerCommand {
                 modes: [
@@ -20,7 +20,7 @@ impl TryFrom<&[u8]> for HeatingControllerCommand {
                 ],
             })
         } else {
-            Err(ProtocolError::PayloadDecodeError)
+            Err(FailCode::EFRAME)
         }
     }
 }
@@ -43,9 +43,9 @@ pub struct HeatingControllerTelemetry {
 }
 
 impl TryFrom<&[u8]> for HeatingControllerTelemetry {
-    type Error = ProtocolError;
+    type Error = FailCode;
 
-    fn try_from(payload: &[u8]) -> Result<Self, ProtocolError> {
+    fn try_from(payload: &[u8]) -> Result<Self, FailCode> {
         if payload.len() >= 3 {
             Ok(HeatingControllerTelemetry {
                 modes: [
@@ -57,7 +57,7 @@ impl TryFrom<&[u8]> for HeatingControllerTelemetry {
                 power_status: payload[2] & 0b0000_0001 != 0,
             })
         } else {
-            Err(ProtocolError::PayloadDecodeError)
+            Err(FailCode::EFRAME)
         }
     }
 }

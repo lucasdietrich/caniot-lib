@@ -1,5 +1,6 @@
 use caniot::{
-    datatypes::HeatingMode, device::implementation::{DeviceApi}, did::DeviceId, error::FailCode, types::Endpoint
+    datatypes::HeatingMode, device::implementation::DeviceApi, did::DeviceId, error::FailCode,
+    types::Endpoint,
 };
 
 use crate::{NodeApi, heaters_payload::HeatingControllerCommand};
@@ -31,8 +32,7 @@ impl DeviceApi for HeatersController {
             return Err(FailCode::ENOTSUP);
         }
 
-        let command =
-            HeatingControllerCommand::try_from(data).map_err(|_| FailCode::EFRAME)?;
+        let command = HeatingControllerCommand::try_from(data).map_err(|_| FailCode::EFRAME)?;
 
         for (i, mode) in command.modes.iter().enumerate() {
             if mode != &HeatingMode::None {

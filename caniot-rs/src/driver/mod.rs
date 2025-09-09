@@ -7,7 +7,7 @@ pub use dummy::DummyDriver;
 pub use linux::LinuxDriver;
 
 use caniot_sys as ll;
-use std::ptr::NonNull;
+use core::ptr::NonNull;
 
 pub trait Driver {
     fn get_api(&self) -> NonNull<ll::caniot_drivers_api>;

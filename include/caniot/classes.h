@@ -194,6 +194,29 @@ int caniot_blc0_command_get(struct caniot_blc0_command *t,
 							const uint8_t *buf,
 							uint8_t len);
 
+typedef enum {
+	CANIOT_BLC1_PC0 = 0,
+	CANIOT_BLC1_PC1,
+	CANIOT_BLC1_PC2,
+	CANIOT_BLC1_PC3,
+	CANIOT_BLC1_PD4,
+	CANIOT_BLC1_PD5,
+	CANIOT_BLC1_PD6,
+	CANIOT_BLC1_PD7,
+	CANIOT_BLC1_EIO0,
+	CANIOT_BLC1_EIO1,
+	CANIOT_BLC1_EIO2,
+	CANIOT_BLC1_EIO3,
+	CANIOT_BLC1_EIO4,
+	CANIOT_BLC1_EIO5,
+	CANIOT_BLC1_EIO6,
+	CANIOT_BLC1_EIO7,
+	CANIOT_BLC1_PB0,
+	CANIOT_BLC1_PE0,
+	CANIOT_BLC1_PE1,
+} caniot_blc1_io_t;
+
+
 struct caniot_blc1_telemetry {
 	uint8_t pcpd;	 /* Represent first 1-8 IOs */
 	uint8_t eio;	 /* Represent IOs 8-15 */
@@ -206,11 +229,91 @@ struct caniot_blc1_telemetry {
 	uint32_t ext_temperature3 : 10;
 };
 
+/** Set all fields to default values.
+ *
+ * @param t The telemetry structure to initialize.
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_telemetry_defaults(struct caniot_blc1_telemetry *t);
 
+/**
+ * Get the temperature from the telemetry structure.
+ *
+ * @param t The telemetry structure.
+ * @param sensor The sensor index (0-3).
+ * @param temperature Pointer to store the temperature value.
+ * @return 0 on valid temperature, 1 if temperature is invalid, negative error code on
+ * failure.
+ */
+int caniot_blc1_telemetry_get_temperature(const struct caniot_blc1_telemetry *t,
+										  caniot_temp_sens_t sensor,
+										  uint16_t *temperature);
+
+/**
+ * Set the temperature in the telemetry structure.
+ *
+ * @param t The telemetry structure.
+ * @param sensor The sensor index (0-3).
+ * @param temperature The temperature value to set.
+ * @return 0 on success, negative error code on failure.
+ */
+int caniot_blc1_telemetry_set_temperature(struct caniot_blc1_telemetry *t,
+										  caniot_temp_sens_t sensor,
+										  uint16_t temperature);
+
+/**
+ * Clear the temperature in the telemetry structure (set to invalid).
+ *
+ * @param t The telemetry structure.
+ * @param sensor The sensor index (0-3).
+ * @return 0 on success, negative error code on failure.
+ */
+int caniot_blc1_telemetry_clear_temperature(struct caniot_blc1_telemetry *t,
+											caniot_temp_sens_t sensor);
+
+/**
+ * Get the state of a digital IO.
+ *
+ * @param t The telemetry structure.
+ * @param io The IO index (0-19).
+ * @param state Pointer to store the state (true for high, false for low).
+ * @return 0 on success, negative error code on failure.
+ */
+int caniot_blc1_telemetry_get_io(const struct caniot_blc1_telemetry *t,
+								 caniot_blc1_io_t io,
+								 bool *state);
+
+/**
+ * Set the state of a digital IO.
+ *
+ * @param t The telemetry structure.
+ * @param io The IO index (0-19).
+ * @param state The state to set (true for high, false for low).
+ * @return 0 on success, negative error code on failure.
+ */
+int caniot_blc1_telemetry_set_io(struct caniot_blc1_telemetry *t,
+								 caniot_blc1_io_t io,
+								 bool state);
+
+/**
+ * Serialize the telemetry structure.
+ *
+ * @param t The telemetry structure.
+ * @param buf The buffer to serialize into.
+ * @param len Pointer to the length of the buffer.
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_telemetry_ser(const struct caniot_blc1_telemetry *t,
 							  uint8_t *buf,
 							  uint8_t *len);
+
+/**
+ * Deserialize the telemetry structure.
+ * @param t The telemetry structure to populate.
+ * @param buf The buffer to deserialize from.
+ * @param len The length of the buffer.
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_telemetry_get(struct caniot_blc1_telemetry *t,
 							  const uint8_t *buf,
 							  uint8_t len);
@@ -219,21 +322,81 @@ struct caniot_blc1_command {
 	caniot_complex_digital_cmd_t gpio_commands[CANIOT_CLASS1_IO_COUNT];
 };
 
+/** Set all fields to default values.
+ *
+ * @param c The command structure to initialize.
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_command_defaults(struct caniot_blc1_command *c);
 
+/**
+ * Set the extended pulse state for a specific IO.
+ *
+ * @param cmd The command structure.
+ * @param io The IO index (0-18).
+ * @param xps The extended pulse state to set.
+ * @return 0 on success, negative error code on failure.
+ */
+int caniot_blc1_command_set_xps(struct caniot_blc1_command *cmd,
+								caniot_blc1_io_t io,
+								caniot_complex_digital_cmd_t xps);
+
+/**
+ * Get the extended pulse state for a specific IO.
+ * @param cmd The command structure.
+ * @param io The IO index (0-18).
+ * @param xps Pointer to store the extended pulse state.
+ * @return 0 on success, negative error code on failure.
+ */
+int caniot_blc1_command_get_xps(const struct caniot_blc1_command *cmd,
+								caniot_blc1_io_t io,
+								caniot_complex_digital_cmd_t *xps);
+
+/**
+ * Set the extended pulse state for a specific IO in a serialized buffer.
+ *
+ * @param xps The extended pulse state to set.
+ * @param buf The buffer to modify.
+ * @param len The length of the buffer.
+ * @param n The IO index (0-18).
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_cmd_buf_set_xps(caniot_complex_digital_cmd_t xps,
 								uint8_t *buf,
 								uint8_t len,
 								uint8_t n);
 
+/**
+ * Get the extended pulse state for a specific IO from a serialized buffer.
+ *
+ * @param xps Pointer to store the extended pulse state.
+ * @param buf The buffer to read from.
+ * @param len The length of the buffer.
+ * @param n The IO index (0-18).
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_cmd_buf_parse_xps(caniot_complex_digital_cmd_t *xps,
 								  const uint8_t *buf,
 								  uint8_t len,
 								  uint8_t n);
 
+/**
+ * Serialize the command structure.
+ * @param t The command structure.
+ * @param buf The buffer to serialize into.
+ * @param len Pointer to the length of the buffer.
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_command_ser(const struct caniot_blc1_command *t,
 							uint8_t *buf,
 							uint8_t *len);
+
+/** Deserialize the command structure.
+ * @param t The command structure to populate.
+ * @param buf The buffer to deserialize from.
+ * @param len The length of the buffer.
+ * @return 0 on success, negative error code on failure.
+ */
 int caniot_blc1_command_get(struct caniot_blc1_command *t,
 							const uint8_t *buf,
 							uint8_t len);

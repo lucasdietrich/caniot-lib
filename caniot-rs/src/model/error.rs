@@ -1,5 +1,4 @@
-use core::{fmt::Display, num::NonZeroU32};
-use std::fmt::Debug;
+use core::{fmt::Debug, fmt::Display, num::NonZeroU32};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct FailCode {
@@ -9,7 +8,8 @@ pub struct FailCode {
 impl FailCode {
     pub const EINVAL: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EINVAL) };
     pub const EAGAIN: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EAGAIN) };
-    pub const ENOTSUP: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_ENOTSUP) };
+    pub const ENOTSUP: Self =
+        unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_ENOTSUP) };
     pub const EFRAME: Self = unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EFRAME) };
     pub const ENOATTR: Self =
         unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_ENOATTR) };
@@ -37,7 +37,7 @@ impl FailCode {
 }
 
 impl Debug for FailCode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "FailCode({:x})", self.code.get())
     }
 }

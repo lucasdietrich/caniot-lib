@@ -588,7 +588,7 @@ const char *caniot_error_to_string(caniot_error_t err)
 		EE(CANIOT_EKEYSECTION, "EKEYSECTION", "Unknown attributes section");
 		EE(CANIOT_EKEYATTR, "EKEYATTR", "Unknown attribute");
 		EE(CANIOT_EKEYPART, "EKEYPART", "Unknown attribute part");
-		EE(CANIOT_ENOATTR, "ENOATTR", "No attribute");
+		EE(CANIOT_ENOATTR, "ENOATTR", "No such attribute");
 		EE(CANIOT_ECLSATTR,
 		   "ECLSATTR",
 		   "Class attribute not accessible for current device");

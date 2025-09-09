@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::ProtocolError;
+use crate::error::FailCode;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DeviceId {
@@ -9,11 +9,11 @@ pub struct DeviceId {
 }
 
 impl TryFrom<u8> for DeviceId {
-    type Error = ProtocolError;
+    type Error = FailCode;
 
     fn try_from(id: u8) -> Result<Self, Self::Error> {
         if id > 0x3f {
-            return Err(ProtocolError::DeviceIdCreationError);
+            return Err(FailCode::EINVAL);
         } else {
             Ok(unsafe { DeviceId::new_from_raw_unchecked(id) })
         }
@@ -30,9 +30,9 @@ impl DeviceId {
         DeviceId { class, sub_id }
     }
 
-    pub const fn new(class: u8, sub_id: u8) -> Result<Self, ProtocolError> {
+    pub const fn new(class: u8, sub_id: u8) -> Result<Self, FailCode> {
         if class > 0x7 || sub_id > 0x7 {
-            Err(ProtocolError::DeviceIdCreationError)
+            Err(FailCode::EINVAL)
         } else {
             Ok(unsafe { DeviceId::new_unchecked(class, sub_id) })
         }

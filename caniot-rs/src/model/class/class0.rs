@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use core::ops::Deref;
 
 use caniot_sys as ll;
 
@@ -26,6 +26,7 @@ impl Default for Telemetry {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum IO {
     Oc1,
     Oc2,
@@ -106,7 +107,7 @@ impl Telemetry {
         let mut temperature: u16 = 0;
         let ret =
             unsafe { ll::caniot_blc0_telemetry_get_temperature(&self.0, sensor, &mut temperature) };
-        FailCode::to_result(ret).ok()?;
+        FailCode::to_errno(ret).ok()?;
         Temperature::from_raw_u10(temperature).to_celsius()
     }
 

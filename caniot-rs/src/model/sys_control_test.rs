@@ -13,7 +13,7 @@ fn sys_default() {
 #[test]
 fn sys_hardware_reset() {
     let mut sys = SysCtrl::HARDWARE_RESET;
-    assert_eq!(sys.hardware_reset, true);
+    assert!(sys.hardware_reset);
 
     let sys_ser: u8 = sys.into();
     assert_eq!(sys_ser, 1_u8);
@@ -26,7 +26,7 @@ fn sys_hardware_reset() {
 #[test]
 fn sys_factory_reset() {
     let mut sys = SysCtrl::FACTORY_RESET;
-    assert_eq!(sys.factory_reset, true);
+    assert!(sys.factory_reset);
 
     let sys_ser: u8 = sys.into();
     assert_eq!(sys_ser, 32_u8);

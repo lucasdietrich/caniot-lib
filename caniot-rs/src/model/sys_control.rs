@@ -48,16 +48,16 @@ impl SysCtrl {
     }
 }
 
-impl Into<u8> for SysCtrl {
-    fn into(self) -> u8 {
+impl From<SysCtrl> for u8 {
+    fn from(val: SysCtrl) -> Self {
         let mut payload = 0_u8;
 
-        payload |= self.hardware_reset as u8;
-        payload |= (self._software_reset as u8) << 1;
-        payload |= (self._watchdog_reset as u8) << 2;
-        payload |= (self.watchdog_enable as u8) << 3;
-        payload |= (self.factory_reset as u8) << 5;
-        payload |= (self.inhibit as u8) << 6;
+        payload |= val.hardware_reset as u8;
+        payload |= (val._software_reset as u8) << 1;
+        payload |= (val._watchdog_reset as u8) << 2;
+        payload |= (val.watchdog_enable as u8) << 3;
+        payload |= (val.factory_reset as u8) << 5;
+        payload |= (val.inhibit as u8) << 6;
 
         payload
     }

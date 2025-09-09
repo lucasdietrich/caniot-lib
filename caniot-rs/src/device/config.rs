@@ -34,8 +34,16 @@ impl StaticConfig {
 
         Self { config }
     }
+}
 
-    pub fn as_mut(&mut self) -> &mut ll::caniot_device_config {
-        &mut self.config
-    }
+impl Default for StaticConfig {
+    fn default() -> Self { Self::new() }
+}
+
+impl AsRef<ll::caniot_device_config> for StaticConfig {
+    fn as_ref(&self) -> &ll::caniot_device_config { &self.config }
+}
+
+impl AsMut<ll::caniot_device_config> for StaticConfig {
+    fn as_mut(&mut self) -> &mut ll::caniot_device_config { &mut self.config }
 }

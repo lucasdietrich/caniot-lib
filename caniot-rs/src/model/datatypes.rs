@@ -1,14 +1,10 @@
 use caniot_sys as ll;
 
-use core::{
-    cmp::{max, min},
-    fmt::{Debug, Display},
-};
+use core::fmt::{Debug, Display};
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
 
-use crate::error::FailCode;
 
 #[derive(Clone, Copy, PartialEq, Default)]
 pub struct Temperature(Option<i16>);
@@ -29,7 +25,7 @@ impl Temperature {
     const VALUE_I16_MAX: i16 = 7200;
 
     pub fn new(val: i16) -> Self {
-        if val < Self::VALUE_I16_MIN || val > Self::VALUE_I16_MAX {
+    if !(Self::VALUE_I16_MIN..=Self::VALUE_I16_MAX).contains(&val) {
             Self::INVALID
         } else {
             Temperature(Some(val))
@@ -69,8 +65,7 @@ impl Temperature {
     pub fn to_raw_u10(&self) -> u16 {
         match self.0 {
             Some(val) => {
-                let val = val / 10;
-                let val = max(min(val, 720), -280) as i16;
+                let val = (val / 10).clamp(-280, 720);
                 (val + 280) as u16
             }
             None => Self::VALUE_U10_INVALID_MARKER1,
@@ -82,14 +77,11 @@ impl Temperature {
     }
 
     pub fn to_celsius(&self) -> Option<f32> {
-        match self.0 {
-            Some(val) => Some(val as f32 / 100.0),
-            None => None,
-        }
+    self.0.map(|val| val as f32 / 100.0)
     }
 
     pub fn from_celsius(val: f32) -> Self {
-        if val < Self::VALUE_F_MIN || val > Self::VALUE_F_MAX {
+    if !(Self::VALUE_F_MIN..=Self::VALUE_F_MAX).contains(&val) {
             Self::INVALID
         } else {
             Temperature(Some((val * 100.0) as i16))
@@ -195,7 +187,7 @@ impl Xps {
         let lsb_available_size = 8 - lsb_offset;
         let byte_n = lsb_index >> 3;
         let xps = *self as u8;
-        data[byte_n] |= (xps << lsb_offset) as u8;
+    data[byte_n] |= xps << lsb_offset;
 
         if lsb_available_size < 3 && (byte_n + 1) < len {
             data[byte_n + 1] |= xps >> lsb_available_size;
@@ -208,7 +200,7 @@ impl Xps {
         let lsb_offset = lsb_index & 0x7;
         let lsb_available_size = 8 - lsb_offset;
         let byte_n = lsb_index >> 3;
-        let mut xps = ((data[byte_n] >> lsb_offset) & 0x7) as u8;
+    let mut xps = (data[byte_n] >> lsb_offset) & 0x7;
 
         if lsb_available_size < 3 && (byte_n + 1) < len {
             let msb_remaining_size = 3 - lsb_available_size;

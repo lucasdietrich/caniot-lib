@@ -13,7 +13,7 @@ impl TryFrom<u8> for DeviceId {
 
     fn try_from(id: u8) -> Result<Self, Self::Error> {
         if id > 0x3f {
-            return Err(FailCode::EINVAL);
+            Err(FailCode::EINVAL)
         } else {
             Ok(unsafe { DeviceId::new_from_raw_unchecked(id) })
         }

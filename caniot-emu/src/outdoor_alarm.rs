@@ -4,7 +4,7 @@ use caniot::{
     class::{
         class0::{self, IO}, llpayload::{LLCommand, LLPayload, LLTelemetry}, TempSensType
     },
-    datatypes::{Temperature, Xps},
+    datatypes::Temperature,
     device::implementation::DeviceApi,
     error::FailCode,
     types::Endpoint,
@@ -68,7 +68,7 @@ impl DeviceApi for OutdoorAlarmController {
         self.presence_sensors[0] = false;
         self.presence_sensors[1] = false;
 
-        Ok(telemetry.serialize()?)
+        telemetry.serialize()
     }
 
     fn command(&mut self, ep: Endpoint, data: &[u8]) -> Result<(), FailCode> {

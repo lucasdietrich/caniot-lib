@@ -1,11 +1,10 @@
-use std::time::{Duration, Instant};
-
-use caniot::datatypes::Xps;
-
-use super::helpers::*;
 
 #[test]
 fn test_xps_simple() {
+    use crate::helpers::EmuXps;
+    use std::time::Instant;
+    use caniot::datatypes::Xps;
+    
     let now = Instant::now();
     let mut xps = EmuXps::new(false, false, None);
     assert_eq!(xps.get_state(), false);
@@ -33,6 +32,10 @@ fn test_xps_simple() {
 
 #[test]
 fn test_xps_pulse() {
+    use std::time::{Instant, Duration};
+    use crate::helpers::EmuXps;
+    use caniot::datatypes::Xps;
+
     let mut now = Instant::now();
     let duration = Duration::from_millis(100);
     let mut xps = EmuXps::new(false, false, Some(duration));

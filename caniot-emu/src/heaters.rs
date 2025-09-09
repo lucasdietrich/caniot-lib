@@ -1,5 +1,5 @@
 use caniot::{
-    datatypes::HeatingMode, device::implementation::DeviceApi, did::DeviceId, error::FailCode,
+    datatypes::HeatingMode, device::implementation::DeviceApi, error::FailCode,
     types::Endpoint,
 };
 

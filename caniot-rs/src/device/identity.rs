@@ -16,7 +16,8 @@ impl Identity {
         Self { identification }
     }
 
-    pub fn as_ref(&self) -> &ll::caniot_device_id {
-        &self.identification
-    }
+}
+
+impl AsRef<ll::caniot_device_id> for Identity {
+    fn as_ref(&self) -> &ll::caniot_device_id { &self.identification }
 }

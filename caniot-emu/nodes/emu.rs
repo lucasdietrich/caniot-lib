@@ -5,10 +5,10 @@ use caniot::{
     types::Endpoint,
 };
 use caniot_emu::{
-    NodeApi, garage::GarageController, heaters::HeatersController,
+    garage::GarageController, heaters::HeatersController,
     outdoor_alarm::OutdoorAlarmController, run_nodes,
 };
-use log::{debug, error, info, warn};
+use log::info;
 
 const DEFAULT_DEV: &str = "vcan0";
 

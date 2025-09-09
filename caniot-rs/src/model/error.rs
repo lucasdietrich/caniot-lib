@@ -42,9 +42,9 @@ impl Debug for FailCode {
     }
 }
 
-impl Into<::core::ffi::c_int> for FailCode {
-    fn into(self) -> ::core::ffi::c_int {
-        self.code.get() as ::core::ffi::c_int
+impl From<FailCode> for ::core::ffi::c_int {
+    fn from(value: FailCode) -> Self {
+        value.code.get() as ::core::ffi::c_int
     }
 }
 
@@ -69,6 +69,11 @@ impl core::error::Error for FailCode {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use caniot_sys as ll;
+    use super::FailCode;
+    #[test]
+    fn fmt_debug_nonzero() {
+        let e = FailCode::EAGAIN;
+        let s = format!("{:?}", e);
+        assert!(s.contains("FailCode"));
+    }
 }

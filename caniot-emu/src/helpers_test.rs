@@ -33,7 +33,7 @@ fn test_xps_simple() {
 
 #[test]
 fn test_xps_pulse() {
-    let now = Instant::now();
+    let mut now = Instant::now();
     let duration = Duration::from_millis(100);
     let mut xps = EmuXps::new(false, false, Some(duration));
 
@@ -49,8 +49,7 @@ fn test_xps_pulse() {
     assert_eq!(xps.pulse_pending(), true);
     assert_eq!(xps.pulse_expired(&now), false);
 
-    // This sleep is bad (todo, create an "advance()" method to manually advance in time)
-    std::thread::sleep(duration);
+    now += duration + Duration::from_millis(10);
 
     assert_eq!(xps.pulse_expired(&now), true);
     assert_eq!(xps.pulse_process(&now), Some(false));

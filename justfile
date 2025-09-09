@@ -29,10 +29,10 @@ rust-dyn EXAMPLE="device": build
 	cargo run -p caniot --example {{EXAMPLE}}
 
 rust EXAMPLE="device": build-static
-	CANIOT_LIB_PATH=out/lib/static cargo run -p caniot --example {{EXAMPLE}}
+	CANIOT_LIB_PATH=out/lib/static cargo run --example {{EXAMPLE}}
 
 rust-test: build-static
-	CANIOT_LIB_PATH=out/lib/static cargo test -p caniot
+	CANIOT_LIB_PATH=out/lib/static cargo test
 
 clean:
 	rm -rf build

@@ -83,4 +83,8 @@
 
 #define CANIOT_ATTR_NAME_MAX_LEN 48u
 
+#ifndef CONFIG_CANIOT_DRIVER_LINUX
+#define CONFIG_CANIOT_DRIVER_LINUX 0u
+#endif
+
 #endif /* CANIOT_CONFIG_H_ */

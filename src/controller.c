@@ -436,7 +436,8 @@ int caniot_controller_driv_init(struct caniot_controller *ctrl,
 								const struct caniot_drivers_api *driv,
 								const void *driv_ctx,
 								caniot_controller_event_cb_t cb,
-								void *user_data)
+								void *user_data,
+								uint8_t flags)
 {
 	(void)ctrl;
 	(void)driv;

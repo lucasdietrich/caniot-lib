@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <caniot/caniot.h>
+
+#if CONFIG_CANIOT_DRIVER_LINUX
+
 #define _GNU_SOURCE
 #include <errno.h>
 #include <stdbool.h>
@@ -14,7 +18,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <caniot/caniot.h>
 #include <caniot/drivers/linux.h>
 #include <fcntl.h>
 #include <linux/can.h>
@@ -248,3 +251,5 @@ static const struct caniot_drivers_api g_linux_api = {
 
 // Exported pointer named exactly as requested.
 const struct caniot_drivers_api *linux_driver_api_ptr = &g_linux_api;
+
+#endif // CONFIG_CANIOT_DRIVER_LINUX

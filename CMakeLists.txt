@@ -60,6 +60,7 @@ target_compile_definitions(caniot PUBLIC CONFIG_CANIOT_QUERY_ID=1)
 target_compile_definitions(caniot PUBLIC CONFIG_CANIOT_BUILD_INFOS=1)
 target_compile_definitions(caniot PUBLIC CONFIG_CANIOT_LOG_LEVEL=4) # 4 for debug
 target_compile_definitions(caniot PUBLIC CONFIG_CANIOT_POSIX=1)
+target_compile_definitions(caniot PUBLIC CONFIG_CANIOT_DRIVER_LINUX=1)
 
 # # SIM config
 # target_compile_definitions(caniot PUBLIC CONFIG_CANIOT_DEVICE_DRIVERS_API=0)

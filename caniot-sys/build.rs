@@ -42,6 +42,7 @@ const CONF: &[&str] = &[
     "-DCONFIG_CANIOT_BUILD_INFOS=1",
     "-DCONFIG_CANIOT_LOG_LEVEL=4", // 4 for debug
     "-DCONFIG_CANIOT_POSIX=1",
+    "-DCONFIG_CANIOT_DRIVER_LINUX=1",
 ];
 
 const OPAQUE_TYPES: &[&str] = &[

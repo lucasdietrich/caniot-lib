@@ -4,7 +4,7 @@ use caniot::{
     driver::LinuxDriver,
     types::Endpoint,
 };
-use caniot_emu::{
+use caniot_examples::{
     garage::GarageController, heaters::HeatersController,
     outdoor_alarm::OutdoorAlarmController, run_nodes,
 };

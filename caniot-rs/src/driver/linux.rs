@@ -7,7 +7,6 @@ use std::os::fd::{AsFd, AsRawFd};
 use super::Driver;
 
 pub struct LinuxDriver {
-    // api: NonNull<*const ll::caniot_drivers_api>,
     data: ll::linux_api_context,
 }
 

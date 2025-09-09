@@ -32,10 +32,10 @@ pub trait LLPayload: Sized + PartialEq + Eq + Clone {
         let mut buf = Vec::with_capacity(len as usize);
         let buf_ptr = buf.as_mut_ptr();
         let ret = unsafe { (Self::SER_FN)(self, buf_ptr, &mut len) };
+        FailCode::to_result(ret)?;
         unsafe {
             buf.set_len(len as usize);
         }
-        FailCode::to_result(ret)?;
         Ok(buf)
     }
 
@@ -192,5 +192,42 @@ mod tests {
 
         test_one::<ll::caniot_blc0_command>();
         test_one::<ll::caniot_blc1_command>();
+    }
+
+    #[test]
+    fn test_temp_sens() {
+        fn test_one<L: LLTelemetry + Debug>() {
+            let mut instance = L::default();
+            assert_eq!(instance.get_temperature(TempSensType::BoardSensor), None);
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(0)), None);
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(1)), None);
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(2)), None);
+
+            assert_eq!(instance.set_temperature(TempSensType::BoardSensor, 25.0), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::BoardSensor), Some(25.0));
+            assert_eq!(instance.clear_temperature(TempSensType::BoardSensor), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::BoardSensor), None);
+
+            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(0), 0.0), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(0)), Some(0.0));
+            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(0)), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(0)), None);
+
+            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(1), -10.5), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(1)), Some(-10.5));
+            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(1)), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(1)), None);
+
+            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(2), 70.0), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(2)), Some(70.0));
+            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(2)), Ok(()));
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(2)), None);
+
+            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(3), 0.0).is_err(), true);
+            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(3)), None);
+            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(3)).is_err(), true);
+        }
+        test_one::<ll::caniot_blc0_telemetry>();
+        test_one::<ll::caniot_blc1_telemetry>();
     }
 }

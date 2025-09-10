@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #include <caniot/caniot_private.h>
@@ -46,6 +47,7 @@ int caniot_blc0_telemetry_get(struct caniot_blc0_telemetry *t,
 	t->ext_temperature	= ((buf[3] >> 2) & 0x3Fu) | ((buf[4] & 0x0Fu) << 6);
 	t->ext_temperature2 = ((buf[4] >> 4) & 0x0Fu) | ((buf[5] & 0x3Fu) << 4);
 	t->ext_temperature3 = ((buf[5] >> 6) & 0x03u) | ((buf[6]) << 2);
+
 
 	return 0;
 }

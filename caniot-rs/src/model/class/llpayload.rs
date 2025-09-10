@@ -3,7 +3,7 @@ use std::mem::MaybeUninit;
 use crate::{
     class::TempSensType,
     datatypes::{Temperature, Xps},
-    error::FailCode,
+    error::FailCode, payload::Payload,
 };
 
 use caniot_sys as ll;
@@ -31,9 +31,9 @@ pub trait LLPayload: Sized + PartialEq + Eq + Clone {
 
     const DEFAULT_FN: unsafe extern "C" fn(t: *mut Self) -> ::core::ffi::c_int;
 
-    fn serialize(&self) -> Result<Vec<u8>, FailCode> {
+    fn serialize(&self) -> Result<Payload, FailCode> {
         let mut len = Self::SER_SIZE;
-        let mut buf = Vec::with_capacity(len as usize);
+        let mut buf = Payload::uninit();
         let buf_ptr = buf.as_mut_ptr();
         let ret = unsafe { (Self::SER_FN)(self, buf_ptr, &mut len) };
         FailCode::to_result(ret)?;
@@ -43,19 +43,20 @@ pub trait LLPayload: Sized + PartialEq + Eq + Clone {
         Ok(buf)
     }
 
-    fn deserialize(data: &[u8]) -> Result<Self, FailCode> {
+    fn deserialize(data: impl AsRef<[u8]>) -> Result<Self, FailCode> {
+        let data = data.as_ref();
         if data.len() != Self::SER_SIZE as usize {
-            return Err(unsafe { FailCode::new_unchecked(ll::caniot_error_t::CANIOT_EINVAL) });
+            return Err(FailCode::EINVAL);
         }
 
-        let mut buffer: MaybeUninit<Self> = MaybeUninit::uninit();
+        let mut buffer: MaybeUninit<Self> = MaybeUninit::zeroed(); // TODO actually reimplement the PartialEq for these types
         let ret = unsafe { (Self::DESER_FN)(buffer.as_mut_ptr(), data.as_ptr(), data.len() as u8) };
         FailCode::to_result(ret)?;
         Ok(unsafe { buffer.assume_init() })
     }
 
     fn default() -> Self {
-        let mut buffer: MaybeUninit<Self> = MaybeUninit::uninit();
+        let mut buffer: MaybeUninit<Self> = MaybeUninit::zeroed();
         let ret = unsafe { (Self::DEFAULT_FN)(buffer.as_mut_ptr()) };
         FailCode::to_result(ret).expect("Failed to set default telemetry");
         unsafe { buffer.assume_init() }

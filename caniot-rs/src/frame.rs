@@ -2,7 +2,7 @@ use core::fmt::Debug;
 use std::{mem::MaybeUninit, ops::{Deref, DerefMut}};
 
 use crate::{
-    did::DeviceId, error::FailCode, types::{Direction, Endpoint, Type}
+    did::DeviceId, error::FailCode, payload::Payload, types::{Direction, Endpoint, Type}
 };
 
 use caniot_sys as ll;
@@ -91,7 +91,7 @@ pub enum Request {
     },
     Command {
         endpoint: Endpoint,
-        payload: Vec<u8>,
+        payload: Payload,
     },
     AttributeRead {
         key: u16,
@@ -112,7 +112,7 @@ pub enum ErrorSource {
 pub enum Response {
     Telemetry {
         endpoint: Endpoint,
-        payload: Vec<u8>
+        payload: Payload
     },
     Attribute {
         key: u16,

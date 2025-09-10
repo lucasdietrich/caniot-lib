@@ -2,14 +2,8 @@ use std::time::Duration;
 
 use caniot::{
     class::{
-        TempSensType,
-        class0::{self, IO},
-        llpayload::{LLCommand, LLPayload, LLTelemetry},
-    },
-    datatypes::Temperature,
-    device::implementation::DeviceApi,
-    error::FailCode,
-    types::Endpoint,
+        class0::{self, IO}, llpayload::{LLCommand, LLPayload, LLTelemetry}, TempSensType
+    }, datatypes::Temperature, device::implementation::DeviceApi, error::FailCode, payload::Payload, types::Endpoint
 };
 use expirable::Expirable;
 
@@ -41,7 +35,7 @@ impl OutdoorAlarmController {
 }
 
 impl DeviceApi for OutdoorAlarmController {
-    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, FailCode> {
+    fn telemetry(&mut self, ep: Endpoint) -> Result<Payload, FailCode> {
         if ep != Endpoint::BoardControl {
             return Err(FailCode::ENOTSUP);
         }

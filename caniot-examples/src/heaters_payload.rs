@@ -1,4 +1,4 @@
-use caniot::{datatypes::HeatingMode, error::FailCode};
+use caniot::{datatypes::HeatingMode, error::FailCode, payload::Payload};
 use num::FromPrimitive;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -25,12 +25,12 @@ impl TryFrom<&[u8]> for HeatingControllerCommand {
     }
 }
 
-impl From<HeatingControllerCommand> for Vec<u8> {
+impl From<HeatingControllerCommand> for Payload {
     fn from(val: HeatingControllerCommand) -> Self {
-        vec![
+        [
             val.modes[0] as u8 | (val.modes[1] as u8) << 4,
             val.modes[2] as u8 | (val.modes[3] as u8) << 4,
-        ]
+        ].into()
     }
 }
 
@@ -60,12 +60,12 @@ impl TryFrom<&[u8]> for HeatingControllerTelemetry {
     }
 }
 
-impl From<HeatingControllerTelemetry> for Vec<u8> {
+impl From<HeatingControllerTelemetry> for Payload {
     fn from(val: HeatingControllerTelemetry) -> Self {
-        vec![
+        [
             val.modes[0] as u8 | (val.modes[1] as u8) << 4,
             val.modes[2] as u8 | (val.modes[3] as u8) << 4,
             val.power_status as u8,
-        ]
+        ].into()
     }
 }

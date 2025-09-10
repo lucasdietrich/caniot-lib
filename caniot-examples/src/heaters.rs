@@ -1,5 +1,5 @@
 use caniot::{
-    datatypes::HeatingMode, device::implementation::DeviceApi, error::FailCode, types::Endpoint,
+    datatypes::HeatingMode, device::implementation::DeviceApi, error::FailCode, payload::Payload, types::Endpoint
 };
 
 use crate::{NodeApi, heaters_payload::HeatingControllerCommand};
@@ -42,7 +42,7 @@ impl DeviceApi for HeatersController {
         Ok(())
     }
 
-    fn telemetry(&mut self, _ep: Endpoint) -> Result<Vec<u8>, FailCode> {
+    fn telemetry(&mut self, _ep: Endpoint) -> Result<Payload, FailCode> {
         if !matches!(_ep, Endpoint::ApplicationDefault) {
             return Err(FailCode::ENOTSUP);
         }

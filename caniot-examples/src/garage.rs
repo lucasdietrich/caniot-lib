@@ -2,14 +2,8 @@ use std::time::{Duration, Instant};
 
 use caniot::{
     class::{
-        TempSensType,
-        class0::{self, IO},
-        llpayload::{LLCommand, LLPayload, LLTelemetry},
-    },
-    datatypes::{Temperature, Xps},
-    device::implementation::DeviceApi,
-    error::FailCode,
-    types::Endpoint,
+        class0::{self, IO}, llpayload::{LLCommand, LLPayload, LLTelemetry}, TempSensType
+    }, datatypes::{Temperature, Xps}, device::implementation::DeviceApi, error::FailCode, payload::Payload, types::Endpoint
 };
 use expirable::Expirable;
 use log::debug;
@@ -143,7 +137,7 @@ impl DeviceApi for GarageController {
         Ok(())
     }
 
-    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, FailCode> {
+    fn telemetry(&mut self, ep: Endpoint) -> Result<Payload, FailCode> {
         if !matches!(ep, Endpoint::BoardControl) {
             return Err(FailCode::ENOTSUP);
         }

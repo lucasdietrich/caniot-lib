@@ -4,6 +4,7 @@ pub mod driver;
 pub mod frame;
 pub mod model;
 pub mod utils;
+pub mod payload;
 
 pub use driver::*;
 pub use model::*;

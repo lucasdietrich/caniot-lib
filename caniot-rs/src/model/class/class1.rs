@@ -227,7 +227,7 @@ impl Default for Command {
 
 impl Command {
     pub fn try_from_raw(data: impl AsRef<[u8]>) -> Result<Self, FailCode> {
-        let command = ll::caniot_blc1_command::deserialize(data.as_ref())?;
+        let command = ll::caniot_blc1_command::deserialize(data)?;
         Ok(Command(command))
     }
 }

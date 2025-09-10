@@ -1,7 +1,7 @@
-use crate::{error::FailCode, types::Endpoint};
+use crate::{error::FailCode, payload::Payload, types::Endpoint};
 
 pub trait DeviceApi {
-    fn telemetry(&mut self, _ep: Endpoint) -> Result<Vec<u8>, FailCode> {
+    fn telemetry(&mut self, _ep: Endpoint) -> Result<Payload, FailCode> {
         Err(FailCode::ENOTSUP)
     }
 

@@ -4,12 +4,7 @@ use caniot::{
     class::{
         class0::{self, IO},
         llpayload::{LLPayload, LLTelemetry},
-    },
-    device::{Device, StaticConfig, implementation::DeviceApi},
-    did::DeviceId,
-    driver::LinuxDriver,
-    error::FailCode,
-    types::Endpoint,
+    }, device::{implementation::DeviceApi, Device, StaticConfig}, did::DeviceId, driver::LinuxDriver, error::FailCode, payload::Payload, types::Endpoint
 };
 use log::{debug, error, info, warn};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
@@ -17,7 +12,7 @@ use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
 pub struct Sensor;
 
 impl DeviceApi for Sensor {
-    fn telemetry(&mut self, ep: Endpoint) -> Result<Vec<u8>, FailCode> {
+    fn telemetry(&mut self, ep: Endpoint) -> Result<Payload, FailCode> {
         info!("Sensor telemetry request for endpoint {:?}", ep);
 
         let mut telem = class0::Telemetry::default();

@@ -5,8 +5,8 @@ use caniot::{
     types::Endpoint,
 };
 use caniot_examples::{
-    garage::GarageController, heaters::HeatersController,
-    outdoor_alarm::OutdoorAlarmController, run_nodes,
+    garage::GarageController, heaters::HeatersController, outdoor_alarm::OutdoorAlarmController,
+    run_nodes,
 };
 use log::info;
 

@@ -4,9 +4,7 @@ use std::ops::DerefMut;
 use caniot_sys as ll;
 
 use crate::{
-    class::{
-        llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry}
-    },
+    class::llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry},
     error::FailCode,
 };
 

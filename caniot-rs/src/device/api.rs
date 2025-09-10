@@ -6,7 +6,7 @@ use crate::{device::implementation::DeviceApi, types::Endpoint};
 
 pub(super) struct DeviceApiWrapper<A: DeviceApi> {
     callbacks: Box<ll::caniot_device_api>, // addr shouldn't move, device has pointers which reference api callbacks
-    data: Box<A>, // Box<dyn ..> is a fat pointer, so wrap it again in a Box
+    data: Box<A>,
 }
 
 fn get_api_from_dev<A: DeviceApi + 'static>(dev: *mut ll::caniot_device) -> &'static mut A {

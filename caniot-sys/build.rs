@@ -98,10 +98,8 @@ fn bindgen() {
 }
 
 fn main() {
-    let caniot_lib_path =
-        env::var("CANIOT_LIB_PATH").unwrap_or_else(|_| "out".to_string());
-    let caniot_lib_type =
-        env::var("CANIOT_LIB_TYPE").unwrap_or_else(|_| "static".to_string());
+    let caniot_lib_path = env::var("CANIOT_LIB_PATH").unwrap_or_else(|_| "out".to_string());
+    let caniot_lib_type = env::var("CANIOT_LIB_TYPE").unwrap_or_else(|_| "static".to_string());
 
     // link the C library
     // println!("cargo:rustc-link-lib=caniot");

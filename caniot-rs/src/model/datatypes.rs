@@ -5,7 +5,6 @@ use core::fmt::{Debug, Display};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
 
-
 #[derive(Clone, Copy, PartialEq, Default)]
 pub struct Temperature(Option<i16>);
 
@@ -25,7 +24,7 @@ impl Temperature {
     const VALUE_I16_MAX: i16 = 7200;
 
     pub fn new(val: i16) -> Self {
-    if !(Self::VALUE_I16_MIN..=Self::VALUE_I16_MAX).contains(&val) {
+        if !(Self::VALUE_I16_MIN..=Self::VALUE_I16_MAX).contains(&val) {
             Self::INVALID
         } else {
             Temperature(Some(val))
@@ -77,11 +76,11 @@ impl Temperature {
     }
 
     pub fn to_celsius(&self) -> Option<f32> {
-    self.0.map(|val| val as f32 / 100.0)
+        self.0.map(|val| val as f32 / 100.0)
     }
 
     pub fn from_celsius(val: f32) -> Self {
-    if !(Self::VALUE_F_MIN..=Self::VALUE_F_MAX).contains(&val) {
+        if !(Self::VALUE_F_MIN..=Self::VALUE_F_MAX).contains(&val) {
             Self::INVALID
         } else {
             Temperature(Some((val * 100.0) as i16))
@@ -187,7 +186,7 @@ impl Xps {
         let lsb_available_size = 8 - lsb_offset;
         let byte_n = lsb_index >> 3;
         let xps = *self as u8;
-    data[byte_n] |= xps << lsb_offset;
+        data[byte_n] |= xps << lsb_offset;
 
         if lsb_available_size < 3 && (byte_n + 1) < len {
             data[byte_n + 1] |= xps >> lsb_available_size;
@@ -200,7 +199,7 @@ impl Xps {
         let lsb_offset = lsb_index & 0x7;
         let lsb_available_size = 8 - lsb_offset;
         let byte_n = lsb_index >> 3;
-    let mut xps = (data[byte_n] >> lsb_offset) & 0x7;
+        let mut xps = (data[byte_n] >> lsb_offset) & 0x7;
 
         if lsb_available_size < 3 && (byte_n + 1) < len {
             let msb_remaining_size = 3 - lsb_available_size;

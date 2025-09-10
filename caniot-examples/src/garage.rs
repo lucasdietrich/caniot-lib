@@ -2,7 +2,9 @@ use std::time::{Duration, Instant};
 
 use caniot::{
     class::{
-        class0::{self, IO}, llpayload::{LLCommand, LLPayload, LLTelemetry}, TempSensType
+        TempSensType,
+        class0::{self, IO},
+        llpayload::{LLCommand, LLPayload, LLTelemetry},
     },
     datatypes::{Temperature, Xps},
     device::implementation::DeviceApi,

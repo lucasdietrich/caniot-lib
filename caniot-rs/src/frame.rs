@@ -36,7 +36,7 @@ impl<'a> Frame<'a> {
     /// and the returned `Frame` borrows the payload bytes immutably for `'a`.
     pub unsafe fn from_ll_unchecked(frame: *const ll::caniot_frame_t) -> Self {
         debug_assert!(!frame.is_null());
-    let frame = unsafe { &*frame };
+        let frame = unsafe { &*frame };
 
         let (action, kind) = match frame.id.type_() {
             ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_COMMAND => (Action::Write, Kind::Telemetry),
@@ -56,9 +56,10 @@ impl<'a> Frame<'a> {
             _ => panic!("Unknown frame direction"),
         };
 
-    let did = unsafe { DeviceId::new_unchecked(frame.id.cls() as u8, frame.id.sid() as u8) };
+        let did = unsafe { DeviceId::new_unchecked(frame.id.cls() as u8, frame.id.sid() as u8) };
         let endpoint = Endpoint::try_from(frame.id.endpoint()).unwrap();
-    let payload = unsafe { core::slice::from_raw_parts(frame.buf.as_ptr(), frame.len as usize) };
+        let payload =
+            unsafe { core::slice::from_raw_parts(frame.buf.as_ptr(), frame.len as usize) };
 
         Frame {
             did,

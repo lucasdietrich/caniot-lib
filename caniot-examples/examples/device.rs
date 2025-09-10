@@ -5,7 +5,7 @@ use caniot::{
         class0::{self, IO},
         llpayload::{LLPayload, LLTelemetry},
     },
-    device::{implementation::DeviceApi, Device, StaticConfig},
+    device::{Device, StaticConfig, implementation::DeviceApi},
     did::DeviceId,
     driver::LinuxDriver,
     error::FailCode,

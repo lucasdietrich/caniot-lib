@@ -1,6 +1,10 @@
 use std::mem::MaybeUninit;
 
-use crate::{class::TempSensType, datatypes::{Temperature, Xps}, error::FailCode};
+use crate::{
+    class::TempSensType,
+    datatypes::{Temperature, Xps},
+    error::FailCode,
+};
 
 use caniot_sys as ll;
 
@@ -94,9 +98,7 @@ pub trait LLTelemetry: LLPayload {
         let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
         let temperature = Temperature::from_celsius(celsius);
 
-        let ret = unsafe {
-            (Self::SET_TEMP_FN)(self, sensor, temperature.to_raw_u10())
-        };
+        let ret = unsafe { (Self::SET_TEMP_FN)(self, sensor, temperature.to_raw_u10()) };
         FailCode::to_errno(ret)
     }
 
@@ -109,13 +111,16 @@ pub trait LLTelemetry: LLPayload {
     fn get_temperature(&self, sensor: TempSensType) -> Option<f32> {
         let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor).ok()?;
         let mut temperature: u16 = 0;
-        let ret =
-            unsafe { (Self::GET_TEMP_FN)(self, sensor, &mut temperature) };
+        let ret = unsafe { (Self::GET_TEMP_FN)(self, sensor, &mut temperature) };
         FailCode::to_errno(ret).ok()?;
         Temperature::from_raw_u10(temperature).to_celsius()
     }
 
-    fn set_io(&mut self, io: impl TryInto<Self::IOType, Error = FailCode>, state: bool) -> Result<(), FailCode> {
+    fn set_io(
+        &mut self,
+        io: impl TryInto<Self::IOType, Error = FailCode>,
+        state: bool,
+    ) -> Result<(), FailCode> {
         let io = io.try_into()?;
         let ret = unsafe { (Self::SET_IO_FN)(self, io, state) };
         FailCode::to_errno(ret)
@@ -145,14 +150,21 @@ pub trait LLCommand: LLPayload {
         xps: ll::caniot_complex_digital_cmd_t::Type,
     ) -> ::core::ffi::c_int;
 
-    fn set_io_xps(&mut self, io: impl TryInto<Self::IOType, Error = FailCode>, xps: Xps) -> Result<(), FailCode> {
+    fn set_io_xps(
+        &mut self,
+        io: impl TryInto<Self::IOType, Error = FailCode>,
+        xps: Xps,
+    ) -> Result<(), FailCode> {
         let io = io.try_into()?;
         let xps = xps.into();
         let ret = unsafe { (Self::SET_IO_XPS_FN)(self, io, xps) };
         FailCode::to_errno(ret)
     }
 
-    fn get_io_xps(&self, io: impl TryInto<Self::IOType, Error = FailCode>) -> Result<Xps, FailCode> {
+    fn get_io_xps(
+        &self,
+        io: impl TryInto<Self::IOType, Error = FailCode>,
+    ) -> Result<Xps, FailCode> {
         let io = io.try_into()?;
         let mut xps = ll::caniot_complex_digital_cmd_t::CANIOT_XPS_NONE;
         let ret = unsafe { (Self::GET_IO_XPS_FN)(self, io, &mut xps) };
@@ -199,33 +211,100 @@ mod tests {
         fn test_one<L: LLTelemetry + Debug>() {
             let mut instance = L::default();
             assert_eq!(instance.get_temperature(TempSensType::BoardSensor), None);
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(0)), None);
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(1)), None);
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(2)), None);
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(0)),
+                None
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(1)),
+                None
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(2)),
+                None
+            );
 
-            assert_eq!(instance.set_temperature(TempSensType::BoardSensor, 25.0), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::BoardSensor), Some(25.0));
-            assert_eq!(instance.clear_temperature(TempSensType::BoardSensor), Ok(()));
+            assert_eq!(
+                instance.set_temperature(TempSensType::BoardSensor, 25.0),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::BoardSensor),
+                Some(25.0)
+            );
+            assert_eq!(
+                instance.clear_temperature(TempSensType::BoardSensor),
+                Ok(())
+            );
             assert_eq!(instance.get_temperature(TempSensType::BoardSensor), None);
 
-            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(0), 0.0), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(0)), Some(0.0));
-            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(0)), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(0)), None);
+            assert_eq!(
+                instance.set_temperature(TempSensType::ExternalSensor(0), 0.0),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(0)),
+                Some(0.0)
+            );
+            assert_eq!(
+                instance.clear_temperature(TempSensType::ExternalSensor(0)),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(0)),
+                None
+            );
 
-            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(1), -10.5), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(1)), Some(-10.5));
-            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(1)), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(1)), None);
+            assert_eq!(
+                instance.set_temperature(TempSensType::ExternalSensor(1), -10.5),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(1)),
+                Some(-10.5)
+            );
+            assert_eq!(
+                instance.clear_temperature(TempSensType::ExternalSensor(1)),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(1)),
+                None
+            );
 
-            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(2), 70.0), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(2)), Some(70.0));
-            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(2)), Ok(()));
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(2)), None);
+            assert_eq!(
+                instance.set_temperature(TempSensType::ExternalSensor(2), 70.0),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(2)),
+                Some(70.0)
+            );
+            assert_eq!(
+                instance.clear_temperature(TempSensType::ExternalSensor(2)),
+                Ok(())
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(2)),
+                None
+            );
 
-            assert_eq!(instance.set_temperature(TempSensType::ExternalSensor(3), 0.0).is_err(), true);
-            assert_eq!(instance.get_temperature(TempSensType::ExternalSensor(3)), None);
-            assert_eq!(instance.clear_temperature(TempSensType::ExternalSensor(3)).is_err(), true);
+            assert_eq!(
+                instance
+                    .set_temperature(TempSensType::ExternalSensor(3), 0.0)
+                    .is_err(),
+                true
+            );
+            assert_eq!(
+                instance.get_temperature(TempSensType::ExternalSensor(3)),
+                None
+            );
+            assert_eq!(
+                instance
+                    .clear_temperature(TempSensType::ExternalSensor(3))
+                    .is_err(),
+                true
+            );
         }
         test_one::<ll::caniot_blc0_telemetry>();
         test_one::<ll::caniot_blc1_telemetry>();

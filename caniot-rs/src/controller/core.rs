@@ -17,7 +17,7 @@ use crate::controller::query::Handle;
 use crate::did::DeviceId;
 use crate::driver::Driver;
 use crate::error::FailCode;
-use crate::frame::Frame;
+use crate::frame::{OwnedFrame, Request};
 
 pub struct Controller<D: Driver> {
     controller: Box<ll::caniot_controller>,
@@ -97,13 +97,13 @@ impl<D: Driver> Controller<D> {
     pub fn query(
         &mut self,
         did: DeviceId,
-        frame: Frame,
+        request: Request,
         timeout: Option<Duration>,
     ) -> Result<Option<Handle>, FailCode> {
         let timeout_ms = timeout.unwrap_or(Duration::from_millis(0)).as_millis() as u32;
-        let mut frame = frame.to_ll();
+        let mut frame = OwnedFrame::new_request(request);
         let ret = unsafe {
-            ll::caniot_controller_query(self.as_mut_ptr(), did.to_u8(), &mut frame, timeout_ms)
+            ll::caniot_controller_query(self.as_mut_ptr(), did.to_u8(), frame.as_mut(), timeout_ms)
         };
         FailCode::to_result(ret).map(|handle| Handle::new(handle as u8))
     }

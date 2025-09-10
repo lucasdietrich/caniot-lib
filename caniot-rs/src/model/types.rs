@@ -2,16 +2,55 @@ use core::fmt;
 
 use caniot_sys as ll;
 
-use num::FromPrimitive;
 use num_derive::FromPrimitive;
 
-use crate::did::DeviceId;
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive)]
-pub enum Kind {
+pub enum Type {
     Telemetry = 0,
-    Attribute = 1,
+    Command = 1,
+    ReadAttribute = 2,
+    WriteAttribute = 3,
 }
+
+impl Type {
+    pub fn get_action(&self) -> Action {
+        match self {
+            Type::Telemetry => Action::Read,
+            Type::Command => Action::Write,
+            Type::ReadAttribute => Action::Read,
+            Type::WriteAttribute => Action::Write,
+        }
+    }
+}
+
+impl From<Type> for ll::caniot_frame_type_t::Type {
+    fn from(kind: Type) -> Self {
+        match kind {
+            Type::Telemetry => ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_TELEMETRY,
+            Type::Command => ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_COMMAND,
+            Type::ReadAttribute => ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
+            Type::WriteAttribute => ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE,
+        }
+    }
+}
+
+impl From<ll::caniot_frame_type_t::Type> for Type {
+    fn from(value: ll::caniot_frame_type_t::Type) -> Self {
+        match value {
+            ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_TELEMETRY => Type::Telemetry,
+            ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_COMMAND => Type::Command,
+            ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_READ_ATTRIBUTE => Type::ReadAttribute,
+            ll::caniot_frame_type_t::CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE => Type::WriteAttribute,
+            _ => panic!("Unknown frame type"),
+        }
+    }
+}
+
+// #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive)]
+// pub enum Kind {
+//     Telemetry = 0,
+//     Attribute = 1,
+// }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive)]
 pub enum Action {
@@ -25,12 +64,37 @@ pub enum Direction {
     Response = 1,
 }
 
+impl From<Direction> for ll::caniot_frame_dir_t::Type {
+    fn from(direction: Direction) -> Self {
+        match direction {
+            Direction::Query => ll::caniot_frame_dir_t::CANIOT_QUERY,
+            Direction::Response => ll::caniot_frame_dir_t::CANIOT_RESPONSE,
+        }
+    }
+}
+
+impl From<ll::caniot_frame_dir_t::Type> for Direction {
+    fn from(value: ll::caniot_frame_dir_t::Type) -> Self {
+        match value {
+            ll::caniot_frame_dir_t::CANIOT_QUERY => Direction::Query,
+            ll::caniot_frame_dir_t::CANIOT_RESPONSE => Direction::Response,
+            _ => panic!("Unknown frame direction"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive)]
 pub enum Endpoint {
     ApplicationDefault = 0,
     Application1 = 1,
     Application2 = 2,
     BoardControl = 3,
+}
+
+impl From<Endpoint> for u8 {
+    fn from(endpoint: Endpoint) -> Self {
+        endpoint as u8
+    }
 }
 
 impl From<Endpoint> for ll::caniot_endpoint_t::Type {
@@ -65,51 +129,6 @@ impl fmt::Display for Endpoint {
             Endpoint::Application1 => write!(f, "ep-1"),
             Endpoint::Application2 => write!(f, "ep-2"),
             Endpoint::BoardControl => write!(f, "ep-c"),
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct Id {
-    pub(crate) device_id: DeviceId,
-    pub(crate) direction: Direction,
-    pub(crate) msg_type: Kind,
-    pub(crate) action: Action,
-    pub(crate) endpoint: Endpoint,
-}
-
-impl From<u16> for Id {
-    fn from(id: u16) -> Self {
-        Id {
-            device_id: DeviceId::try_from(((id >> 3) & 0x3f) as u8).unwrap(),
-            action: Action::from_u8((id & 0x1) as u8).unwrap(),
-            msg_type: Kind::from_u8(((id >> 1) & 0x1) as u8).unwrap(),
-            direction: Direction::from_u8(((id >> 2) & 0x1) as u8).unwrap(),
-            endpoint: Endpoint::from_u8(((id >> 9) & 0x3) as u8).unwrap(),
-        }
-    }
-}
-
-impl Id {
-    // Direct conversion functions instead of Into traits
-    pub fn to_u16(self) -> u16 {
-        let mut id: u16 = 0;
-        id |= (self.device_id.class as u16) << 3;
-        id |= (self.device_id.sub_id as u16) << 6;
-        id |= self.action as u16;
-        id |= (self.msg_type as u16) << 1;
-        id |= (self.direction as u16) << 2;
-        id |= (self.endpoint as u16) << 9;
-        id
-    }
-
-    /// Returns the endpoint if the message is a telemetry message
-    /// Returns None if the message is not a attribute message
-    pub fn get_endpoint(&self) -> Option<Endpoint> {
-        if self.msg_type == Kind::Telemetry {
-            Some(self.endpoint)
-        } else {
-            None
         }
     }
 }

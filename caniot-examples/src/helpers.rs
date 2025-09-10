@@ -77,29 +77,29 @@ impl EmuXps {
         }
     }
 
-    pub fn apply(&mut self, action: &Xps) {
+    pub fn apply(&mut self, action: Xps) {
         match action {
-            &Xps::None => {}
-            &Xps::SetOn => {
+            Xps::None => {}
+            Xps::SetOn => {
                 self.pin_state = true;
             }
-            &Xps::SetOff => {
+            Xps::SetOff => {
                 self.pin_state = false;
             }
-            &Xps::Toggle => {
+            Xps::Toggle => {
                 self.pin_state = !self.pin_state;
             }
-            &Xps::Reset => {
+            Xps::Reset => {
                 self.pin_state = self.pin_default;
                 self.pulse_time = None;
             }
-            &Xps::PulseOn => {
+            Xps::PulseOn => {
                 self.pulse(true);
             }
-            &Xps::PulseOff => {
+            Xps::PulseOff => {
                 self.pulse(false);
             }
-            &Xps::PulseCancel => {
+            Xps::PulseCancel => {
                 self.pulse_time = None;
             }
         }

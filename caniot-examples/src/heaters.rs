@@ -51,6 +51,6 @@ impl DeviceApi for HeatersController {
             modes: self.modes,
             power_status: self.power_status,
         };
-        Ok(telemetry.try_into().unwrap())
+        Ok(telemetry.into())
     }
 }

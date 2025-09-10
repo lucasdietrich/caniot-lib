@@ -101,20 +101,11 @@ impl Expirable<Duration> for Door {
     }
 }
 
+#[derive(Default, Debug)]
 pub struct GarageController {
     left_door: Door,  // RL1, IN3
     right_door: Door, // RL2, IN4
     gate_open: bool,  // IN2
-}
-
-impl Default for GarageController {
-    fn default() -> Self {
-        Self {
-            left_door: Door::default(),
-            right_door: Door::default(),
-            gate_open: false,
-        }
-    }
 }
 
 impl NodeApi for GarageController {
@@ -170,6 +161,6 @@ impl DeviceApi for GarageController {
         t.clear_temperature(TempSensType::ExternalSensor(1))?;
         t.clear_temperature(TempSensType::ExternalSensor(2))?;
 
-        Ok(t.serialize()?)
+        t.serialize()
     }
 }

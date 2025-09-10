@@ -2,13 +2,11 @@ use std::{io::Read, os::fd::AsFd, time::Duration};
 
 use caniot::{
     controller::{
-        Controller,
-        event::ControllerEvent,
-        implementation::{ControllerApi, EventVerdict},
+        event::ControllerEvent, implementation::{ControllerApi, EventVerdict}, Controller
     },
     did::DeviceId,
     driver::LinuxDriver,
-    frame::Frame,
+    frame::Request,
 };
 use log::{debug, error, info};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
@@ -76,12 +74,8 @@ fn main() {
                             Ok(_) => match buf[0] {
                                 b'q' | b'Q' => {
                                     info!("Query");
-                                    // let did =
-                                    //     DeviceId::try_from(8).expect("Failed to create DeviceId");
-                                    let did = DeviceId::BROADCAST;
-                                    let frame = Frame::new(did, &[1, 2, 3, 4])
-                                        .expect("Failed to create frame");
-                                    match ctrl.query(did, frame, Some(Duration::from_millis(1000)))
+                                    let request = Request::AttributeRead { key: 0 };
+                                    match ctrl.query(DeviceId::BROADCAST, request, Some(Duration::from_millis(1000)))
                                     {
                                         Ok(Some(handle)) => {
                                             info!("Query sent, handle: {:?}", handle);

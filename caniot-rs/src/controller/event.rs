@@ -2,9 +2,9 @@ use core::{fmt::Debug, time::Duration};
 
 use caniot_sys as ll;
 
-use crate::{controller::query::Handle, did::DeviceId, frame::Frame};
+use crate::{controller::query::Handle, did::DeviceId, frame::FrameRef};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ControllerEvent<'a> {
     /// Frame received that does not belong to a tracked query.
     Orphan {
@@ -30,30 +30,30 @@ impl<'a> ControllerEvent<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MessageStatus<'a> {
-    Ok { payload: Frame<'a> },
-    Error { payload: Frame<'a> },
+    Ok { frame: FrameRef<'a> },
+    Error { frame: FrameRef<'a> },
 }
 
 impl<'a> MessageStatus<'a> {
-    pub fn payload(&self) -> &Frame<'a> {
+    pub fn frame(&self) -> &FrameRef<'a> {
         match self {
-            MessageStatus::Ok { payload } | MessageStatus::Error { payload } => payload,
+            MessageStatus::Ok { frame } | MessageStatus::Error { frame } => frame,
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QueryResult<'a> {
-    Ok { payload: Frame<'a> },
-    Error { payload: Frame<'a> },
+    Ok { payload: FrameRef<'a> },
+    Error { payload: FrameRef<'a> },
     Timeout,
     Cancelled,
 }
 
 impl<'a> QueryResult<'a> {
-    pub fn payload(&self) -> Option<&Frame<'a>> {
+    pub fn payload(&self) -> Option<&FrameRef<'a>> {
         match self {
             QueryResult::Ok { payload } | QueryResult::Error { payload } => Some(payload),
             QueryResult::Timeout | QueryResult::Cancelled => None,
@@ -67,13 +67,13 @@ impl<'a> ControllerEvent<'a> {
             match (*inner).context() {
                 ll::caniot_controller_event_context_t::CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN => {
                     let did = DeviceId::new_from_raw_unchecked((*inner).did);
-                    let payload = Frame::from_ll_unchecked((*inner).response);
+                    let frame = FrameRef::from_ll_unchecked((*inner).response);
                     let kind = if (*inner).status()
                         == ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_OK
                     {
-                        MessageStatus::Ok { payload }
+                        MessageStatus::Ok { frame }
                     } else {
-                        MessageStatus::Error { payload }
+                        MessageStatus::Error { frame }
                     };
                     ControllerEvent::Orphan { did, status: kind }
                 }
@@ -83,11 +83,11 @@ impl<'a> ControllerEvent<'a> {
                     let terminated = (*inner).terminated() != 0;
                     let kind = match (*inner).status() {
                         ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_OK => {
-                            let payload = Frame::from_ll_unchecked((*inner).response);
+                            let payload = FrameRef::from_ll_unchecked((*inner).response);
                             QueryResult::Ok { payload }
                         }
                         ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_ERROR => {
-                            let payload = Frame::from_ll_unchecked((*inner).response);
+                            let payload = FrameRef::from_ll_unchecked((*inner).response);
                             QueryResult::Error { payload }
                         }
                         ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_TIMEOUT => {

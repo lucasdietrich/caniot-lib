@@ -223,16 +223,9 @@ bool caniot_device_is_target(caniot_did_t did, const struct caniot_frame *frame)
 
 bool caniot_controller_is_target(const struct caniot_frame *frame);
 
-static inline void caniot_clear_frame(struct caniot_frame *frame)
-{
-	memset(frame, 0x00U, sizeof(struct caniot_frame));
-}
+void caniot_clear_frame(struct caniot_frame *frame);
 
-static inline void caniot_copy_frame(struct caniot_frame *dst,
-									 const struct caniot_frame *src)
-{
-	memcpy(dst, src, sizeof(struct caniot_frame));
-}
+void caniot_copy_frame(struct caniot_frame *dst, const struct caniot_frame *src);
 
 bool caniot_is_error_frame(caniot_id_t id);
 
@@ -255,10 +248,10 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 /*____________________________________________________________________________*/
 
-int caniot_build_query_telemetry(struct caniot_frame *frame, uint8_t endpoint);
+int caniot_build_query_telemetry(struct caniot_frame *frame, caniot_endpoint_t endpoint);
 
 int caniot_build_query_command(struct caniot_frame *frame,
-							   uint8_t endpoint,
+							   caniot_endpoint_t endpoint,
 							   const uint8_t *buf,
 							   uint8_t size);
 

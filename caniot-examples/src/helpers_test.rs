@@ -13,19 +13,19 @@ fn test_xps_simple() {
     assert_eq!(xps.time_to_pulse_expire(&now), None);
     assert_eq!(xps.pulse_process(&now), None);
 
-    xps.apply(&Xps::SetOn);
+    xps.apply(Xps::SetOn);
     assert_eq!(xps.get_state(), true);
 
-    xps.apply(&Xps::SetOff);
+    xps.apply(Xps::SetOff);
     assert_eq!(xps.get_state(), false);
 
-    xps.apply(&Xps::SetOn);
+    xps.apply(Xps::SetOn);
     assert_eq!(xps.get_state(), true);
 
-    xps.apply(&Xps::None);
+    xps.apply(Xps::None);
     assert_eq!(xps.get_state(), true);
 
-    xps.apply(&Xps::Reset);
+    xps.apply(Xps::Reset);
     assert_eq!(xps.get_state(), false);
 }
 
@@ -46,7 +46,7 @@ fn test_xps_pulse() {
     assert_eq!(xps.time_to_pulse_expire(&now), None);
     assert_eq!(xps.pulse_process(&now), None);
 
-    xps.apply(&Xps::PulseOn);
+    xps.apply(Xps::PulseOn);
     assert_eq!(xps.get_state(), true);
     assert_eq!(xps.pulse_pending(), true);
     assert_eq!(xps.pulse_expired(&now), false);

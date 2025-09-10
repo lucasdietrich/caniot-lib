@@ -8,6 +8,12 @@ pub struct DeviceId {
     pub sub_id: u8,
 }
 
+impl From<DeviceId> for u8 {
+    fn from(did: DeviceId) -> Self {
+        did.to_u8()
+    }
+}
+
 impl TryFrom<u8> for DeviceId {
     type Error = FailCode;
 

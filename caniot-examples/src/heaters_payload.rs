@@ -25,14 +25,12 @@ impl TryFrom<&[u8]> for HeatingControllerCommand {
     }
 }
 
-impl Into<Vec<u8>> for HeatingControllerCommand {
-    fn into(self) -> Vec<u8> {
-        let mut payload = Vec::with_capacity(2);
-
-        payload.push(self.modes[0] as u8 | (self.modes[1] as u8) << 4);
-        payload.push(self.modes[2] as u8 | (self.modes[3] as u8) << 4);
-
-        payload
+impl From<HeatingControllerCommand> for Vec<u8> {
+    fn from(val: HeatingControllerCommand) -> Self {
+        vec![
+            val.modes[0] as u8 | (val.modes[1] as u8) << 4,
+            val.modes[2] as u8 | (val.modes[3] as u8) << 4,
+        ]
     }
 }
 
@@ -62,13 +60,12 @@ impl TryFrom<&[u8]> for HeatingControllerTelemetry {
     }
 }
 
-impl Into<Vec<u8>> for HeatingControllerTelemetry {
-    fn into(self) -> Vec<u8> {
-        let mut payload = Vec::with_capacity(3);
-
-        payload.push(self.modes[0] as u8 | (self.modes[1] as u8) << 4);
-        payload.push(self.modes[2] as u8 | (self.modes[3] as u8) << 4);
-        payload.push(self.power_status as u8);
-        payload
+impl From<HeatingControllerTelemetry> for Vec<u8> {
+    fn from(val: HeatingControllerTelemetry) -> Self {
+        vec![
+            val.modes[0] as u8 | (val.modes[1] as u8) << 4,
+            val.modes[2] as u8 | (val.modes[3] as u8) << 4,
+            val.power_status as u8,
+        ]
     }
 }

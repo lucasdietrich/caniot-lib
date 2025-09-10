@@ -13,7 +13,7 @@ impl Handle {
         Self(unsafe { NonZeroU8::new_unchecked(handle) })
     }
 
-    pub(crate) fn get(&self) -> u8 {
-        self.0.get()
-    }
+    // pub(crate) fn get(&self) -> u8 {
+    //     self.0.get()
+    // }
 }

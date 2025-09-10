@@ -80,9 +80,9 @@ impl DeviceApi for OutdoorAlarmController {
 
         let command = class0::Command::try_from_raw(&data[0..2])?;
 
-        self.lights[0].apply(&command.get_io_xps(IO::Oc1).unwrap());
-        self.lights[1].apply(&command.get_io_xps(IO::Oc2).unwrap());
-        self.siren.apply(&command.get_io_xps(IO::Relay1).unwrap());
+        self.lights[0].apply(command.get_io_xps(IO::Oc1).unwrap());
+        self.lights[1].apply(command.get_io_xps(IO::Oc2).unwrap());
+        self.siren.apply(command.get_io_xps(IO::Relay1).unwrap());
 
         Ok(())
     }

@@ -1,9 +1,10 @@
-use std::mem::MaybeUninit;
+use core::mem::MaybeUninit;
 
 use crate::{
     class::TempSensType,
     datatypes::{Temperature, Xps},
-    error::FailCode, payload::Payload,
+    error::FailCode,
+    payload::Payload,
 };
 
 use caniot_sys as ll;
@@ -176,7 +177,7 @@ pub trait LLCommand: LLPayload {
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::Debug;
+    use core::fmt::Debug;
 
     use super::*;
 

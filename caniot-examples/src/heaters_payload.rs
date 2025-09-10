@@ -30,7 +30,8 @@ impl From<HeatingControllerCommand> for Payload {
         [
             val.modes[0] as u8 | (val.modes[1] as u8) << 4,
             val.modes[2] as u8 | (val.modes[3] as u8) << 4,
-        ].into()
+        ]
+        .into()
     }
 }
 
@@ -66,6 +67,7 @@ impl From<HeatingControllerTelemetry> for Payload {
             val.modes[0] as u8 | (val.modes[1] as u8) << 4,
             val.modes[2] as u8 | (val.modes[3] as u8) << 4,
             val.power_status as u8,
-        ].into()
+        ]
+        .into()
     }
 }

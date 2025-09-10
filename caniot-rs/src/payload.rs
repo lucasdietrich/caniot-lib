@@ -35,7 +35,10 @@ impl Payload {
         self.data.as_mut_ptr()
     }
 
-    pub unsafe fn set_len(&mut self, len: usize)  {
+    /// # Safety
+    ///
+    /// `len` must be less than or equal to 8.
+    pub unsafe fn set_len(&mut self, len: usize) {
         self.len = len;
     }
 
@@ -43,7 +46,6 @@ impl Payload {
         Payload::default()
     }
 }
-
 
 impl AsRef<[u8]> for Payload {
     fn as_ref(&self) -> &[u8] {
@@ -65,7 +67,7 @@ macro_rules! impl_from_array_payload {
     }
 }
 
-impl_from_array_payload!(0,1,2,3,4,5,6,7,8);
+impl_from_array_payload!(0, 1, 2, 3, 4, 5, 6, 7, 8);
 
 #[cfg(test)]
 mod tests {
@@ -77,11 +79,11 @@ mod tests {
         assert_eq!(p0.len(), 0);
 
         let p3 = Payload::from([1u8, 2, 3]);
-        assert_eq!(p3.as_ref(), &[1,2,3]);
+        assert_eq!(p3.as_ref(), &[1, 2, 3]);
         assert_eq!(p3.len(), 3);
 
-        let p8 = Payload::from([10u8,11,12,13,14,15,16,17]);
+        let p8 = Payload::from([10u8, 11, 12, 13, 14, 15, 16, 17]);
         assert_eq!(p8.len(), 8);
-        assert_eq!(p8.as_ref(), &[10,11,12,13,14,15,16,17]);
+        assert_eq!(p8.as_ref(), &[10, 11, 12, 13, 14, 15, 16, 17]);
     }
 }

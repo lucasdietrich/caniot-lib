@@ -4,7 +4,13 @@ use caniot::{
     class::{
         class0::{self, IO},
         llpayload::{LLPayload, LLTelemetry},
-    }, device::{implementation::DeviceApi, Device, StaticConfig}, did::DeviceId, driver::LinuxDriver, error::FailCode, payload::Payload, types::Endpoint
+    },
+    device::{Device, StaticConfig, implementation::DeviceApi},
+    did::DeviceId,
+    driver::LinuxDriver,
+    error::FailCode,
+    payload::Payload,
+    types::Endpoint,
 };
 use log::{debug, error, info, warn};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};

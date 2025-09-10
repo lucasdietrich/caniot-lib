@@ -1,8 +1,14 @@
 use core::fmt::Debug;
-use std::{mem::MaybeUninit, ops::{Deref, DerefMut}};
+use core::{
+    mem::MaybeUninit,
+    ops::{Deref, DerefMut},
+};
 
 use crate::{
-    did::DeviceId, error::FailCode, payload::Payload, types::{Direction, Endpoint, Type}
+    did::DeviceId,
+    error::FailCode,
+    payload::Payload,
+    types::{Direction, Endpoint, Type},
 };
 
 use caniot_sys as ll;
@@ -112,7 +118,7 @@ pub enum ErrorSource {
 pub enum Response {
     Telemetry {
         endpoint: Endpoint,
-        payload: Payload
+        payload: Payload,
     },
     Attribute {
         key: u16,
@@ -158,7 +164,12 @@ impl OwnedFrame {
                     ll::caniot_build_query_telemetry(frame.as_mut_ptr(), endpoint.into());
                 }
                 Request::Command { endpoint, payload } => {
-                    ll::caniot_build_query_command(frame.as_mut_ptr(), endpoint.into(), payload.as_ptr(), payload.len() as u8);
+                    ll::caniot_build_query_command(
+                        frame.as_mut_ptr(),
+                        endpoint.into(),
+                        payload.as_ptr(),
+                        payload.len() as u8,
+                    );
                 }
                 Request::AttributeRead { key } => {
                     ll::caniot_build_query_read_attribute(frame.as_mut_ptr(), key);

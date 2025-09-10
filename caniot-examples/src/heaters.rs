@@ -1,5 +1,6 @@
 use caniot::{
-    datatypes::HeatingMode, device::implementation::DeviceApi, error::FailCode, payload::Payload, types::Endpoint
+    datatypes::HeatingMode, device::implementation::DeviceApi, error::FailCode, payload::Payload,
+    types::Endpoint,
 };
 
 use crate::{NodeApi, heaters_payload::HeatingControllerCommand};

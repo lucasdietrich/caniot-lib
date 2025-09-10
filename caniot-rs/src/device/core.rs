@@ -82,7 +82,6 @@ impl<D: Driver, A: DeviceApi + 'static> Device<D, A> {
         unsafe { ll::caniot_device_trigger_telemetry_ep(&mut self.device, endpoint) };
     }
 
-
     pub fn get_api_mut(&mut self) -> &mut A {
         self.api.as_mut()
     }

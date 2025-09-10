@@ -2,7 +2,9 @@ use std::{io::Read, os::fd::AsFd, time::Duration};
 
 use caniot::{
     controller::{
-        event::ControllerEvent, implementation::{ControllerApi, EventVerdict}, Controller
+        Controller,
+        event::ControllerEvent,
+        implementation::{ControllerApi, EventVerdict},
     },
     did::DeviceId,
     driver::LinuxDriver,
@@ -75,8 +77,11 @@ fn main() {
                                 b'q' | b'Q' => {
                                     info!("Query");
                                     let request = Request::AttributeRead { key: 0 };
-                                    match ctrl.query(DeviceId::BROADCAST, request, Some(Duration::from_millis(1000)))
-                                    {
+                                    match ctrl.query(
+                                        DeviceId::BROADCAST,
+                                        request,
+                                        Some(Duration::from_millis(1000)),
+                                    ) {
                                         Ok(Some(handle)) => {
                                             info!("Query sent, handle: {:?}", handle);
                                         }

@@ -2,8 +2,15 @@ use std::time::{Duration, Instant};
 
 use caniot::{
     class::{
-        class0::{self, IO}, llpayload::{LLCommand, LLPayload, LLTelemetry}, TempSensType
-    }, datatypes::{Temperature, Xps}, device::implementation::DeviceApi, error::FailCode, payload::Payload, types::Endpoint
+        TempSensType,
+        class0::{self, IO},
+        llpayload::{LLCommand, LLPayload, LLTelemetry},
+    },
+    datatypes::{Temperature, Xps},
+    device::implementation::DeviceApi,
+    error::FailCode,
+    payload::Payload,
+    types::Endpoint,
 };
 use expirable::Expirable;
 use log::debug;

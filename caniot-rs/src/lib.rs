@@ -7,4 +7,6 @@ pub mod payload;
 pub mod utils;
 
 pub use driver::*;
+pub use frame::*;
 pub use model::*;
+pub use payload::Payload;

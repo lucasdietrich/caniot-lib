@@ -1,11 +1,12 @@
 use caniot_sys as ll;
+use serde::{Deserialize, Serialize};
 
 use core::fmt::{Debug, Display};
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
 
-#[derive(Clone, Copy, PartialEq, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Temperature(Option<i16>);
 
 impl Temperature {

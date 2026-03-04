@@ -26,7 +26,7 @@ fn main() {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
     let myctrl = MyController;
-    let driver = LinuxDriver::init("vcan0").expect("Failed to initialize Linux driver");
+    let driver = LinuxDriver::init("vcan1").expect("Failed to initialize Linux driver");
     let mut ctrl = Controller::init(driver, myctrl).expect("Failed to initialize controller");
 
     let mut stdin = std::io::stdin();

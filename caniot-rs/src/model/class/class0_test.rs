@@ -1,4 +1,5 @@
 use crate::{
+    Temperature,
     class::{
         TempSensType,
         llpayload::{LLCommand, LLTelemetry},
@@ -24,18 +25,18 @@ fn telemetry_ios() {
     t.set_io(IO::Relay1PulseActive, true).unwrap();
     t.set_io(IO::Relay2PulseActive, false).unwrap();
 
-    assert_eq!(t.get_io(IO::Oc1), Some(true));
-    assert_eq!(t.get_io(IO::Oc2), Some(false));
-    assert_eq!(t.get_io(IO::Relay1), Some(true));
-    assert_eq!(t.get_io(IO::Relay2), Some(false));
-    assert_eq!(t.get_io(IO::Input1), Some(true));
-    assert_eq!(t.get_io(IO::Input2), Some(false));
-    assert_eq!(t.get_io(IO::Input3), Some(true));
-    assert_eq!(t.get_io(IO::Input4), Some(false));
-    assert_eq!(t.get_io(IO::Oc1PulseActive), Some(true));
-    assert_eq!(t.get_io(IO::Oc2PulseActive), Some(false));
-    assert_eq!(t.get_io(IO::Relay1PulseActive), Some(true));
-    assert_eq!(t.get_io(IO::Relay2PulseActive), Some(false));
+    assert_eq!(t.get_io(IO::Oc1), Ok(true));
+    assert_eq!(t.get_io(IO::Oc2), Ok(false));
+    assert_eq!(t.get_io(IO::Relay1), Ok(true));
+    assert_eq!(t.get_io(IO::Relay2), Ok(false));
+    assert_eq!(t.get_io(IO::Input1), Ok(true));
+    assert_eq!(t.get_io(IO::Input2), Ok(false));
+    assert_eq!(t.get_io(IO::Input3), Ok(true));
+    assert_eq!(t.get_io(IO::Input4), Ok(false));
+    assert_eq!(t.get_io(IO::Oc1PulseActive), Ok(true));
+    assert_eq!(t.get_io(IO::Oc2PulseActive), Ok(false));
+    assert_eq!(t.get_io(IO::Relay1PulseActive), Ok(true));
+    assert_eq!(t.get_io(IO::Relay2PulseActive), Ok(false));
 }
 
 #[test]
@@ -43,30 +44,39 @@ fn telemetry_temperature() {
     let temp = 25.0;
 
     let mut t = Telemetry::default();
-    t.set_temperature(TempSensType::BoardSensor, temp)
+    t.set_temperature(TempSensType::BoardSensor, Temperature::from_celsius(temp))
         .expect("Failed to set temperature");
-    t.set_temperature(TempSensType::ExternalSensor(0), temp + 1.0)
-        .expect("Failed to set temperature");
-    t.set_temperature(TempSensType::ExternalSensor(1), temp + 2.0)
-        .expect("Failed to set temperature");
-    t.set_temperature(TempSensType::ExternalSensor(2), temp + 3.0)
-        .expect("Failed to set temperature");
+    t.set_temperature(
+        TempSensType::ExternalSensor(0),
+        Temperature::from_celsius(temp + 1.0),
+    )
+    .expect("Failed to set temperature");
+    t.set_temperature(
+        TempSensType::ExternalSensor(1),
+        Temperature::from_celsius(temp + 2.0),
+    )
+    .expect("Failed to set temperature");
+    t.set_temperature(
+        TempSensType::ExternalSensor(2),
+        Temperature::from_celsius(temp + 3.0),
+    )
+    .expect("Failed to set temperature");
     let read_temp = t
         .get_temperature(TempSensType::BoardSensor)
         .expect("Failed to get temperature");
-    assert!((read_temp - temp).abs() < f32::EPSILON);
+    assert_eq!(Temperature::from_celsius(temp), read_temp);
     let read_temp = t
         .get_temperature(TempSensType::ExternalSensor(0))
         .expect("Failed to get temperature");
-    assert!((read_temp - (temp + 1.0)).abs() < f32::EPSILON);
+    assert_eq!(Temperature::from_celsius(temp + 1.0), read_temp);
     let read_temp = t
         .get_temperature(TempSensType::ExternalSensor(1))
         .expect("Failed to get temperature");
-    assert!((read_temp - (temp + 2.0)).abs() < f32::EPSILON);
+    assert_eq!(Temperature::from_celsius(temp + 2.0), read_temp);
     let read_temp = t
         .get_temperature(TempSensType::ExternalSensor(2))
         .expect("Failed to get temperature");
-    assert!((read_temp - (temp + 3.0)).abs() < f32::EPSILON);
+    assert_eq!(Temperature::from_celsius(temp + 3.0), read_temp);
 }
 
 #[test]

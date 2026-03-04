@@ -1,10 +1,12 @@
 use core::ops::{Deref, DerefMut};
 
 use caniot_sys as ll;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    class::llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry},
-    error::FailCode,
+    class::{
+        llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry}, TelemetryTrait, TempSensType
+    }, error::FailCode, Temperature, Xps
 };
 
 impl LLPayload for ll::caniot_blc1_telemetry {
@@ -163,6 +165,79 @@ impl TryFrom<IO> for ll::caniot_blc1_io_t::Type {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TelemetryData {
+    pub ios: [bool; 19],
+
+    pub temp_in: Temperature,
+    pub temp_out: [Temperature; 3],
+}
+
+impl Telemetry {
+    pub fn to_telemetry_data(&self) -> Result<TelemetryData, FailCode> {
+        Ok(TelemetryData {
+            ios: [
+                self.get_io(IO::Pc0)?,
+                self.get_io(IO::Pc1)?,
+                self.get_io(IO::Pc2)?,
+                self.get_io(IO::Pc3)?,
+                self.get_io(IO::Pd4)?,
+                self.get_io(IO::Pd5)?,
+                self.get_io(IO::Pd6)?,
+                self.get_io(IO::Pd7)?,
+                self.get_io(IO::Eio0)?,
+                self.get_io(IO::Eio1)?,
+                self.get_io(IO::Eio2)?,
+                self.get_io(IO::Eio3)?,
+                self.get_io(IO::Eio4)?,
+                self.get_io(IO::Eio5)?,
+                self.get_io(IO::Eio6)?,
+                self.get_io(IO::Eio7)?,
+                self.get_io(IO::Pb0)?,
+                self.get_io(IO::Pe0)?,
+                self.get_io(IO::Pe1)?,
+            ],
+
+            temp_in: self.get_temperature(TempSensType::BoardSensor)?,
+            temp_out: [
+                self.get_temperature(TempSensType::ExternalSensor(0))?,
+                self.get_temperature(TempSensType::ExternalSensor(1))?,
+                self.get_temperature(TempSensType::ExternalSensor(2))?,
+            ],
+        })
+    }
+
+    pub fn from_telemetry_data(data: TelemetryData) -> Result<Self, FailCode> {
+        let mut t = Telemetry::default();
+        t.set_io(IO::Pc0, data.ios[0])?;
+        t.set_io(IO::Pc1, data.ios[1])?;
+        t.set_io(IO::Pc2, data.ios[2])?;
+        t.set_io(IO::Pc3, data.ios[3])?;
+        t.set_io(IO::Pd4, data.ios[4])?;
+        t.set_io(IO::Pd5, data.ios[5])?;
+        t.set_io(IO::Pd6, data.ios[6])?;
+        t.set_io(IO::Pd7, data.ios[7])?;
+        t.set_io(IO::Eio0, data.ios[8])?;
+        t.set_io(IO::Eio1, data.ios[9])?;
+        t.set_io(IO::Eio2, data.ios[10])?;
+        t.set_io(IO::Eio3, data.ios[11])?;
+        t.set_io(IO::Eio4, data.ios[12])?;
+        t.set_io(IO::Eio5, data.ios[13])?;
+        t.set_io(IO::Eio6, data.ios[14])?;
+        t.set_io(IO::Eio7, data.ios[15])?;
+        t.set_io(IO::Pb0, data.ios[16])?;
+        t.set_io(IO::Pe0, data.ios[17])?;
+        t.set_io(IO::Pe1, data.ios[18])?;
+
+        t.set_temperature(TempSensType::BoardSensor, data.temp_in)?;
+        t.set_temperature(TempSensType::ExternalSensor(0), data.temp_out[0])?;
+        t.set_temperature(TempSensType::ExternalSensor(1), data.temp_out[1])?;
+        t.set_temperature(TempSensType::ExternalSensor(2), data.temp_out[2])?;
+
+        Ok(t)
+    }
+}
+
 impl LLPayload for ll::caniot_blc1_command {
     const SER_SIZE: u8 = ll::CANIOT_BLC1_COMMAND_BUF_LEN as u8;
 
@@ -228,5 +303,71 @@ impl Command {
     pub fn try_from_raw(data: impl AsRef<[u8]>) -> Result<Self, FailCode> {
         let command = ll::caniot_blc1_command::deserialize(data)?;
         Ok(Command(command))
+    }
+}
+
+pub struct CommandData {
+    pub ios: [Xps; 19],
+}
+
+impl Command {
+    pub fn to_command_data(&self) -> Result<CommandData, FailCode> {
+        Ok(CommandData {
+            ios: [
+                self.get_io_xps(IO::Pc0)?,
+                self.get_io_xps(IO::Pc1)?,
+                self.get_io_xps(IO::Pc2)?,
+                self.get_io_xps(IO::Pc3)?,
+                self.get_io_xps(IO::Pd4)?,
+                self.get_io_xps(IO::Pd5)?,
+                self.get_io_xps(IO::Pd6)?,
+                self.get_io_xps(IO::Pd7)?,
+                self.get_io_xps(IO::Eio0)?,
+                self.get_io_xps(IO::Eio1)?,
+                self.get_io_xps(IO::Eio2)?,
+                self.get_io_xps(IO::Eio3)?,
+                self.get_io_xps(IO::Eio4)?,
+                self.get_io_xps(IO::Eio5)?,
+                self.get_io_xps(IO::Eio6)?,
+                self.get_io_xps(IO::Eio7)?,
+                self.get_io_xps(IO::Pb0)?,
+                self.get_io_xps(IO::Pe0)?,
+                self.get_io_xps(IO::Pe1)?,
+            ],
+        })
+    }
+
+    pub fn from_command_data(data: CommandData) -> Result<Self, FailCode> {
+        let mut c = Command::default();
+        c.set_io_xps(IO::Pc0, data.ios[0])?;
+        c.set_io_xps(IO::Pc1, data.ios[1])?;
+        c.set_io_xps(IO::Pc2, data.ios[2])?;
+        c.set_io_xps(IO::Pc3, data.ios[3])?;
+        c.set_io_xps(IO::Pd4, data.ios[4])?;
+        c.set_io_xps(IO::Pd5, data.ios[5])?;
+        c.set_io_xps(IO::Pd6, data.ios[6])?;
+        c.set_io_xps(IO::Pd7, data.ios[7])?;
+        c.set_io_xps(IO::Eio0, data.ios[8])?;
+        c.set_io_xps(IO::Eio1, data.ios[9])?;
+        c.set_io_xps(IO::Eio2, data.ios[10])?;
+        c.set_io_xps(IO::Eio3, data.ios[11])?;
+        c.set_io_xps(IO::Eio4, data.ios[12])?;
+        c.set_io_xps(IO::Eio5, data.ios[13])?;
+        c.set_io_xps(IO::Eio6, data.ios[14])?;
+        c.set_io_xps(IO::Eio7, data.ios[15])?;
+        c.set_io_xps(IO::Pb0, data.ios[16])?;
+        c.set_io_xps(IO::Pe0, data.ios[17])?;
+        c.set_io_xps(IO::Pe1, data.ios[18])?;
+        Ok(c)
+    }
+}
+
+impl TelemetryTrait for TelemetryData {
+    fn get_temperature(&self, sensor: TempSensType) -> Option<Temperature> {
+        match sensor {
+            TempSensType::BoardSensor => Some(self.temp_in),
+            TempSensType::ExternalSensor(n) if n < 3 => Some(self.temp_out[n as usize]),
+            _ => None,
+        }
     }
 }

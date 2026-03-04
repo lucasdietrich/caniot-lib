@@ -74,6 +74,7 @@ dependencies = [
  "num-derive",
  "num-traits",
  "rand",
+ "serde",
  "simple_logger",
 ]
 

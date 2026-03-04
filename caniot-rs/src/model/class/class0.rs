@@ -1,10 +1,12 @@
 use core::ops::{Deref, DerefMut};
 
 use caniot_sys as ll;
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    class::llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry},
-    error::FailCode,
+    class::{
+        llpayload::{HasEffect, LLCommand, LLPayload, LLTelemetry}, TelemetryTrait, TempSensType
+    }, error::FailCode, Temperature, Xps
 };
 
 impl LLPayload for ll::caniot_blc0_telemetry {
@@ -142,6 +144,81 @@ impl TryFrom<IO> for ll::caniot_blc0_io_t::Type {
     }
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TelemetryData {
+    pub oc1: bool,
+    pub oc2: bool,
+    pub rl1: bool,
+    pub rl2: bool,
+    pub in1: bool,
+    pub in2: bool,
+    pub in3: bool,
+    pub in4: bool,
+    pub poc1: bool,
+    pub poc2: bool,
+    pub prl1: bool,
+    pub prl2: bool,
+
+    pub temp_in: Temperature,
+    pub temp_out: [Temperature; 3],
+}
+
+impl Telemetry {
+    pub fn to_telemetry_data(&self) -> Result<TelemetryData, FailCode> {
+        Ok(TelemetryData {
+            oc1: self.get_io(IO::Oc1)?,
+            oc2: self.get_io(IO::Oc2)?,
+            rl1: self.get_io(IO::Relay1)?,
+            rl2: self.get_io(IO::Relay2)?,
+            in1: self.get_io(IO::Input1)?,
+            in2: self.get_io(IO::Input2)?,
+            in3: self.get_io(IO::Input3)?,
+            in4: self.get_io(IO::Input4)?,
+            poc1: self.get_io(IO::Oc1PulseActive)?,
+            poc2: self.get_io(IO::Oc2PulseActive)?,
+            prl1: self.get_io(IO::Relay1PulseActive)?,
+            prl2: self.get_io(IO::Relay2PulseActive)?,
+            temp_in: self.get_temperature(TempSensType::BoardSensor)?,
+            temp_out: [
+                self.get_temperature(TempSensType::ExternalSensor(0))?,
+                self.get_temperature(TempSensType::ExternalSensor(1))?,
+                self.get_temperature(TempSensType::ExternalSensor(2))?,
+            ],
+        })
+    }
+
+    pub fn from_telemetry_data(data: TelemetryData) -> Result<Self, FailCode> {
+        let mut t = Telemetry::default();
+        t.set_io(IO::Oc1, data.oc1)?;
+        t.set_io(IO::Oc2, data.oc2)?;
+        t.set_io(IO::Relay1, data.rl1)?;
+        t.set_io(IO::Relay2, data.rl2)?;
+        t.set_io(IO::Input1, data.in1)?;
+        t.set_io(IO::Input2, data.in2)?;
+        t.set_io(IO::Input3, data.in3)?;
+        t.set_io(IO::Input4, data.in4)?;
+        t.set_io(IO::Oc1PulseActive, data.poc1)?;
+        t.set_io(IO::Oc2PulseActive, data.poc2)?;
+        t.set_io(IO::Relay1PulseActive, data.prl1)?;
+        t.set_io(IO::Relay2PulseActive, data.prl2)?;
+        t.set_temperature(TempSensType::BoardSensor, data.temp_in)?;
+        t.set_temperature(TempSensType::ExternalSensor(0), data.temp_out[0])?;
+        t.set_temperature(TempSensType::ExternalSensor(1), data.temp_out[1])?;
+        t.set_temperature(TempSensType::ExternalSensor(2), data.temp_out[2])?;
+        Ok(t)
+    }
+}
+
+impl TelemetryTrait for TelemetryData {
+    fn get_temperature(&self, sensor: TempSensType) -> Option<Temperature> {
+        match sensor {
+            TempSensType::BoardSensor => Some(self.temp_in),
+            TempSensType::ExternalSensor(n) if n < 3 => Some(self.temp_out[n as usize]),
+            _ => None,
+        }
+    }
+}
+
 impl LLPayload for ll::caniot_blc0_command {
     const SER_SIZE: u8 = ll::CANIOT_BLC0_COMMAND_BUF_LEN as u8;
 
@@ -207,5 +284,32 @@ impl Command {
     pub fn try_from_raw(data: impl AsRef<[u8]>) -> Result<Self, FailCode> {
         let command = ll::caniot_blc0_command::deserialize(data)?;
         Ok(Command(command))
+    }
+}
+
+pub struct CommandData {
+    pub oc1: Xps,
+    pub oc2: Xps,
+    pub rl1: Xps,
+    pub rl2: Xps,
+}
+
+impl Command {
+    pub fn to_command_data(&self) -> Result<CommandData, FailCode> {
+        Ok(CommandData {
+            oc1: self.get_io_xps(IO::Oc1)?,
+            oc2: self.get_io_xps(IO::Oc2)?,
+            rl1: self.get_io_xps(IO::Relay1)?,
+            rl2: self.get_io_xps(IO::Relay2)?,
+        })
+    }
+
+    pub fn from_command_data(data: CommandData) -> Result<Self, FailCode> {
+        let mut cmd = Command::default();
+        cmd.set_io_xps(IO::Oc1, data.oc1)?;
+        cmd.set_io_xps(IO::Oc2, data.oc2)?;
+        cmd.set_io_xps(IO::Relay1, data.rl1)?;
+        cmd.set_io_xps(IO::Relay2, data.rl2)?;
+        Ok(cmd)
     }
 }

@@ -93,7 +93,7 @@ int caniot_blc0_telemetry_get_temperature(const struct caniot_blc0_telemetry *t,
 		break;
 	}
 
-	if (*temperature == CANIOT_DT_T10_INVALID) return -1;
+	if (*temperature == CANIOT_DT_T10_INVALID) return 1;
 
 	return 0;
 }
@@ -495,7 +495,7 @@ int caniot_blc1_telemetry_get_temperature(const struct caniot_blc1_telemetry *t,
 		break;
 	}
 
-	if (*temperature == CANIOT_DT_T10_INVALID) return -1;
+	if (*temperature == CANIOT_DT_T10_INVALID) return 1;
 
 	return 0;
 }

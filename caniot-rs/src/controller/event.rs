@@ -66,7 +66,7 @@ impl<'a> ControllerEvent<'a> {
         unsafe {
             match (*inner).context() {
                 ll::caniot_controller_event_context_t::CANIOT_CONTROLLER_EVENT_CONTEXT_ORPHAN => {
-                    let did = DeviceId::new_from_raw_unchecked((*inner).did);
+                    let did = DeviceId::from_raw_unchecked((*inner).did);
                     let frame = FrameRef::from_ll_unchecked((*inner).response);
                     let kind = if (*inner).status()
                         == ll::caniot_controller_event_status_t::CANIOT_CONTROLLER_EVENT_STATUS_OK
@@ -78,7 +78,7 @@ impl<'a> ControllerEvent<'a> {
                     ControllerEvent::Orphan { did, status: kind }
                 }
                 ll::caniot_controller_event_context_t::CANIOT_CONTROLLER_EVENT_CONTEXT_QUERY => {
-                    let did = DeviceId::new_from_raw_unchecked((*inner).did);
+                    let did = DeviceId::from_raw_unchecked((*inner).did);
                     let handle = Handle::new_unchecked((*inner).handle);
                     let terminated = (*inner).terminated() != 0;
                     let kind = match (*inner).status() {

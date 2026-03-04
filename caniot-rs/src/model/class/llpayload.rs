@@ -96,10 +96,12 @@ pub trait LLTelemetry: LLPayload {
         state: bool,
     ) -> ::core::ffi::c_int;
 
-    fn set_temperature(&mut self, sensor: TempSensType, celsius: f32) -> Result<(), FailCode> {
+    fn set_temperature(
+        &mut self,
+        sensor: TempSensType,
+        temperature: Temperature,
+    ) -> Result<(), FailCode> {
         let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
-        let temperature = Temperature::from_celsius(celsius);
-
         let ret = unsafe { (Self::SET_TEMP_FN)(self, sensor, temperature.to_raw_u10()) };
         FailCode::to_errno(ret)
     }
@@ -110,12 +112,12 @@ pub trait LLTelemetry: LLPayload {
         FailCode::to_errno(ret)
     }
 
-    fn get_temperature(&self, sensor: TempSensType) -> Option<f32> {
-        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor).ok()?;
+    fn get_temperature(&self, sensor: TempSensType) -> Result<Temperature, FailCode> {
+        let sensor = ll::caniot_temp_sens_t::Type::try_from(sensor)?;
         let mut temperature: u16 = 0;
         let ret = unsafe { (Self::GET_TEMP_FN)(self, sensor, &mut temperature) };
-        FailCode::to_errno(ret).ok()?;
-        Temperature::from_raw_u10(temperature).to_celsius()
+        FailCode::to_errno(ret)?;
+        Ok(Temperature::from_raw_u10(temperature))
     }
 
     fn set_io(
@@ -128,12 +130,12 @@ pub trait LLTelemetry: LLPayload {
         FailCode::to_errno(ret)
     }
 
-    fn get_io(&self, io: impl TryInto<Self::IOType, Error = FailCode>) -> Option<bool> {
-        let io = io.try_into().ok()?;
+    fn get_io(&self, io: impl TryInto<Self::IOType, Error = FailCode>) -> Result<bool, FailCode> {
+        let io = io.try_into()?;
         let mut state = false;
         let ret = unsafe { (Self::GET_IO_FN)(self, io, &mut state) };
-        FailCode::to_result(ret).ok()?;
-        Some(state)
+        FailCode::to_result(ret)?;
+        Ok(state)
     }
 }
 
@@ -212,41 +214,51 @@ mod tests {
     fn test_temp_sens() {
         fn test_one<L: LLTelemetry + Debug>() {
             let mut instance = L::default();
-            assert_eq!(instance.get_temperature(TempSensType::BoardSensor), None);
+            assert_eq!(
+                instance.get_temperature(TempSensType::BoardSensor),
+                Ok(Temperature::INVALID)
+            );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(0)),
-                None
+                Ok(Temperature::INVALID)
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(1)),
-                None
+                Ok(Temperature::INVALID)
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(2)),
-                None
+                Ok(Temperature::INVALID)
             );
 
             assert_eq!(
-                instance.set_temperature(TempSensType::BoardSensor, 25.0),
+                instance
+                    .set_temperature(TempSensType::BoardSensor, Temperature::from_celsius(25.0)),
                 Ok(())
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::BoardSensor),
-                Some(25.0)
+                Ok(Temperature::from_celsius(25.0))
             );
             assert_eq!(
                 instance.clear_temperature(TempSensType::BoardSensor),
                 Ok(())
             );
-            assert_eq!(instance.get_temperature(TempSensType::BoardSensor), None);
+            assert_eq!(
+                instance.get_temperature(TempSensType::BoardSensor),
+                Ok(Temperature::INVALID)
+            );
 
             assert_eq!(
-                instance.set_temperature(TempSensType::ExternalSensor(0), 0.0),
+                instance.set_temperature(
+                    TempSensType::ExternalSensor(0),
+                    Temperature::from_celsius(0.0)
+                ),
                 Ok(())
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(0)),
-                Some(0.0)
+                Ok(Temperature::from_celsius(0.0))
             );
             assert_eq!(
                 instance.clear_temperature(TempSensType::ExternalSensor(0)),
@@ -254,16 +266,19 @@ mod tests {
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(0)),
-                None
+                Ok(Temperature::INVALID)
             );
 
             assert_eq!(
-                instance.set_temperature(TempSensType::ExternalSensor(1), -10.5),
+                instance.set_temperature(
+                    TempSensType::ExternalSensor(1),
+                    Temperature::from_celsius(-10.5)
+                ),
                 Ok(())
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(1)),
-                Some(-10.5)
+                Ok(Temperature::from_celsius(-10.5))
             );
             assert_eq!(
                 instance.clear_temperature(TempSensType::ExternalSensor(1)),
@@ -271,16 +286,19 @@ mod tests {
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(1)),
-                None
+                Ok(Temperature::INVALID)
             );
 
             assert_eq!(
-                instance.set_temperature(TempSensType::ExternalSensor(2), 70.0),
+                instance.set_temperature(
+                    TempSensType::ExternalSensor(2),
+                    Temperature::from_celsius(70.0)
+                ),
                 Ok(())
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(2)),
-                Some(70.0)
+                Ok(Temperature::from_celsius(70.0))
             );
             assert_eq!(
                 instance.clear_temperature(TempSensType::ExternalSensor(2)),
@@ -288,18 +306,21 @@ mod tests {
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(2)),
-                None
+                Ok(Temperature::INVALID)
             );
 
             assert_eq!(
                 instance
-                    .set_temperature(TempSensType::ExternalSensor(3), 0.0)
+                    .set_temperature(
+                        TempSensType::ExternalSensor(3),
+                        Temperature::from_celsius(0.0)
+                    )
                     .is_err(),
                 true
             );
             assert_eq!(
                 instance.get_temperature(TempSensType::ExternalSensor(3)),
-                None
+                Err(FailCode::EINVAL)
             );
             assert_eq!(
                 instance

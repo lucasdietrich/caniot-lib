@@ -1,8 +1,10 @@
 use core::fmt;
 
+use serde::{Deserialize, Serialize};
+
 use crate::error::FailCode;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct DeviceId {
     pub class: u8,
     pub sub_id: u8,
@@ -21,7 +23,7 @@ impl TryFrom<u8> for DeviceId {
         if id > 0x3f {
             Err(FailCode::EINVAL)
         } else {
-            Ok(unsafe { DeviceId::new_from_raw_unchecked(id) })
+            Ok(unsafe { DeviceId::from_raw_unchecked(id) })
         }
     }
 }
@@ -44,7 +46,7 @@ impl DeviceId {
         }
     }
 
-    pub(crate) unsafe fn new_from_raw_unchecked(did: u8) -> Self {
+    pub(crate) unsafe fn from_raw_unchecked(did: u8) -> Self {
         unsafe { Self::new_unchecked(did & 0x7, (did >> 3) & 0x7) }
     }
 

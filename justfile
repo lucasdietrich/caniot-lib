@@ -3,6 +3,9 @@
 # Default recipe
 all: build-all
 
+export CANIOT_LIB_STATIC := "1"
+export CANIOT_LIB_PATH := "out"
+
 build:
 	cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_LIBDIR=out -DCMAKE_INSTALL_PREFIX=. -B build
 	make -C build install
@@ -27,10 +30,13 @@ rust-dyn EXAMPLE="device": build
 	cargo run -p caniot --example {{EXAMPLE}}
 
 rust EXAMPLE="device": build-static
-	CANIOT_LIB_PATH=out cargo run --example {{EXAMPLE}}
+	cargo run --example {{EXAMPLE}}
 
+rust-emu:
+	cargo run --example emu -- vcan1
+	
 rust-test: build-static
-	CANIOT_LIB_PATH=out cargo test
+	cargo test
 
 clean:
 	rm -rf build target out

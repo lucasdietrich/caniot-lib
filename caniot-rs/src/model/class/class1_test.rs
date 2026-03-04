@@ -1,4 +1,5 @@
 use crate::{
+    Temperature,
     class::{
         TempSensType,
         llpayload::{LLCommand, LLTelemetry},
@@ -39,7 +40,7 @@ fn telemetry_ios() {
     }
 
     for (io, state) in states {
-        assert_eq!(t.get_io(*io), Some(*state), "Mismatch on {:?}", io);
+        assert_eq!(t.get_io(*io), Ok(*state), "Mismatch on {:?}", io);
     }
 }
 
@@ -48,24 +49,39 @@ fn telemetry_temperature() {
     let base = 21.5;
     let mut t = Telemetry::default();
 
-    t.set_temperature(TempSensType::BoardSensor, base).unwrap();
-    t.set_temperature(TempSensType::ExternalSensor(0), base + 1.0)
+    t.set_temperature(TempSensType::BoardSensor, Temperature::from_celsius(base))
         .unwrap();
-    t.set_temperature(TempSensType::ExternalSensor(1), base + 2.0)
-        .unwrap();
-    t.set_temperature(TempSensType::ExternalSensor(2), base + 3.0)
-        .unwrap();
+    t.set_temperature(
+        TempSensType::ExternalSensor(0),
+        Temperature::from_celsius(base + 1.0),
+    )
+    .unwrap();
+    t.set_temperature(
+        TempSensType::ExternalSensor(1),
+        Temperature::from_celsius(base + 2.0),
+    )
+    .unwrap();
+    t.set_temperature(
+        TempSensType::ExternalSensor(2),
+        Temperature::from_celsius(base + 3.0),
+    )
+    .unwrap();
 
-    let eps = f32::EPSILON;
-    assert!((t.get_temperature(TempSensType::BoardSensor).unwrap() - base).abs() < eps);
-    assert!(
-        (t.get_temperature(TempSensType::ExternalSensor(0)).unwrap() - (base + 1.0)).abs() < eps
+    assert_eq!(
+        t.get_temperature(TempSensType::BoardSensor).unwrap(),
+        Temperature::from_celsius(base)
     );
-    assert!(
-        (t.get_temperature(TempSensType::ExternalSensor(1)).unwrap() - (base + 2.0)).abs() < eps
+    assert_eq!(
+        t.get_temperature(TempSensType::ExternalSensor(0)).unwrap(),
+        Temperature::from_celsius(base + 1.0)
     );
-    assert!(
-        (t.get_temperature(TempSensType::ExternalSensor(2)).unwrap() - (base + 3.0)).abs() < eps
+    assert_eq!(
+        t.get_temperature(TempSensType::ExternalSensor(1)).unwrap(),
+        Temperature::from_celsius(base + 2.0)
+    );
+    assert_eq!(
+        t.get_temperature(TempSensType::ExternalSensor(2)).unwrap(),
+        Temperature::from_celsius(base + 3.0)
     );
 }
 

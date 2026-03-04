@@ -58,13 +58,10 @@ impl DeviceApi for OutdoorAlarmController {
         telemetry.set_io(IO::Oc2PulseActive, self.lights[1].pulse_pending())?;
         telemetry.set_io(IO::Relay1, self.siren.get_state())?;
         telemetry.set_io(IO::Relay1PulseActive, self.siren.pulse_pending())?;
-        telemetry.set_temperature(
-            TempSensType::BoardSensor,
-            Temperature::random_full_range().to_celsius().unwrap(),
-        )?;
+        telemetry.set_temperature(TempSensType::BoardSensor, Temperature::random_full_range())?;
         telemetry.set_temperature(
             TempSensType::ExternalSensor(0),
-            Temperature::random_full_range().to_celsius().unwrap(),
+            Temperature::random_full_range(),
         )?;
 
         // Reset detector after sending telemetry as it is a one-shot event

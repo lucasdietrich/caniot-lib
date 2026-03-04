@@ -154,10 +154,7 @@ impl DeviceApi for GarageController {
         t.set_io(IO::Input2, self.gate_open)?;
         t.set_io(IO::Input3, self.left_door.is_open())?;
         t.set_io(IO::Input4, self.right_door.is_open())?;
-        t.set_temperature(
-            TempSensType::BoardSensor,
-            Temperature::random_full_range().to_celsius().unwrap(),
-        )?;
+        t.set_temperature(TempSensType::BoardSensor, Temperature::random_full_range())?;
         t.clear_temperature(TempSensType::ExternalSensor(0))?;
         t.clear_temperature(TempSensType::ExternalSensor(1))?;
         t.clear_temperature(TempSensType::ExternalSensor(2))?;

@@ -1,0 +1,14 @@
+[package]
+name = "caniot-examples"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+caniot = { path = "../caniot-rs", features = ["std"] }
+log = "0.4.27"
+expirable = { git = "https://github.com/lucasdietrich/expirable-rs.git", rev = "736cc60d50e01c2433385b9b4c9557dde4daef28" }
+nix = { version = "0.30.1", features = ["poll"] }
+simple_logger = "5.0.0"
+num = "0.4.3"
+
+[dev-dependencies]

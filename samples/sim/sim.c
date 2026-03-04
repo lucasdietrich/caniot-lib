@@ -36,6 +36,16 @@ caniot_frame_t qwrite_attr = {
 	.buf = {0x60, 0x20, 'G', 'B', 'E', 'N'},
 };
 
+caniot_frame_t qread_attr = {
+	.id =
+		{
+			.type  = CANIOT_FRAME_TYPE_READ_ATTRIBUTE,
+			.query = CANIOT_QUERY,
+		},
+	.len = 2u,
+	.buf = {0x60, 0x20},
+};
+
 caniot_frame_t qcommand = {
 	.id =
 		{
@@ -70,12 +80,10 @@ struct timed_frame {
 };
 
 struct timed_frame timed_frames[] = {
-	{100u,
-	 0U,
-	 CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0),
-	 1000u,
-	 &qtelemetry},
+	{100u, 0U, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qtelemetry},
 	{100u, 0U, CANIOT_DID_BROADCAST, 1000u, &qtelemetry},
+	{100u, 0u, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qwrite_attr},
+	{100u, 0u, CANIOT_DID(CANIOT_DEVICE_CLASS1, CANIOT_DEVICE_SID0), 1000u, &qread_attr},
 };
 
 int main(void)
@@ -96,19 +104,23 @@ int main(void)
 		/* Get current time */
 		uint32_t sec;
 		uint16_t ms;
-		vtime_get(&sec, &ms);
+		vtime_get(NULL, &sec, &ms);
 		const uint64_t now = (uint64_t)sec * 1000U + ms;
 		char chr;
 		ssize_t ret;
 
 		/* Send schedulded frames */
 		for (struct timed_frame *tf = timed_frames;
-		     tf < timed_frames + ARRAY_SIZE(timed_frames);
-		     tf++) {
+			 tf < timed_frames + ARRAY_SIZE(timed_frames);
+			 tf++) {
 
 			if (now >= tf->time) {
-				ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
-				tf->time = (uint64_t)-1;
+				int ctrl_err = ctrl_Q(tf->ctrlid, tf->did, tf->frame, tf->timeout);
+				if (ctrl_err >= 0) {
+					tf->time = (uint64_t)-1;
+				} else {
+					printf("Query failed: %d\n", ctrl_err);
+				}
 			}
 		}
 
@@ -117,7 +129,7 @@ int main(void)
 		FD_ZERO(&readfds);
 		FD_SET(STDIN_FILENO, &readfds);
 		struct timeval timeout = {.tv_sec = 0, .tv_usec = 0};
-		ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
+		ret					   = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
 		if (ret > 0 && read(STDIN_FILENO, &chr, 1u) > 0) {
 			switch (chr) {
 			case 'd':
@@ -136,10 +148,10 @@ int main(void)
 			last_time = now;
 		}
 		const uint64_t delta = now - last_time;
-		last_time	     = now;
+		last_time			 = now;
 
 		/* Process a single frame */
-		ret = can_recv(&frame);
+		ret = can_recv(NULL, &frame, false);
 		if (ret == 0U) {
 			// caniot_show_frame(&frame);
 			caniot_explain_frame(&frame);

@@ -8,7 +8,7 @@
 #define _HEADER_H
 
 #define CONTROLLERS_COUNT 1U
-#define DEVICES_COUNT	  2u
+#define DEVICES_COUNT	  63u
 
 #define VTIME_INC_CONST_VAL 100U
 
@@ -24,16 +24,16 @@ void controllers_discovery_start(void);
 void controllers_discovery_stop(void);
 
 int ctrl_Q(uint32_t ctrlid,
-	   caniot_did_t did,
-	   struct caniot_frame *frame,
-	   uint32_t timeout);
+		   caniot_did_t did,
+		   struct caniot_frame *frame,
+		   uint32_t timeout);
 int ctrl_C(uint32_t ctrlid, uint8_t handle, bool suppress);
 
-int can_send(const struct caniot_frame *frame, uint32_t delay_ms);
-int can_recv(struct caniot_frame *frame);
+int can_send(void *ctx, const struct caniot_frame *frame, uint32_t delay_ms);
+int can_recv(void *ctx, struct caniot_frame *frame, bool blocking);
 
 void get_time(uint32_t *sec, uint16_t *ms);
-void vtime_get(uint32_t *sec, uint16_t *ms);
+void vtime_get(void *ctx, uint32_t *sec, uint16_t *ms);
 void vtime_inc(uint32_t inc_ms);
 static inline void vtime_inc_const(void)
 {

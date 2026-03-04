@@ -1,0 +1,6 @@
+[workspace]
+resolver = "3"
+members = [ "caniot-examples", "caniot-rs","caniot-sys"]
+
+[profile.release]
+debug = true

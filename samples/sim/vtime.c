@@ -10,8 +10,9 @@
 
 static uint64_t time_ms = 0U;
 
-void vtime_get(uint32_t *sec, uint16_t *ms)
+void vtime_get(void *ctx, uint32_t *sec, uint16_t *ms)
 {
+	(void)ctx;
 	if (sec != NULL) {
 		*sec = time_ms / 1000U;
 	}

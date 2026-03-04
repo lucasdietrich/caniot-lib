@@ -1,1 +1,9 @@
 build
+
+# Added by cargo
+
+/target
+perf.data*
+flamegraph.svg
+
+/out

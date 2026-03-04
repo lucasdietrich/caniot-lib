@@ -27,7 +27,7 @@
 #define snprintf snprintf_P
 #define F(x)	 PSTR(x)
 #define memcpy_P memcpy_P
-#define ROM	 PROGMEM
+#define ROM		 PROGMEM
 #define Z_ASSERT(x)
 
 #if CONFIG_CANIOT_ATTRIBUTE_NAME
@@ -107,12 +107,37 @@ extern void __assert(bool statement);
 #endif /* CANIOT_LOG_LEVEL >= 1 */
 
 #if !defined(__ZEPHYR__)
-#define MIN(a, b)		       ((a) < (b) ? (a) : (b))
-#define MAX(a, b)		       ((a) > (b) ? (a) : (b))
-#define ARRAY_SIZE(a)		       (sizeof(a) / sizeof((a)[0]))
+#define MIN(a, b)					   ((a) < (b) ? (a) : (b))
+#define MAX(a, b)					   ((a) > (b) ? (a) : (b))
+#define ARRAY_SIZE(a)				   (sizeof(a) / sizeof((a)[0]))
 #define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #endif
 
 #define INDEX_OF(obj, base, _struct) ((_struct *)(obj) - (_struct *)(base))
+
+static inline void write_le16(uint8_t *buf, uint16_t val)
+{
+	buf[0] = (uint8_t)(val & 0xFFU);
+	buf[1] = (uint8_t)((val >> 8U) & 0xFFU);
+}
+
+static inline void write_le32(uint8_t *buf, uint32_t val)
+{
+	buf[0] = (uint8_t)(val & 0xFFU);
+	buf[1] = (uint8_t)((val >> 8U) & 0xFFU);
+	buf[2] = (uint8_t)((val >> 16U) & 0xFFU);
+	buf[3] = (uint8_t)((val >> 24U) & 0xFFU);
+}
+
+static inline uint16_t read_le16(const uint8_t *buf)
+{
+	return (uint16_t)((uint16_t)buf[0] | ((uint16_t)buf[1] << 8U));
+}
+
+static inline uint32_t read_le32(const uint8_t *buf)
+{
+	return (uint32_t)((uint32_t)buf[0] | ((uint32_t)buf[1] << 8U) |
+					  ((uint32_t)buf[2] << 16U) | ((uint32_t)buf[3] << 24U));
+}
 
 #endif /* _CANIOT_PRIVATE_H_ */

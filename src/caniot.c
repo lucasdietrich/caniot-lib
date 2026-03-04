@@ -6,8 +6,6 @@
 
 #include <caniot/caniot.h>
 #include <caniot/caniot_private.h>
-#include <caniot/classes/class0.h>
-#include <caniot/classes/class1.h>
 #include <caniot/datatype.h>
 
 static const char cls_str[][3U] ROM = {
@@ -141,14 +139,12 @@ void caniot_show_deviceid(caniot_did_t did)
 		cpy_class_str(CANIOT_DID_CLS(did), cls_str, sizeof(cls_str));
 		cpy_sid_str(CANIOT_DID_SID(did), sid_str, sizeof(sid_str));
 
-		CANIOT_INF(
-			F("[%hhd] 0x%02x (cls=%s sid=%s)"), did, did, cls_str, sid_str);
+		CANIOT_INF(F("(%hhd: %s,%s)"), did, cls_str, sid_str);
 #else
-		CANIOT_INF(F("[%hhd] 0x%02x (cls=%s sid=%s)"),
-			   did,
-			   did,
-			   get_class_str(CANIOT_DID_CLS(did)),
-			   get_sid_str(CANIOT_DID_SID(did)));
+		CANIOT_INF(F("(%hhd: %s,%s)"),
+				   did,
+				   get_class_str(CANIOT_DID_CLS(did)),
+				   get_sid_str(CANIOT_DID_SID(did)));
 #endif
 	}
 }
@@ -156,17 +152,17 @@ void caniot_show_deviceid(caniot_did_t did)
 void caniot_show_frame(const struct caniot_frame *frame)
 {
 	CANIOT_INF(F("%x [ %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx %02hhx ] len "
-		     "= %d"),
-		   caniot_id_to_canid(frame->id),
-		   (uint8_t)frame->buf[0],
-		   (uint8_t)frame->buf[1],
-		   (uint8_t)frame->buf[2],
-		   (uint8_t)frame->buf[3],
-		   (uint8_t)frame->buf[4],
-		   (uint8_t)frame->buf[5],
-		   (uint8_t)frame->buf[6],
-		   (uint8_t)frame->buf[7],
-		   (uint8_t)frame->len);
+				 "= %d"),
+			   caniot_id_to_canid(frame->id),
+			   (uint8_t)frame->buf[0],
+			   (uint8_t)frame->buf[1],
+			   (uint8_t)frame->buf[2],
+			   (uint8_t)frame->buf[3],
+			   (uint8_t)frame->buf[4],
+			   (uint8_t)frame->buf[5],
+			   (uint8_t)frame->buf[6],
+			   (uint8_t)frame->buf[7],
+			   (uint8_t)frame->len);
 }
 
 void caniot_explain_id(caniot_id_t id)
@@ -199,25 +195,34 @@ void caniot_explain_id(caniot_id_t id)
 
 void caniot_explain_frame(const struct caniot_frame *frame)
 {
+#if CANIOT_LOG_LEVEL >= 3
 	caniot_explain_id(frame->id);
 
 	if (caniot_is_error_frame(frame->id)) {
-		CANIOT_INF(F(": -%04x"), (uint32_t)-frame->err.code);
+		const uint32_t err = read_le32(frame->buf);
+		const int32_t err2 = *(int32_t *)&err;
+		CANIOT_INF(F(": -%04x"), (uint16_t)-err2);
 		return;
 	}
 
 	if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
-	    (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
+		(frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
 		for (int i = 0; i < frame->len; i++) {
 			CANIOT_INF(F("%02hhx "), (uint8_t)frame->buf[i]);
 		}
 	} else {
-		CANIOT_INF(F("len: %d key: x%02x val: x%04x%04x"),
-			   frame->len,
-			   frame->attr.key,
-			   (FMT_UINT_CAST)(frame->attr.val >> 16u),
-			   (FMT_UINT_CAST)(frame->attr.val & 0xFFFFu));
+		struct caniot_attribute attr = {
+			.key = read_le16(frame->buf),
+			.val = read_le32(frame->buf + 2u),
+		};
+
+		CANIOT_INF(F("len: %d key: x%04x val: x%04x%04x"),
+				   frame->len,
+				   attr.key,
+				   (FMT_UINT_CAST)(attr.val >> 16u),
+				   (FMT_UINT_CAST)(attr.val & 0xFFFFu));
 	}
+#endif
 }
 
 #if !defined(__AVR__)
@@ -240,13 +245,13 @@ int caniot_explain_id_str(caniot_id_t id, char *buf, size_t len)
 		ret = snprintf(buf, len, "Error frame ");
 	} else {
 		ret = snprintf(buf,
-			       len,
-			       "%02u %s-%s %s %s ",
-			       CANIOT_DID(id.cls, id.sid),
-			       get_class_str(id.cls),
-			       get_sid_str(id.sid),
-			       get_type_str(id.type),
-			       get_query_str(id.query));
+					   len,
+					   "%02u %s-%s %s %s ",
+					   CANIOT_DID(id.cls, id.sid),
+					   get_class_str(id.cls),
+					   get_sid_str(id.sid),
+					   get_type_str(id.type),
+					   get_query_str(id.query));
 	}
 
 	if (ret < 0) {
@@ -275,12 +280,14 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 	len -= ret;
 
 	if (caniot_is_error_frame(frame->id)) {
-		ret = snprintf(buf, len, ": -%04x", (uint32_t)-frame->err.code);
+		uint32_t err = read_le16(frame->buf);
+		int32_t err2 = *(int32_t *)&err;
+		ret			 = snprintf(buf, len, ": -%04x", (int16_t)-err2);
 		total += ret;
 		buf += ret;
 		len -= ret;
 	} else if ((frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY) ||
-		   (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
+			   (frame->id.type == CANIOT_FRAME_TYPE_COMMAND)) {
 		ret = snprintf(buf, len, "ep : %s", get_endpoint_str(frame->id.endpoint));
 		if (ret > (int)len || ret < 0) {
 			return ret;
@@ -299,12 +306,9 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 			len -= ret;
 		}
 	} else {
-		ret = snprintf(buf,
-			       len,
-			       "len: %d key: x%02x val: x%04x",
-			       frame->len,
-			       frame->attr.key,
-			       frame->attr.val);
+		uint16_t key = read_le16(frame->buf);
+		uint32_t val = read_le32(frame->buf + 2u);
+		ret = snprintf(buf, len, "len: %d key: x%02x val: x%04x", frame->len, key, val);
 		if (ret > (int)len || ret < 0) {
 			return ret;
 		}
@@ -326,7 +330,7 @@ int caniot_explain_frame_str(const struct caniot_frame *frame, char *buf, size_t
 
 /*____________________________________________________________________________*/
 
-caniot_did_t caniot_frame_get_did(struct caniot_frame *frame)
+caniot_did_t caniot_frame_get_did(const struct caniot_frame *frame)
 {
 	ASSERT(frame != NULL);
 
@@ -342,7 +346,7 @@ void caniot_frame_set_did(struct caniot_frame *frame, caniot_did_t did)
 	frame->id.sid = CANIOT_DID_SID(did);
 }
 
-int caniot_build_query_telemetry(struct caniot_frame *frame, uint8_t endpoint)
+int caniot_build_query_telemetry(struct caniot_frame *frame, caniot_endpoint_t endpoint)
 {
 	ASSERT(frame);
 
@@ -351,16 +355,16 @@ int caniot_build_query_telemetry(struct caniot_frame *frame, uint8_t endpoint)
 		frame->id.type	   = CANIOT_FRAME_TYPE_TELEMETRY;
 		frame->id.query	   = CANIOT_QUERY;
 		frame->id.endpoint = endpoint;
-		frame->len	   = 0U;
-		ret		   = 0;
+		frame->len		   = 0U;
+		ret				   = 0;
 	}
 	return ret;
 }
 
 int caniot_build_query_command(struct caniot_frame *frame,
-			       uint8_t endpoint,
-			       const uint8_t *buf,
-			       uint8_t size)
+							   caniot_endpoint_t endpoint,
+							   const uint8_t *buf,
+							   uint8_t size)
 {
 	ASSERT(frame);
 	ASSERT(buf);
@@ -370,7 +374,7 @@ int caniot_build_query_command(struct caniot_frame *frame,
 		frame->id.type	   = CANIOT_FRAME_TYPE_COMMAND;
 		frame->id.query	   = CANIOT_QUERY;
 		frame->id.endpoint = endpoint;
-		frame->len	   = MIN(size, sizeof(frame->buf));
+		frame->len		   = MIN(size, sizeof(frame->buf));
 		memcpy(frame->buf, buf, frame->len);
 		ret = 0;
 	}
@@ -386,25 +390,25 @@ int caniot_build_query_read_attribute(struct caniot_frame *frame, uint16_t key)
 
 	frame->id.type	= CANIOT_FRAME_TYPE_READ_ATTRIBUTE;
 	frame->id.query = CANIOT_QUERY;
-	frame->len	= 2u;
-	frame->attr.key = key;
+	frame->len		= 2u;
+	write_le16(frame->buf, key);
 
 	return 0;
 }
 
 int caniot_build_query_write_attribute(struct caniot_frame *frame,
-				       uint16_t key,
-				       uint32_t value)
+									   uint16_t key,
+									   uint32_t value)
 {
 	ASSERT(frame);
 
 	/* Endpoint doesn't matter for attributes */
 	frame->id.endpoint = CANIOT_ENDPOINT_APP;
 
-	frame->id.type	= CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
-	frame->len	= 6u;
-	frame->attr.key = key;
-	frame->attr.val = value;
+	frame->id.type = CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE;
+	frame->len	   = 6u;
+	write_le16(frame->buf, key);
+	write_le32(frame->buf + 2u, value);
 
 	return 0;
 }
@@ -419,21 +423,31 @@ bool caniot_validate_drivers_api(struct caniot_drivers_api *api)
 bool caniot_is_error(int cterr)
 {
 	return (cterr < 0) && ((uint32_t)cterr < CANIOT_ERROR_MAX) &&
-	       ((uint32_t)cterr > CANIOT_ERROR_BASE);
+		   ((uint32_t)cterr > CANIOT_ERROR_BASE);
 }
 
 bool caniot_device_is_target(caniot_did_t did, const struct caniot_frame *frame)
 {
 	return (frame->id.query == CANIOT_QUERY) &&
-	       (((frame->id.cls == CANIOT_DID_CLS(did)) &&
-		 (frame->id.sid == CANIOT_DID_SID(did))) ||
-		((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
-		 (frame->id.sid == CANIOT_SUBID_BROADCAST)));
+		   (((frame->id.cls == CANIOT_DID_CLS(did)) &&
+			 (frame->id.sid == CANIOT_DID_SID(did))) ||
+			((frame->id.cls == CANIOT_CLASS_BROADCAST) &&
+			 (frame->id.sid == CANIOT_SUBID_BROADCAST)));
 }
 
 bool caniot_controller_is_target(const struct caniot_frame *frame)
 {
 	return frame->id.query == CANIOT_RESPONSE;
+}
+
+void caniot_clear_frame(struct caniot_frame *frame)
+{
+	memset(frame, 0x00U, sizeof(struct caniot_frame));
+}
+
+void caniot_copy_frame(struct caniot_frame *dst, const struct caniot_frame *src)
+{
+	memcpy(dst, src, sizeof(struct caniot_frame));
 }
 
 void caniot_show_error(int cterr)
@@ -505,15 +519,14 @@ caniot_id_t caniot_canid_to_id(uint16_t canid)
 
 bool caniot_is_error_frame(caniot_id_t id)
 {
-	return id.query == CANIOT_RESPONSE &&
-	       (id.type == CANIOT_FRAME_TYPE_COMMAND ||
-		id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
+	return id.query == CANIOT_RESPONSE && (id.type == CANIOT_FRAME_TYPE_COMMAND ||
+										   id.type == CANIOT_FRAME_TYPE_WRITE_ATTRIBUTE);
 }
 
 bool is_telemetry_response(struct caniot_frame *frame)
 {
 	return (frame->id.query == CANIOT_RESPONSE) &&
-	       (frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
+		   (frame->id.type == CANIOT_FRAME_TYPE_TELEMETRY);
 }
 
 caniot_frame_type_t caniot_resp_error_for(caniot_frame_type_t query)
@@ -555,76 +568,68 @@ caniot_error_t caniot_interpret_error(int err, bool *forwarded)
 	return (caniot_error_t)(err);
 }
 
-int caniot_cmd_blc1_init(struct caniot_blc1_command *cmd)
+#define EE(_err, _description, _details)                                                 \
+	case _err:                                                                           \
+		str = _details " (" _description ")";                                            \
+		break;
+
+const char *caniot_error_to_string(caniot_error_t err)
 {
-	return caniot_cmd_blc1_clear(cmd);
-}
+	const char *str = NULL;
 
-int caniot_cmd_blc1_set_xps(struct caniot_blc1_command *cmd,
-			    uint8_t n,
-			    caniot_complex_digital_cmd_t xps)
-{
-#if CONFIG_CANIOT_CHECKS
-	if (cmd == NULL) {
-		return -CANIOT_EINVAL;
+	switch (err) {
+		EE(CANIOT_OK, "OK", "No error");
+		EE(CANIOT_EINVAL, "EINVAL", "Invalid argument");
+		EE(CANIOT_ENPROC, "ENPROC", "Unprocessable");
+		EE(CANIOT_ECMD, "ECMD", "Command error");
+		EE(CANIOT_EKEY, "EKEY", "Key error (read/write-attribute)");
+		EE(CANIOT_ETIMEOUT, "ETIMEOUT", "Timeout");
+		EE(CANIOT_EAGAIN, "EAGAIN", "Busy / Try again");
+		EE(CANIOT_EFMT, "EFMT", "Format error");
+		EE(CANIOT_EHANDLERC, "EHANDLERC", "Undefined command handler");
+		EE(CANIOT_EHANDLERT, "EHANDLERT", "Undefined telemetry handler");
+		EE(CANIOT_ETELEMETRY, "ETELEMETRY", "Telemetry error");
+		EE(CANIOT_EUNEXPECTED, "EUNEXPECTED", "Unexpected frame");
+		EE(CANIOT_EEP, "EEP", "Endpoint error");
+		EE(CANIOT_ECMDEP, "ECMDEP", "Illegal command, broadcast to all endpoints");
+		EE(CANIOT_ENOINIT, "ENOINIT", "Not initialized");
+		EE(CANIOT_EDRIVER, "EDRIVER", "Driver error");
+		EE(CANIOT_EAPI, "EAPI", "API error");
+		EE(CANIOT_EKEYSECTION, "EKEYSECTION", "Unknown attributes section");
+		EE(CANIOT_EKEYATTR, "EKEYATTR", "Unknown attribute");
+		EE(CANIOT_EKEYPART, "EKEYPART", "Unknown attribute part");
+		EE(CANIOT_ENOATTR, "ENOATTR", "No such attribute");
+		EE(CANIOT_ECLSATTR,
+		   "ECLSATTR",
+		   "Class attribute not accessible for current device");
+		EE(CANIOT_EREADONLY, "EREADONLY", "Read-only");
+		EE(CANIOT_ENULL, "ENULL", "Null pointer");
+		EE(CANIOT_ENULLDRV, "ENULLDRV", "Null driver");
+		EE(CANIOT_ENULLAPI, "ENULLAPI", "Null API");
+		EE(CANIOT_ENULLID, "ENULLID", "Null ID");
+		EE(CANIOT_ENULLDEV, "ENULLDEV", "Null device");
+		EE(CANIOT_ENULLCFG, "ENULLCFG", "Null config");
+		EE(CANIOT_ENULLCTRL, "ENULLCTRL", "Null controller");
+		EE(CANIOT_ENULLCTRLCB, "ENULLCTRLCB", "Null controller callback");
+		EE(CANIOT_EROATTR, "EROATTR", "Read-only attribute");
+		EE(CANIOT_EREADATTR, "EREADATTR", "Query read attribute");
+		EE(CANIOT_EWRITEATTR, "EWRITEATTR", "Query write attribute");
+		EE(CANIOT_EENOCB, "EENOCB", "No event handler");
+		EE(CANIOT_EECB, "EECB", "ECCB error");
+		EE(CANIOT_EPQALLOC, "EPQALLOC", "Pending query allocation");
+		EE(CANIOT_ENOPQ, "ENOPQ", "No pending query");
+		EE(CANIOT_ENOHANDLE, "ENOHANDLE", "No handler");
+		EE(CANIOT_EDEVICE, "EDEVICE", "Device error");
+		EE(CANIOT_EFRAME, "EFRAME", "Frame error (not a valid CANIOT frame)");
+		EE(CANIOT_EMLFRM, "EMLFRM", "Malformed frame");
+		EE(CANIOT_ECLASS, "ECLASS", "Invalid class");
+		EE(CANIOT_ECFG, "ECFG", "Invalid configuration");
+		EE(CANIOT_EHYST, "EHYST", "Invalid hysteresis structure");
+		EE(CANIOT_ENOTSUP, "ENOTSUP", "Not supported");
+		EE(CANIOT_ENIMPL, "ENIMPL", "Not implemented");
+	default:
+		str = "<Unknown Error>";
 	}
 
-	if (n >= CANIOT_CLASS1_IO_COUNT) {
-		return -CANIOT_EINVAL;
-	}
-#endif
-
-	const uint8_t msb_index	   = n * 3u;
-	const uint8_t msb_offset   = msb_index & 0x7u;
-	const uint8_t msb_rem_size = 8u - msb_offset;
-	const uint8_t byte_n	   = msb_index >> 3u;
-
-	cmd->data[byte_n] |= ((xps & 0x7u) << msb_offset) & 0xffu;
-
-	if ((msb_rem_size < 3u) && ((byte_n + 1u) <= 6u)) {
-		cmd->data[byte_n + 1u] |= ((xps & 0x7u) >> msb_rem_size);
-	}
-
-	return 0;
-}
-
-int caniot_cmd_blc1_clear(struct caniot_blc1_command *cmd)
-{
-#if CONFIG_CANIOT_CHECKS
-	if (cmd == NULL) {
-		return -CANIOT_EINVAL;
-	}
-#endif
-
-	memset(cmd, 0, sizeof(struct caniot_blc1_command));
-
-	return 0;
-}
-
-caniot_complex_digital_cmd_t caniot_cmd_blc1_parse_xps(struct caniot_blc1_command *cmd,
-						       uint8_t n)
-{
-#if CONFIG_CANIOT_CHECKS
-	if (cmd == NULL) {
-		return -CANIOT_EINVAL;
-	}
-
-	if (n >= CANIOT_CLASS1_IO_COUNT) {
-		return -CANIOT_EINVAL;
-	}
-#endif
-	caniot_complex_digital_cmd_t xps = CANIOT_XPS_NONE;
-
-	const uint8_t msb_index	   = n * 3u;
-	const uint8_t msb_offset   = msb_index & 0x7u;
-	const uint8_t msb_rem_size = 8u - msb_offset;
-	const uint8_t byte_n	   = msb_index >> 3u;
-
-	xps = (cmd->data[byte_n] >> msb_offset) & 0x7u;
-
-	if ((msb_rem_size < 3u) && ((byte_n + 1u) <= 6u)) {
-		xps |= (cmd->data[byte_n + 1u] << msb_rem_size) & 0x7u;
-	}
-
-	return xps;
+	return str;
 }

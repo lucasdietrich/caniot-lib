@@ -9,45 +9,9 @@
 #include <caniot/caniot_private.h>
 #include <caniot/datatype.h>
 
-_Static_assert(sizeof(struct caniot_blc_command) == 8u, "Invalid size");
-
 static inline bool is_valid_class(uint8_t cls)
 {
 	return cls <= 0x7u;
-}
-
-int caniot_dt_endpoints_count(uint8_t cls)
-{
-	switch (cls) {
-	case 0:
-		return 1;
-	case 1:
-		return -CANIOT_ENIMPL;
-	case 2:
-		return -CANIOT_ENIMPL;
-	case 3:
-		return -CANIOT_ENIMPL;
-	case 4:
-		return -CANIOT_ENIMPL;
-	case 5:
-		return -CANIOT_ENIMPL;
-	case 6:
-		return -CANIOT_ENIMPL;
-	case 7:
-		return -CANIOT_ENIMPL;
-	default:
-		return -CANIOT_ECLASS;
-	}
-}
-
-bool caniot_dt_valid_endpoint(uint8_t cls, uint8_t endpoint)
-{
-	int ret;
-
-	ret = caniot_dt_endpoints_count(cls);
-	if (ret < 0) return false;
-
-	return endpoint < ret;
 }
 
 uint16_t caniot_dt_T16_to_T10(int16_t T16)
@@ -65,37 +29,50 @@ int16_t caniot_dt_T10_to_T16(uint16_t T)
 	return ((int16_t)T * 10) - 2800;
 }
 
-void caniot_blc_command_init(struct caniot_blc_command *cmd)
+void caniot_caniot_blc_sys_command_init(struct caniot_blc_sys_command *cmd)
 {
 	ASSERT(cmd != NULL);
 
-	memset(cmd, 0, sizeof(*cmd));
+	memset(cmd, 0x00U, sizeof(struct caniot_blc_sys_command));
 }
 
-void caniot_blc0_command_init(struct caniot_blc0_command *cmd)
+#define BLC_SYS_RESET_OFFSET		  0u
+#define BLC_SYS_WATCHDOG_RESET_OFFSET 1u
+#define BLC_SYS_SOFTWARE_RESET_OFFSET 2u
+#define BLC_SYS_WATCHDOG_OFFSET		  3u
+#define BLC_SYS_CONFIG_RESET_OFFSET	  5u
+#define BLC_SYS_INHIBIT_OFFSET		  6u
+
+uint8_t caniot_blc_sys_command_to_byte(const struct caniot_blc_sys_command *bf)
+{
+	uint8_t byte = 0x00u;
+
+	if (bf) {
+		byte |= bf->reset << BLC_SYS_RESET_OFFSET;
+
+		/* Deprecated */
+		byte |= bf->_software_reset << BLC_SYS_WATCHDOG_RESET_OFFSET;
+		byte |= bf->_watchdog_reset << BLC_SYS_SOFTWARE_RESET_OFFSET;
+
+		byte |= bf->watchdog << BLC_SYS_WATCHDOG_OFFSET;
+		byte |= bf->config_reset << BLC_SYS_CONFIG_RESET_OFFSET;
+		byte |= bf->inhibit << BLC_SYS_INHIBIT_OFFSET;
+	}
+
+	return byte;
+}
+
+void caniot_blc_sys_command_from_byte(struct caniot_blc_sys_command *cmd, uint8_t byte)
 {
 	ASSERT(cmd != NULL);
 
-	memset(cmd, 0x00U, sizeof(struct caniot_blc0_command));
-}
+	cmd->reset = (byte >> BLC_SYS_RESET_OFFSET) & 0x01u;
 
-void caniot_blc1_command_init(struct caniot_blc1_command *cmd)
-{
-	ASSERT(cmd != NULL);
+	/* Deprecated */
+	cmd->_software_reset = (byte >> BLC_SYS_WATCHDOG_RESET_OFFSET) & 0x01u;
+	cmd->_watchdog_reset = (byte >> BLC_SYS_SOFTWARE_RESET_OFFSET) & 0x01u;
 
-	memset(cmd, 0x00U, sizeof(struct caniot_blc1_command));
-}
-
-void caniot_blc_sys_req_reboot(struct caniot_blc_sys_command *sysc)
-{
-	ASSERT(sysc != NULL);
-
-	sysc->reset = 1u;
-}
-
-void caniot_blc_sys_req_factory_reset(struct caniot_blc_sys_command *sysc)
-{
-	ASSERT(sysc != NULL);
-
-	sysc->config_reset = 1u;
+	cmd->watchdog	  = (byte >> BLC_SYS_WATCHDOG_OFFSET) & 0x03u;
+	cmd->config_reset = (byte >> BLC_SYS_CONFIG_RESET_OFFSET) & 0x01u;
+	cmd->inhibit	  = (byte >> BLC_SYS_INHIBIT_OFFSET) & 0x03u;
 }
